@@ -108,7 +108,7 @@ const Dashboard = () => {
               <SelectValue placeholder="Country" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Countries</SelectItem>
+              <SelectItem value="all-countries">All Countries</SelectItem>
               {uniqueCountries.map((country) => (
                 <SelectItem key={country} value={country}>
                   {country}
@@ -121,7 +121,7 @@ const Dashboard = () => {
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="all-statuses">All Statuses</SelectItem>
               {statusTags.map((tag) => (
                 <SelectItem key={tag.id} value={tag.id}>
                   {tag.name}
@@ -134,7 +134,7 @@ const Dashboard = () => {
               <SelectValue placeholder="Tag" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Tags</SelectItem>
+              <SelectItem value="all-tags">All Tags</SelectItem>
               {customTags.map((tag) => (
                 <SelectItem key={tag.id} value={tag.id}>
                   {tag.name}
@@ -180,7 +180,7 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground">
                 {filteredPrograms.length} program{filteredPrograms.length !== 1 ? "s" : ""} found
               </p>
-              {countryFilter && (
+              {countryFilter && countryFilter !== "all-countries" && (
                 <Badge variant="outline" className="flex items-center gap-1">
                   Country: {countryFilter}
                   <button
@@ -191,7 +191,7 @@ const Dashboard = () => {
                   </button>
                 </Badge>
               )}
-              {statusFilter && (
+              {statusFilter && statusFilter !== "all-statuses" && (
                 <Badge variant="outline" className="flex items-center gap-1">
                   Status: {tags.find((t) => t.id === statusFilter)?.name}
                   <button
@@ -202,7 +202,7 @@ const Dashboard = () => {
                   </button>
                 </Badge>
               )}
-              {tagFilter && (
+              {tagFilter && tagFilter !== "all-tags" && (
                 <Badge variant="outline" className="flex items-center gap-1">
                   Tag: {tags.find((t) => t.id === tagFilter)?.name}
                   <button

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -109,14 +110,14 @@ const Documents = () => {
         <div className="w-full md:w-64">
           <div className="space-y-4">
             <Select 
-              value={selectedProgramId || ""} 
-              onValueChange={(value) => setSelectedProgramId(value || null)}
+              value={selectedProgramId || "all-documents"} 
+              onValueChange={(value) => setSelectedProgramId(value === "all-documents" ? null : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All documents" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All documents</SelectItem>
+                <SelectItem value="all-documents">All documents</SelectItem>
                 {programs.map(program => (
                   <SelectItem key={program.id} value={program.id}>
                     {program.programName}
@@ -208,14 +209,14 @@ const Documents = () => {
                 
                 {!selectedDocument && (
                   <Select 
-                    value={selectedProgramId || ""} 
-                    onValueChange={(value) => setSelectedProgramId(value || null)}
+                    value={selectedProgramId || "no-program"} 
+                    onValueChange={(value) => setSelectedProgramId(value === "no-program" ? null : value)}
                   >
                     <SelectTrigger className="w-[200px]">
                       <SelectValue placeholder="Link to program" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No program link</SelectItem>
+                      <SelectItem value="no-program">No program link</SelectItem>
                       {programs.map(program => (
                         <SelectItem key={program.id} value={program.id}>
                           {program.programName}
