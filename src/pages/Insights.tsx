@@ -1,118 +1,35 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, BarChart, Calendar, Globe, DollarSign, PieChart } from "lucide-react";
 import { useProgramContext } from "@/contexts/ProgramContext";
+import { useOpenAI } from "@/contexts/OpenAIContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 const Insights = () => {
   const { programs } = useProgramContext();
+  const { analyzeShortlist } = useOpenAI();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [insights, setInsights] = useState<string[] | null>(null);
   
   const hasEnoughPrograms = programs.length >= 3;
   
-  const analyzeShortlist = async () => {
+  const handleAnalyzeShortlist = async () => {
     setIsAnalyzing(true);
     
     try {
-      // Call the API endpoint for shortlist analysis
-      const response = await fetch("/api/shortlist-analysis", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          programs: programs,
-        }),
-      });
+      const response = await analyzeShortlist(programs);
       
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+      if (response) {
+        setInsights(response.insights);
       }
-      
-      const data = await response.json();
-      setInsights(data.insights);
     } catch (error) {
       console.error("Shortlist analysis error:", error);
-      toast.error("Failed to analyze shortlist. Using local analysis instead.");
-      
-      // Fallback to local analysis
-      const generatedInsights = generateLocalInsights();
-      setInsights(generatedInsights);
     } finally {
       setIsAnalyzing(false);
     }
-  };
-  
-  // Helper function to generate local insights if API fails
-  const generateLocalInsights = () => {
-    // This would be replaced by actual AI analysis
-    const countries = [...new Set(programs.map(p => p.country))];
-    const deadlines = programs.filter(p => p.deadline).map(p => new Date(p.deadline));
-    
-    const insights: string[] = [];
-    
-    // Country diversity
-    if (countries.length === 1) {
-      insights.push(`All your programs are in ${countries[0]}. Consider diversifying your applications across different countries for better odds.`);
-    } else {
-      insights.push(`You have a good mix of programs across ${countries.length} countries (${countries.join(", ")}). This gives you geographical flexibility.`);
-    }
-    
-    // Deadline clustering
-    if (deadlines.length > 0) {
-      deadlines.sort((a, b) => a.getTime() - b.getTime());
-      const earliestDeadline = deadlines[0];
-      const latestDeadline = deadlines[deadlines.length - 1];
-      
-      const timeSpan = Math.ceil((latestDeadline.getTime() - earliestDeadline.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (timeSpan < 30 && deadlines.length > 1) {
-        insights.push(`You have ${deadlines.length} deadlines within a ${timeSpan} day period. Prepare your application materials well in advance to avoid last-minute stress.`);
-      } else if (deadlines.length > 1) {
-        insights.push(`Your application deadlines are spread across ${timeSpan} days, giving you good time to prepare materials sequentially.`);
-      }
-    } else {
-      insights.push("Consider adding application deadlines to better plan your application timeline.");
-    }
-    
-    // Tuition analysis
-    const tuitionsWithValues = programs.filter(p => p.tuition && p.tuition.trim() !== '');
-    if (tuitionsWithValues.length > 0) {
-      if (tuitionsWithValues.length === programs.length) {
-        insights.push("You have entered tuition information for all programs, which is excellent for financial planning.");
-      } else {
-        insights.push(`You have tuition information for ${tuitionsWithValues.length} out of ${programs.length} programs. Complete this information to better plan finances.`);
-      }
-    } else {
-      insights.push("Add tuition information to your programs to get insights on financial planning.");
-    }
-    
-    // Program type balance
-    const degreeTypes = [...new Set(programs.map(p => p.degreeType))];
-    if (degreeTypes.length > 1) {
-      insights.push(`You're considering multiple degree types: ${degreeTypes.join(", ")}. Ensure your application strategy aligns with the different requirements for each.`);
-    }
-    
-    // Task completion status
-    const tasksTotal = programs.reduce((sum, program) => sum + program.tasks.length, 0);
-    const tasksCompleted = programs.reduce((sum, program) => sum + program.tasks.filter(t => t.completed).length, 0);
-    
-    if (tasksTotal > 0) {
-      const completionPercentage = Math.round((tasksCompleted / tasksTotal) * 100);
-      insights.push(`You have completed ${completionPercentage}% of your application tasks (${tasksCompleted}/${tasksTotal}). ${completionPercentage < 50 ? "Keep up the momentum!" : "Great progress!"}`);
-    } else {
-      insights.push("Start adding tasks to your programs to track your application progress.");
-    }
-    
-    // Extra recommendation
-    insights.push(`Based on your current shortlist, consider exploring programs in ${countries.includes("USA") ? "Europe" : "USA"} to diversify your options.`);
-    
-    return insights;
   };
   
   // Extract some statistics for the charts
@@ -156,7 +73,7 @@ const Insights = () => {
             <p className="text-center text-muted-foreground mb-4">
               Get AI-powered insights on your {programs.length} shortlisted programs.
             </p>
-            <Button onClick={analyzeShortlist} disabled={isAnalyzing} size="lg">
+            <Button onClick={handleAnalyzeShortlist} disabled={isAnalyzing} size="lg">
               {isAnalyzing ? "Analyzing..." : "Analyze My Shortlist"}
             </Button>
           </CardContent>

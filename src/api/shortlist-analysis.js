@@ -1,5 +1,5 @@
 
-// Mock API endpoint for analyzing shortlisted programs with OpenAI
+// API endpoint for analyzing shortlisted programs with OpenAI
 export async function POST(request) {
   try {
     const { programs } = await request.json();
@@ -14,9 +14,16 @@ export async function POST(request) {
       });
     }
     
-    // YOUR_OPENAI_API_KEY_HERE
-    // This would be replaced with an environment variable in production
-    const openAiApiKey = "placeholder_openai_api_key";
+    // OpenAI API key
+    const openAiApiKey = process.env.OPENAI_API_KEY || "";
+    
+    if (!openAiApiKey) {
+      console.warn("OpenAI API key not found. Using mock insights.");
+      return new Response(JSON.stringify({ insights: generateMockInsights(programs) }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     
     // Format the program data for the AI
     const programData = programs.map(p => ({
@@ -44,37 +51,53 @@ export async function POST(request) {
     
     Format your response as a list of 5-8 specific bullet points, each containing actionable insights.`;
     
-    // Actual OpenAI API call would go here
-    // const openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     "Authorization": `Bearer ${openAiApiKey}`,
-    //   },
-    //   body: JSON.stringify({
-    //     model: "gpt-4o",
-    //     messages: [
-    //       {
-    //         role: "system",
-    //         content: systemPrompt
-    //       },
-    //       {
-    //         role: "user",
-    //         content: JSON.stringify(programData)
-    //       }
-    //     ],
-    //     temperature: 0.5,
-    //     max_tokens: 1000
-    //   }),
-    // });
-    
-    // For now, generate mock insights based on the actual programs
-    const insights = generateMockInsights(programs);
-    
-    return new Response(JSON.stringify({ insights }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    try {
+      // Call OpenAI API
+      const openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openAiApiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            {
+              role: "user",
+              content: JSON.stringify(programData)
+            }
+          ],
+          temperature: 0.5,
+          max_tokens: 1000
+        }),
+      });
+      
+      if (!openAiResponse.ok) {
+        throw new Error(`OpenAI API error: ${openAiResponse.status}`);
+      }
+      
+      const data = await openAiResponse.json();
+      const insights = data.choices[0].message.content
+        .split("\n")
+        .filter(line => line.trim().startsWith("•") || line.trim().startsWith("-"))
+        .map(line => line.replace(/^[•\-]\s*/, "").trim());
+      
+      return new Response(JSON.stringify({ insights }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (openAiError) {
+      console.error("OpenAI API error:", openAiError);
+      // Fallback to mock insights if OpenAI call fails
+      return new Response(JSON.stringify({ insights: generateMockInsights(programs) }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
   } catch (error) {
     console.error("Shortlist analysis API error:", error);
     return new Response(JSON.stringify({ 

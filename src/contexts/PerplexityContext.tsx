@@ -1,6 +1,7 @@
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { toast } from "sonner";
+import { getApiKey, setApiKey, API_KEYS } from "@/utils/apiKeys";
 
 export type SearchResult = {
   programName: string;
@@ -29,22 +30,30 @@ export const usePerplexityContext = () => {
 };
 
 export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
-  const [apiKey, setApiKey] = useState<string | null>(
-    localStorage.getItem("perplexity_api_key")
-  );
+  const [apiKey, setApiKeyState] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Load API key on mount
+  useEffect(() => {
+    const storedKey = getApiKey(API_KEYS.PERPLEXITY);
+    if (storedKey) {
+      setApiKeyState(storedKey);
+    }
+  }, []);
 
   // Save API key to localStorage when set
   const handleSetApiKey = (key: string) => {
-    localStorage.setItem("perplexity_api_key", key);
-    setApiKey(key);
+    setApiKey(API_KEYS.PERPLEXITY, key);
+    setApiKeyState(key);
   };
 
   // Search programs using Perplexity API
   const searchPrograms = async (query: string) => {
-    if (!apiKey) {
-      toast.error("API key not set");
+    const currentApiKey = apiKey || getApiKey(API_KEYS.PERPLEXITY);
+    
+    if (!currentApiKey) {
+      toast.error("API key not set. Please add your Perplexity API key in Settings.");
       return;
     }
 
@@ -57,7 +66,7 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query, apiKey }),
+        body: JSON.stringify({ query, apiKey: currentApiKey }),
       });
 
       if (!response.ok) {
