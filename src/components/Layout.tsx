@@ -1,6 +1,6 @@
 
 import { Outlet } from "react-router-dom";
-import Sidebar from "./Sidebar";
+import { Sidebar } from "./Sidebar";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
@@ -11,7 +11,7 @@ const Layout = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+      <Sidebar className={sidebarOpen ? "" : "hidden"} />
       
       <main className={cn(
         "flex-1 overflow-auto transition-all duration-300 ease-in-out p-4 md:p-6", 
