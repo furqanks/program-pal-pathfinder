@@ -1,25 +1,43 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import Search from "./pages/Search";
+import Documents from "./pages/Documents";
+import Insights from "./pages/Insights";
 import NotFound from "./pages/NotFound";
+import Layout from "./components/Layout";
+import { TagProvider } from "./contexts/TagContext";
+import { ProgramProvider } from "./contexts/ProgramContext";
+import { PerplexityProvider } from "./contexts/PerplexityContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <ProgramProvider>
+        <TagProvider>
+          <PerplexityProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="search" element={<Search />} />
+                  <Route path="documents" element={<Documents />} />
+                  <Route path="insights" element={<Insights />} />
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </PerplexityProvider>
+        </TagProvider>
+      </ProgramProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
