@@ -100,39 +100,73 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     ).sort((a, b) => b.versionNumber - a.versionNumber);
   };
 
-  const generateFeedback = (documentId: string) => {
+  const generateFeedback = async (documentId: string) => {
     const document = getDocument(documentId);
     if (!document) return;
-
-    // In a real implementation, this would call an AI service
-    // For now, let's mock the feedback
     
-    // Get the program details if linked
-    const program = document.linkedProgramId ? getProgram(document.linkedProgramId) : null;
+    toast.loading("Generating feedback...");
     
-    let feedbackText = "";
-    let score = 0;
-    
-    if (document.documentType === "SOP") {
-      feedbackText = `Your statement of purpose is well-structured but could benefit from more specific examples of your research interests. ${program ? `For ${program.university}'s ${program.programName} program, you should emphasize your relevant coursework and research experience.` : "Consider adding more details about your academic background and research experience."} Your introduction is strong, but the conclusion could be more compelling. Overall, good work!`;
-      score = 7.5;
-    } else if (document.documentType === "CV") {
-      feedbackText = "Your CV is well-organized, but consider adding quantifiable achievements to your work experience section. The education section is strong, but you could add relevant coursework. Consider adding a skills section to highlight your technical abilities.";
-      score = 8;
-    } else {
-      feedbackText = "Your essay has a clear thesis and good supporting arguments. Consider strengthening your conclusion and adding more scholarly references. Your writing style is engaging but could benefit from more varied sentence structure.";
-      score = 7;
+    try {
+      // Call the API endpoint for document review
+      const response = await fetch("/api/review-document", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          documentType: document.documentType,
+          content: document.contentRaw,
+          programId: document.linkedProgramId,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Update the document with feedback
+      setDocuments(
+        documents.map((doc) =>
+          doc.id === documentId
+            ? { ...doc, contentFeedback: data.feedback, score: data.score }
+            : doc
+        )
+      );
+      
+      toast.dismiss();
+      toast.success("Feedback generated successfully");
+    } catch (error) {
+      console.error("Error generating feedback:", error);
+      toast.dismiss();
+      toast.error("Failed to generate feedback. Please try again.");
+      
+      // For demo purposes, still provide mock feedback on error
+      const program = document.linkedProgramId ? getProgram(document.linkedProgramId) : null;
+      
+      let feedbackText = "";
+      let score = 0;
+      
+      if (document.documentType === "SOP") {
+        feedbackText = `Your statement of purpose is well-structured but could benefit from more specific examples of your research interests. ${program ? `For ${program.university}'s ${program.programName} program, you should emphasize your relevant coursework and research experience.` : "Consider adding more details about your academic background and research experience."} Your introduction is strong, but the conclusion could be more compelling. Overall, good work!`;
+        score = 7.5;
+      } else if (document.documentType === "CV") {
+        feedbackText = "Your CV is well-organized, but consider adding quantifiable achievements to your work experience section. The education section is strong, but you could add relevant coursework. Consider adding a skills section to highlight your technical abilities.";
+        score = 8;
+      } else {
+        feedbackText = "Your essay has a clear thesis and good supporting arguments. Consider strengthening your conclusion and adding more scholarly references. Your writing style is engaging but could benefit from more varied sentence structure.";
+        score = 7;
+      }
+      
+      setDocuments(
+        documents.map((doc) =>
+          doc.id === documentId
+            ? { ...doc, contentFeedback: feedbackText, score }
+            : doc
+        )
+      );
     }
-    
-    setDocuments(
-      documents.map((doc) =>
-        doc.id === documentId
-          ? { ...doc, contentFeedback: feedbackText, score }
-          : doc
-      )
-    );
-    
-    toast.success("Feedback generated");
   };
 
   return (

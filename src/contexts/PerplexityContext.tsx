@@ -1,5 +1,5 @@
 
-import { createContext, useState, useContext, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 import { toast } from "sonner";
 
 export type SearchResult = {
@@ -12,10 +12,10 @@ export type SearchResult = {
 
 type PerplexityContextType = {
   apiKey: string | null;
-  setApiKey: (key: string | null) => void;
-  isLoading: boolean;
-  searchResults: SearchResult[];
+  setApiKey: (key: string) => void;
   searchPrograms: (query: string) => Promise<void>;
+  searchResults: SearchResult[];
+  isLoading: boolean;
 };
 
 const PerplexityContext = createContext<PerplexityContextType | undefined>(undefined);
@@ -29,55 +29,43 @@ export const usePerplexityContext = () => {
 };
 
 export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(
+    localStorage.getItem("perplexity_api_key")
+  );
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const searchPrograms = async (query: string): Promise<void> => {
+  // Save API key to localStorage when set
+  const handleSetApiKey = (key: string) => {
+    localStorage.setItem("perplexity_api_key", key);
+    setApiKey(key);
+  };
+
+  // Search programs using Perplexity API
+  const searchPrograms = async (query: string) => {
     if (!apiKey) {
-      toast.error("Please enter your Perplexity API key first");
+      toast.error("API key not set");
       return;
     }
 
     setIsLoading(true);
-    try {
-      // In a real integration, this would call the Perplexity API
-      // For demo purposes, we'll simulate results after a delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const mockResults: SearchResult[] = [
-        {
-          programName: `${query} Engineering`,
-          university: "MIT",
-          degreeType: "Masters",
-          country: "USA",
-          description: `The ${query} Engineering program at MIT offers cutting-edge research opportunities in ${query} and related technologies.`,
-        },
-        {
-          programName: `${query} Science`,
-          university: "Stanford University",
-          degreeType: "PhD",
-          country: "USA",
-          description: `Stanford's ${query} Science program is renowned for its interdisciplinary approach integrating ${query} with applied research.`,
-        },
-        {
-          programName: `${query} Technology`,
-          university: "ETH Zurich",
-          degreeType: "Masters",
-          country: "Switzerland",
-          description: `ETH Zurich's ${query} Technology program provides a comprehensive curriculum with strong industry connections.`,
-        },
-        {
-          programName: `${query} Innovation`,
-          university: "University of Tokyo",
-          degreeType: "Masters",
-          country: "Japan",
-          description: `The University of Tokyo's ${query} Innovation program focuses on emerging technologies and entrepreneurship in ${query} fields.`,
-        },
-      ];
+    setSearchResults([]);
 
-      setSearchResults(mockResults);
-      toast.success(`Found ${mockResults.length} programs related to "${query}"`);
+    try {
+      const response = await fetch("/api/search-programs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query, apiKey }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setSearchResults(data.results);
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Failed to search programs. Please try again.");
@@ -90,10 +78,10 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
     <PerplexityContext.Provider
       value={{
         apiKey,
-        setApiKey,
-        isLoading,
-        searchResults,
+        setApiKey: handleSetApiKey,
         searchPrograms,
+        searchResults,
+        isLoading,
       }}
     >
       {children}

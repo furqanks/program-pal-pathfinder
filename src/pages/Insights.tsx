@@ -6,6 +6,7 @@ import { Sparkles, BarChart, Calendar, Globe, DollarSign, PieChart } from "lucid
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 const Insights = () => {
   const { programs } = useProgramContext();
@@ -14,18 +15,41 @@ const Insights = () => {
   
   const hasEnoughPrograms = programs.length >= 3;
   
-  const analyzeShortlist = () => {
+  const analyzeShortlist = async () => {
     setIsAnalyzing(true);
-    setTimeout(() => {
-      // Generate insights
-      const generatedInsights = generateInsights();
+    
+    try {
+      // Call the API endpoint for shortlist analysis
+      const response = await fetch("/api/shortlist-analysis", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          programs: programs,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setInsights(data.insights);
+    } catch (error) {
+      console.error("Shortlist analysis error:", error);
+      toast.error("Failed to analyze shortlist. Using local analysis instead.");
+      
+      // Fallback to local analysis
+      const generatedInsights = generateLocalInsights();
       setInsights(generatedInsights);
+    } finally {
       setIsAnalyzing(false);
-    }, 1500);
+    }
   };
   
-  // Helper function to simulate AI analysis
-  const generateInsights = () => {
+  // Helper function to generate local insights if API fails
+  const generateLocalInsights = () => {
     // This would be replaced by actual AI analysis
     const countries = [...new Set(programs.map(p => p.country))];
     const deadlines = programs.filter(p => p.deadline).map(p => new Date(p.deadline));
