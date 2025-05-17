@@ -49,8 +49,8 @@ const Insights = () => {
   }, {} as Record<string, number>);
 
   return (
-    <div className="space-y-6 w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4 w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Shortlist Insights</h1>
           <p className="text-muted-foreground mt-1">
@@ -61,7 +61,7 @@ const Insights = () => {
       
       {!hasEnoughPrograms && (
         <Card className="w-full">
-          <CardContent className="flex flex-col items-center justify-center p-8">
+          <CardContent className="flex flex-col items-center justify-center p-6">
             <BarChart className="h-16 w-16 text-muted-foreground opacity-50 mb-4" />
             <h3 className="text-xl font-medium mb-2">Add more programs to get insights</h3>
             <p className="text-center text-muted-foreground mb-4">
@@ -106,16 +106,16 @@ const Insights = () => {
       )}
       
       {insights && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2">
-            <CardHeader>
+            <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5" />
                 Shortlist Analysis
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <ul className="space-y-3">
+              <ul className="space-y-2">
                 {insights.map((insight, i) => (
                   <li key={i} className="flex gap-2">
                     <Badge variant="outline" className="shrink-0 mt-0.5 h-5 w-5 flex items-center justify-center p-0">
@@ -125,7 +125,7 @@ const Insights = () => {
                   </li>
                 ))}
               </ul>
-              <div className="pt-4">
+              <div className="pt-3">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -139,7 +139,7 @@ const Insights = () => {
             </CardContent>
           </Card>
           
-          <div className="space-y-6">
+          <div className="space-y-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">

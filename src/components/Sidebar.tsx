@@ -48,10 +48,10 @@ export function Sidebar({ className }: SidebarProps) {
   ];
 
   return (
-    <div className={cn("pb-12 h-full", className)}>
-      <div className="space-y-4 py-4">
-        <div className="px-4 py-2">
-          <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">
+    <div className={cn("pb-6 h-full bg-sidebar border-r", className)}>
+      <div className="space-y-2 py-2">
+        <div className="px-3 py-1">
+          <h2 className="mb-1 px-2 text-lg font-semibold tracking-tight">
             University App
           </h2>
           <div className="space-y-1">
@@ -60,6 +60,7 @@ export function Sidebar({ className }: SidebarProps) {
                 <Button
                   variant={isActive(item.href) ? "secondary" : "ghost"}
                   className="w-full justify-start"
+                  size="sm"
                 >
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.name}

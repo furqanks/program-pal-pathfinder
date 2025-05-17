@@ -1,7 +1,7 @@
 
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
 import { Button } from "./ui/button";
@@ -12,23 +12,25 @@ const Layout = () => {
   const isMobile = useIsMobile();
   
   // Auto-collapse sidebar on mobile
-  useState(() => {
+  useEffect(() => {
     if (isMobile) {
       setSidebarOpen(false);
+    } else {
+      setSidebarOpen(true);
     }
-  });
+  }, [isMobile]);
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
       <Sidebar className={cn(
         sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-        "fixed md:static z-20 h-full transition-transform duration-300 ease-in-out",
-        isMobile && !sidebarOpen ? "w-0" : "w-64"
+        "fixed md:relative z-20 h-full transition-transform duration-300 ease-in-out",
+        isMobile && !sidebarOpen ? "w-0" : "w-56"
       )} />
       
       <main className={cn(
-        "flex-1 overflow-auto transition-all duration-300 ease-in-out p-4 md:p-6 w-full", 
-        sidebarOpen && !isMobile ? "md:ml-64" : "ml-0"
+        "flex-1 overflow-auto transition-all duration-300 ease-in-out p-3 md:p-5 w-full", 
+        sidebarOpen && !isMobile ? "md:ml-0" : "ml-0"
       )}>
         <div className="md:hidden mb-4">
           <Button 
@@ -40,7 +42,7 @@ const Layout = () => {
             <Menu className="h-4 w-4" />
           </Button>
         </div>
-        <div className="max-w-6xl mx-auto">
+        <div className="w-full max-w-7xl mx-auto">
           <Outlet />
         </div>
       </main>
