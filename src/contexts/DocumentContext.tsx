@@ -29,6 +29,9 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       try {
         const docs = await fetchUserDocuments();
         setDocuments(docs);
+      } catch (error) {
+        console.error("Error fetching documents:", error);
+        toast.error("Failed to load documents. Please refresh the page.");
       } finally {
         setLoading(false);
       }
@@ -57,6 +60,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error) {
       console.error("Error in context addDocument:", error);
+      throw error; // Re-throw to allow handling in the component
     }
   };
 

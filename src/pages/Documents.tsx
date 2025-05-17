@@ -18,6 +18,7 @@ import { PlusCircle, FileText, Sparkles, Save, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useProgramContext } from "@/contexts/ProgramContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -30,6 +31,7 @@ const DocumentsPage = () => {
 };
 
 const Documents = () => {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("sop");
   const { 
     documents, 
@@ -142,7 +144,8 @@ const Documents = () => {
       </div>
       
       <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-64">
+        {/* Sidebar for document types and versions */}
+        <div className={`${isMobile ? "w-full" : "w-64"}`}>
           <div className="space-y-4">
             <Select 
               value={selectedProgramId || "all-documents"} 
@@ -196,7 +199,7 @@ const Documents = () => {
                   No documents yet
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-[40vh] md:max-h-[50vh] overflow-y-auto pr-1">
                   {documentVersions.map((doc) => {
                     const program = doc.linkedProgramId 
                       ? programs.find(p => p.id === doc.linkedProgramId) 
@@ -237,11 +240,12 @@ const Documents = () => {
           </div>
         </div>
         
+        {/* Main document content area */}
         <div className="flex-1 space-y-4">
-          <Card className="h-[calc(100vh-18rem)]">
+          <Card className={isMobile ? "h-auto min-h-[60vh]" : "h-[calc(100vh-18rem)]"}>
             <CardHeader className="pb-3">
-              <div className="flex justify-between items-center">
-                <CardTitle>
+              <div className="flex justify-between items-center flex-wrap gap-2">
+                <CardTitle className="text-lg">
                   {selectedDocument 
                     ? `${documentTypeLabels[selectedDocument.documentType]} - Version ${selectedDocument.versionNumber}` 
                     : `New ${documentTypeLabels[activeDocumentType]}`}
@@ -252,7 +256,7 @@ const Documents = () => {
                     value={selectedProgramId || "no-program"} 
                     onValueChange={(value) => setSelectedProgramId(value === "no-program" ? null : value)}
                   >
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className={isMobile ? "w-full" : "w-[200px]"}>
                       <SelectValue placeholder="Link to program" />
                     </SelectTrigger>
                     <SelectContent>
@@ -307,9 +311,17 @@ const Documents = () => {
                   ) : (
                     <div className="flex flex-col items-center justify-center p-8">
                       <Sparkles className="h-10 w-10 text-muted-foreground mb-2 opacity-50" />
-                      <p className="text-center text-muted-foreground">
+                      <p className="text-center text-muted-foreground mb-4">
                         No feedback generated yet. Click "Get AI Feedback" to analyze this document.
                       </p>
+                      <Button 
+                        onClick={handleGenerateFeedback}
+                        disabled={isGeneratingFeedback}
+                        className="gap-2"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        {isGeneratingFeedback ? "Generating..." : "Get AI Feedback"}
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -323,21 +335,26 @@ const Documents = () => {
                     value={documentContent}
                     onChange={(e) => setDocumentContent(e.target.value)}
                     placeholder={`Enter your ${documentTypeLabels[activeDocumentType]} content here...`}
-                    className="mt-1 h-[calc(100vh-25rem)]"
+                    className="mt-1"
+                    style={{ 
+                      height: isMobile ? '300px' : 'calc(100vh - 25rem)',
+                      minHeight: '150px'
+                    }}
                   />
                 </div>
               )}
             </CardContent>
             
-            <CardFooter>
+            <CardFooter className={isMobile ? "flex-col w-full gap-2" : ""}>
               {selectedDocument ? (
-                <div className="flex w-full gap-2 justify-end">
+                <div className={`flex ${isMobile ? "w-full flex-col" : ""} gap-2 ${!isMobile && "justify-end"}`}>
                   <Button 
                     variant="outline"
                     onClick={() => {
                       setSelectedDocumentId(null);
                       setDocumentContent(selectedDocument.contentRaw);
                     }}
+                    className={isMobile ? "w-full" : ""}
                   >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Create New Version
@@ -345,6 +362,7 @@ const Documents = () => {
                   <Button 
                     onClick={handleGenerateFeedback}
                     disabled={!!selectedDocument.contentFeedback || isGeneratingFeedback}
+                    className={isMobile ? "w-full" : ""}
                   >
                     <Sparkles className="mr-2 h-4 w-4" />
                     {isGeneratingFeedback 
@@ -357,7 +375,7 @@ const Documents = () => {
               ) : (
                 <Button 
                   onClick={handleCreateDocument} 
-                  className="ml-auto"
+                  className={isMobile ? "w-full" : "ml-auto"}
                   disabled={isSaving}
                 >
                   <Save className="mr-2 h-4 w-4" />
