@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDocumentContext, Document } from "@/contexts/DocumentContext";
 import { DocumentProvider } from "@/contexts/DocumentContext";
-import { PlusCircle, FileText, Sparkles } from "lucide-react";
+import { PlusCircle, FileText, Sparkles, Save, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useProgramContext } from "@/contexts/ProgramContext";
@@ -42,6 +42,8 @@ const Documents = () => {
   const [documentContent, setDocumentContent] = useState("");
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
   
   const documentTypes = {
     sop: "SOP",
@@ -92,19 +94,41 @@ const Documents = () => {
       return;
     }
     
-    await addDocument({
-      documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
-      linkedProgramId: selectedProgramId,
-      contentRaw: documentContent
-    });
+    setIsSaving(true);
     
-    // Reset content
-    setDocumentContent("");
+    try {
+      const savedDoc = await addDocument({
+        documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
+        linkedProgramId: selectedProgramId,
+        contentRaw: documentContent
+      });
+      
+      if (savedDoc) {
+        // Set the newly created document as selected
+        setSelectedDocumentId(savedDoc.id);
+        toast.success("Document saved successfully");
+      }
+      
+    } catch (error) {
+      console.error("Error creating document:", error);
+      toast.error("Failed to save document. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   const handleGenerateFeedback = async () => {
     if (selectedDocumentId) {
-      await generateFeedback(selectedDocumentId);
+      setIsGeneratingFeedback(true);
+      
+      try {
+        await generateFeedback(selectedDocumentId);
+      } catch (error) {
+        console.error("Error generating feedback:", error);
+        toast.error("Failed to generate feedback. Please try again.");
+      } finally {
+        setIsGeneratingFeedback(false);
+      }
     }
   };
 
@@ -315,19 +339,29 @@ const Documents = () => {
                       setDocumentContent(selectedDocument.contentRaw);
                     }}
                   >
+                    <PlusCircle className="mr-2 h-4 w-4" />
                     Create New Version
                   </Button>
                   <Button 
                     onClick={handleGenerateFeedback}
-                    disabled={!!selectedDocument.contentFeedback}
+                    disabled={!!selectedDocument.contentFeedback || isGeneratingFeedback}
                   >
                     <Sparkles className="mr-2 h-4 w-4" />
-                    {selectedDocument.contentFeedback ? "Feedback Generated" : "Get AI Feedback"}
+                    {isGeneratingFeedback 
+                      ? "Generating..." 
+                      : selectedDocument.contentFeedback 
+                        ? "Feedback Generated" 
+                        : "Get AI Feedback"}
                   </Button>
                 </div>
               ) : (
-                <Button onClick={handleCreateDocument} className="ml-auto">
-                  Save Document
+                <Button 
+                  onClick={handleCreateDocument} 
+                  className="ml-auto"
+                  disabled={isSaving}
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSaving ? "Saving..." : "Save Document"}
                 </Button>
               )}
             </CardFooter>

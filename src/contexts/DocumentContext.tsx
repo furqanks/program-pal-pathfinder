@@ -1,3 +1,4 @@
+
 import { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -17,7 +18,7 @@ export interface Document {
 
 type DocumentContextType = {
   documents: Document[];
-  addDocument: (doc: Omit<Document, "id" | "versionNumber" | "createdAt">) => void;
+  addDocument: (doc: Omit<Document, "id" | "versionNumber" | "createdAt">) => Promise<Document | undefined>;
   getVersions: (documentType: string, programId: string | null) => Document[];
   generateFeedback: (documentId: string) => Promise<void>;
 };
@@ -83,14 +84,22 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     ).sort((a, b) => b.versionNumber - a.versionNumber);
   };
 
-  // Add a new document
+  // Add a new document - Fixed function with correct parameter order
   const addDocument = async (doc: Omit<Document, "id" | "versionNumber" | "createdAt">) => {
     try {
-      // Get the next version number from Supabase
+      // Get the current user's ID
+      const currentUser = await supabase.auth.getUser();
+      
+      if (!currentUser.data.user) {
+        toast.error("You must be logged in to save documents");
+        return;
+      }
+      
+      // Get the next version number from Supabase - Fixed parameter order
       const { data: versionNumber, error: versionError } = await supabase.rpc(
         'get_next_version_number',
         {
-          p_user_id: (await supabase.auth.getUser()).data.user?.id,
+          p_user_id: currentUser.data.user.id,
           p_document_type: doc.documentType,
           p_program_id: doc.linkedProgramId
         }
