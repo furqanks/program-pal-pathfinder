@@ -1,27 +1,13 @@
 
 import { createContext, useState, useContext, ReactNode, useEffect } from "react";
-import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-
-export interface Document {
-  id: string;
-  documentType: "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay";
-  linkedProgramId: string | null;
-  contentRaw: string;
-  contentFeedback?: string;
-  improvementPoints?: string[];
-  score?: number;
-  versionNumber: number;
-  createdAt: string;
-}
-
-type DocumentContextType = {
-  documents: Document[];
-  addDocument: (doc: Omit<Document, "id" | "versionNumber" | "createdAt">) => Promise<Document | undefined>;
-  getVersions: (documentType: string, programId: string | null) => Document[];
-  generateFeedback: (documentId: string) => Promise<void>;
-};
+import { Document, DocumentContextType } from "@/types/document.types";
+import { 
+  fetchUserDocuments, 
+  addDocument as addDocumentService, 
+  generateDocumentFeedback, 
+  generateMockFeedback 
+} from "@/services/document.service";
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
 
@@ -39,40 +25,16 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
 
   // Fetch documents from Supabase on component mount
   useEffect(() => {
-    const fetchDocuments = async () => {
+    const loadDocuments = async () => {
       try {
-        const { data: userDocuments, error } = await supabase
-          .from('user_documents')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        if (userDocuments) {
-          // Convert Supabase document format to our Document interface
-          const formattedDocuments: Document[] = userDocuments.map((doc: any) => ({
-            id: doc.id,
-            documentType: doc.document_type,
-            linkedProgramId: doc.program_id,
-            contentRaw: doc.original_text,
-            contentFeedback: doc.feedback_summary,
-            improvementPoints: doc.improvement_points,
-            score: doc.score,
-            versionNumber: doc.version_number,
-            createdAt: doc.created_at
-          }));
-
-          setDocuments(formattedDocuments);
-        }
-      } catch (error) {
-        console.error('Error fetching documents:', error);
-        toast.error('Failed to load your documents');
+        const docs = await fetchUserDocuments();
+        setDocuments(docs);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDocuments();
+    loadDocuments();
   }, []);
 
   // Get all versions of a document type, optionally filtered by program
@@ -84,62 +46,17 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     ).sort((a, b) => b.versionNumber - a.versionNumber);
   };
 
-  // Add a new document - Fixed function with correct parameter order
+  // Add a new document
   const addDocument = async (doc: Omit<Document, "id" | "versionNumber" | "createdAt">) => {
     try {
-      // Get the current user's ID
-      const currentUser = await supabase.auth.getUser();
+      const newDocument = await addDocumentService(doc);
       
-      if (!currentUser.data.user) {
-        toast.error("You must be logged in to save documents");
-        return;
+      if (newDocument) {
+        setDocuments([newDocument, ...documents]);
+        return newDocument;
       }
-      
-      // Get the next version number from Supabase - Fixed parameter order
-      const { data: versionNumber, error: versionError } = await supabase.rpc(
-        'get_next_version_number',
-        {
-          p_user_id: currentUser.data.user.id,
-          p_document_type: doc.documentType,
-          p_program_id: doc.linkedProgramId
-        }
-      );
-
-      if (versionError) throw versionError;
-
-      // Insert the document into Supabase
-      const { data, error } = await supabase
-        .from('user_documents')
-        .insert({
-          document_type: doc.documentType,
-          program_id: doc.linkedProgramId,
-          original_text: doc.contentRaw,
-          version_number: versionNumber || 1
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Add the new document to state
-      const newDocument: Document = {
-        id: data.id,
-        documentType: data.document_type,
-        linkedProgramId: data.program_id,
-        contentRaw: data.original_text,
-        contentFeedback: data.feedback_summary,
-        improvementPoints: data.improvement_points,
-        score: data.score,
-        versionNumber: data.version_number,
-        createdAt: data.created_at
-      };
-
-      setDocuments([newDocument, ...documents]);
-      toast.success("Document saved successfully");
-      return newDocument;
     } catch (error) {
-      console.error("Error adding document:", error);
-      toast.error("Failed to save document");
+      console.error("Error in context addDocument:", error);
     }
   };
 
@@ -160,66 +77,35 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     toast.info("Generating feedback...", { duration: 2000 });
     
     try {
-      // Call the review-document edge function
-      const { data, error } = await supabase.functions.invoke('review-document', {
-        body: {
-          content: document.contentRaw,
-          documentType: document.documentType,
-          programId: document.linkedProgramId
-        }
-      });
-
-      if (error) throw error;
+      const feedback = await generateDocumentFeedback(documentId);
       
-      if (data && data.summary) {
-        // Update the document with the feedback
-        const { error: updateError } = await supabase
-          .from('user_documents')
-          .update({
-            feedback_summary: data.summary,
-            improvement_points: data.improvementPoints,
-            score: data.score
-          })
-          .eq('id', documentId);
-
-        if (updateError) throw updateError;
-
+      if (feedback) {
         // Update the document in state
         setDocuments(documents.map(doc => 
           doc.id === documentId ? {
             ...doc,
-            contentFeedback: data.summary,
-            improvementPoints: data.improvementPoints,
-            score: data.score
+            contentFeedback: feedback.summary,
+            improvementPoints: feedback.improvementPoints,
+            score: feedback.score
           } : doc
         ));
         
         toast.success("Feedback generated successfully");
-      } else {
-        throw new Error(data?.error || "Failed to generate feedback");
       }
     } catch (error) {
       console.error("Error generating feedback:", error);
       toast.error(error instanceof Error ? error.message : "Failed to generate feedback");
       
       // For development, simulate feedback after API failure
-      const mockFeedback = "This is a simulated feedback for testing purposes. In a real environment, this would be replaced with AI-generated feedback based on the document content.";
-      const mockPoints = [
-        "Consider adding more specific examples about your experience.",
-        "The introduction could be stronger to grab attention.",
-        "Make sure to align your skills with the program requirements.",
-        "Proofread for grammatical errors and clarity.",
-        "Add more details about your long-term goals."
-      ];
-      const mockScore = 7;
+      const mockFeedback = generateMockFeedback();
       
       // Update the document in state with mock feedback
       setDocuments(documents.map(doc => 
         doc.id === documentId ? {
           ...doc,
-          contentFeedback: mockFeedback,
-          improvementPoints: mockPoints,
-          score: mockScore
+          contentFeedback: mockFeedback.summary,
+          improvementPoints: mockFeedback.improvementPoints,
+          score: mockFeedback.score
         } : doc
       ));
       
@@ -240,3 +126,5 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     </DocumentContext.Provider>
   );
 };
+
+export { Document };
