@@ -1,115 +1,88 @@
 
-import { useState } from "react";
-import { Program, useProgramContext, ChecklistTask } from "@/contexts/ProgramContext";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Check, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useProgramContext, ProgramTask } from '@/contexts/ProgramContext';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { TrashIcon, PlusIcon } from 'lucide-react';
 
 interface TaskListProps {
   programId: string;
 }
 
-const TaskList = ({ programId }: TaskListProps) => {
-  const { getProgram, updateTask, deleteTask } = useProgramContext();
-  const program = getProgram(programId);
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [editedTaskText, setEditedTaskText] = useState("");
+const TaskList: React.FC<TaskListProps> = ({ programId }) => {
+  const { programs, addTask, toggleTask, deleteTask } = useProgramContext();
+  const [newTask, setNewTask] = useState('');
+  
+  const program = programs.find(p => p.id === programId);
+  const tasks = program?.tasks || [];
 
-  if (!program) return null;
-
-  const startEditing = (task: ChecklistTask) => {
-    setEditingTaskId(task.id);
-    setEditedTaskText(task.description);
-  };
-
-  const saveEditing = () => {
-    if (editingTaskId && editedTaskText.trim()) {
-      updateTask(programId, editingTaskId, { description: editedTaskText });
+  const handleAddTask = () => {
+    if (newTask.trim()) {
+      addTask(programId, {
+        title: newTask.trim(),
+        completed: false
+      });
+      setNewTask('');
     }
-    setEditingTaskId(null);
   };
 
-  const cancelEditing = () => {
-    setEditingTaskId(null);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleAddTask();
+    }
   };
 
   return (
-    <div className="space-y-1">
-      {program.tasks.length === 0 ? (
-        <p className="text-sm text-muted-foreground italic">No tasks added yet</p>
-      ) : (
-        program.tasks.map((task) => (
-          <div key={task.id} className="flex items-center gap-2 group">
-            {editingTaskId === task.id ? (
-              <>
-                <Input
-                  value={editedTaskText}
-                  onChange={(e) => setEditedTaskText(e.target.value)}
-                  className="h-7 text-sm"
-                  autoFocus
-                />
-                <div className="flex items-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={saveEditing}
-                    className="h-7 w-7 p-0"
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={cancelEditing}
-                    className="h-7 w-7 p-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
+    <div className="space-y-3 mt-4">
+      <h3 className="font-medium">Application Tasks</h3>
+      
+      <div className="flex gap-2">
+        <Input
+          placeholder="Add a new task..."
+          value={newTask}
+          onChange={(e) => setNewTask(e.target.value)}
+          onKeyDown={handleKeyPress}
+          className="flex-1"
+        />
+        <Button onClick={handleAddTask} size="sm">
+          <PlusIcon className="h-4 w-4 mr-1" />
+          Add
+        </Button>
+      </div>
+      
+      <div className="space-y-2">
+        {tasks.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic">No tasks yet. Add some tasks to track your application progress.</p>
+        ) : (
+          tasks.map((task) => (
+            <div key={task.id} className="flex items-center justify-between gap-2 border rounded-md p-2">
+              <div className="flex items-center gap-2">
                 <Checkbox
-                  id={task.id}
                   checked={task.completed}
-                  onCheckedChange={(checked) =>
-                    updateTask(programId, task.id, {
-                      completed: checked === true,
-                    })
-                  }
+                  onCheckedChange={() => toggleTask(programId, task.id)}
+                  id={`task-${task.id}`}
                 />
                 <label
-                  htmlFor={task.id}
-                  className={`text-sm flex-1 ${
-                    task.completed ? "line-through text-muted-foreground" : ""
-                  }`}
+                  htmlFor={`task-${task.id}`}
+                  className={`text-sm ${task.completed ? 'line-through text-muted-foreground' : ''}`}
                 >
-                  {task.description}
+                  {task.title}
                 </label>
-                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => startEditing(task)}
-                    className="h-7 w-7 p-0"
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteTask(programId, task.id)}
-                    className="h-7 w-7 p-0 text-destructive"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        ))
-      )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => deleteTask(programId, task.id)}
+                className="h-7 w-7 p-0"
+              >
+                <TrashIcon className="h-4 w-4" />
+                <span className="sr-only">Delete task</span>
+              </Button>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 };

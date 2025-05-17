@@ -22,11 +22,12 @@ export interface Program {
   statusTagId: string;
   customTagIds: string[];
   tasks: ProgramTask[];
+  createdAt?: string;
 }
 
 type ProgramContextType = {
   programs: Program[];
-  addProgram: (program: Omit<Program, "id" | "tasks">) => void;
+  addProgram: (program: Omit<Program, "id" | "tasks" | "createdAt">) => void;
   updateProgram: (id: string, updates: Partial<Program>) => void;
   deleteProgram: (id: string) => void;
   addTask: (programId: string, task: Omit<ProgramTask, "id">) => void;
