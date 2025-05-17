@@ -20,10 +20,7 @@ const Insights = () => {
     setLoading(true);
     try {
       const result = await analyzeShortlist();
-      // Only set the analysis data if we received a non-null result
-      if (result) {
-        setAnalysisData(result);
-      }
+      setAnalysisData(result);
     } catch (error) {
       console.error("Error analyzing shortlist:", error);
       toast.error("Failed to analyze shortlist");
