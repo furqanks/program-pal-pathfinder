@@ -1,4 +1,3 @@
-
 import { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -25,6 +24,15 @@ export interface Program {
   createdAt?: string;
 }
 
+interface AnalysisResult {
+  summary: string;
+  suggestions: string[];
+  countryAnalysis: string;
+  degreeTypeAnalysis: string;
+  timelineInsight: string;
+  financialInsight: string;
+}
+
 type ProgramContextType = {
   programs: Program[];
   addProgram: (program: Omit<Program, "id" | "tasks" | "createdAt">) => void;
@@ -33,7 +41,7 @@ type ProgramContextType = {
   addTask: (programId: string, task: Omit<ProgramTask, "id">) => void;
   toggleTask: (programId: string, taskId: string) => void;
   deleteTask: (programId: string, taskId: string) => void;
-  analyzeShortlist: () => Promise<void>;
+  analyzeShortlist: () => Promise<AnalysisResult | undefined>;
 };
 
 const ProgramContext = createContext<ProgramContextType | undefined>(undefined);
@@ -49,7 +57,7 @@ export const useProgramContext = () => {
 export const ProgramProvider = ({ children }: { children: ReactNode }) => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
-  const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
 
   // Fetch programs from Supabase on component mount
   useEffect(() => {
@@ -92,7 +100,7 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
     fetchPrograms();
   }, []);
 
-  const addProgram = async (program: Omit<Program, "id" | "tasks">) => {
+  const addProgram = async (program: Omit<Program, "id" | "tasks" | "createdAt">) => {
     try {
       // Insert into Supabase
       const { data, error } = await supabase
@@ -232,10 +240,10 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Analyze shortlist using the edge function
-  const analyzeShortlist = async () => {
+  const analyzeShortlist = async (): Promise<AnalysisResult | undefined> => {
     if (programs.length < 3) {
       toast.error("Please add at least 3 programs to analyze your shortlist");
-      return;
+      return undefined;
     }
 
     toast.info("Analyzing your shortlist...", { duration: 2000 });
@@ -243,15 +251,13 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Call the shortlist-analysis edge function
       const { data, error } = await supabase.functions.invoke('shortlist-analysis');
-
+      
       if (error) throw error;
-
+      
       if (data) {
-        setAnalysisResults(data);
-        // This is where we could store the analysis in state
-        // For now we'll just toast a success
+        setAnalysisResults(data as AnalysisResult);
         toast.success("Shortlist analysis complete");
-        return data;
+        return data as AnalysisResult;
       } else {
         throw new Error("Failed to analyze shortlist");
       }
@@ -260,7 +266,7 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
       toast.error("Failed to analyze shortlist");
       
       // For development, generate mock analysis
-      const mockAnalysis = {
+      const mockAnalysis: AnalysisResult = {
         summary: "Your shortlist shows a good mix of programs but could benefit from more geographical diversity. Consider adding programs from different regions to broaden your options.",
         suggestions: [
           "Consider adding 1-2 programs from Asia to diversify your geographical options.",
