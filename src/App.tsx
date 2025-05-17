@@ -13,33 +13,37 @@ import Layout from "./components/Layout";
 import { TagProvider } from "./contexts/TagContext";
 import { ProgramProvider } from "./contexts/ProgramContext";
 import { PerplexityProvider } from "./contexts/PerplexityContext";
+import React from 'react';
 
+// Create the query client instance
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ProgramProvider>
-        <TagProvider>
-          <PerplexityProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="search" element={<Search />} />
-                  <Route path="documents" element={<Documents />} />
-                  <Route path="insights" element={<Insights />} />
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-              </Routes>
-            </BrowserRouter>
-          </PerplexityProvider>
-        </TagProvider>
-      </ProgramProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <ProgramProvider>
+          <TagProvider>
+            <PerplexityProvider>
+              <BrowserRouter>
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  <Route path="/" element={<Layout />}>
+                    <Route index element={<Dashboard />} />
+                    <Route path="search" element={<Search />} />
+                    <Route path="documents" element={<Documents />} />
+                    <Route path="insights" element={<Insights />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Route>
+                </Routes>
+              </BrowserRouter>
+            </PerplexityProvider>
+          </TagProvider>
+        </ProgramProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </React.StrictMode>
 );
 
 export default App;
