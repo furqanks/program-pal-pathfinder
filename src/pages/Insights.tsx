@@ -1,215 +1,104 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, BarChart, Calendar, Globe, DollarSign, PieChart } from "lucide-react";
-import { useProgramContext } from "@/contexts/ProgramContext";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertCircle, BarChart3, TrendingUp } from 'lucide-react';
+import { useProgramContext } from '@/contexts/ProgramContext';
+import { toast } from 'sonner';
 
 const Insights = () => {
   const { programs, analyzeShortlist } = useProgramContext();
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [insights, setInsights] = useState<any | null>(null);
-  
-  const hasEnoughPrograms = programs.length >= 3;
-  
+  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
   const handleAnalyzeShortlist = async () => {
-    setIsAnalyzing(true);
+    if (programs.length < 3) {
+      toast.error("Please add at least 3 programs to analyze your shortlist");
+      return;
+    }
+
+    setLoading(true);
     try {
-      const analysisResults = await analyzeShortlist();
-      if (analysisResults) {
-        setInsights(analysisResults);
+      const result = await analyzeShortlist();
+      if (result) {
+        setAnalysisData(result);
       }
+    } catch (error) {
+      console.error("Error analyzing shortlist:", error);
+      toast.error("Failed to analyze shortlist");
     } finally {
-      setIsAnalyzing(false);
+      setLoading(false);
     }
   };
-  
-  // Extract some statistics for the charts
-  const countryDistribution = programs.reduce((acc, program) => {
-    acc[program.country] = (acc[program.country] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-  
-  const degreeTypeDistribution = programs.reduce((acc, program) => {
-    acc[program.degreeType] = (acc[program.degreeType] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Shortlist Insights</h1>
-        <p className="text-muted-foreground mt-1">
-          Get AI-powered analysis of your program shortlist
-        </p>
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-semibold">Application Insights</h1>
+        <Button onClick={handleAnalyzeShortlist} disabled={loading || programs.length < 3}>
+          {loading ? "Analyzing..." : "Analyze My Shortlist"}
+        </Button>
       </div>
-      
-      {!hasEnoughPrograms && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center p-8">
-            <BarChart className="h-16 w-16 text-muted-foreground opacity-50 mb-4" />
-            <h3 className="text-xl font-medium mb-2">Add more programs to get insights</h3>
-            <p className="text-center text-muted-foreground mb-4">
-              You need at least 3 programs in your shortlist to generate insights.
-              Currently you have {programs.length}.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-      
-      {hasEnoughPrograms && !insights && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center p-8">
-            <Sparkles className="h-16 w-16 text-muted-foreground opacity-50 mb-4" />
-            <h3 className="text-xl font-medium mb-2">Ready to analyze your shortlist</h3>
-            <p className="text-center text-muted-foreground mb-4">
-              Get AI-powered insights on your {programs.length} shortlisted programs.
-            </p>
-            <Button onClick={handleAnalyzeShortlist} disabled={isAnalyzing} size="lg">
-              {isAnalyzing ? "Analyzing..." : "Analyze My Shortlist"}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-      
-      {isAnalyzing && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5" />
-              Analyzing Your Shortlist...
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
-            <Skeleton className="h-4 w-4/5" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-          </CardContent>
-        </Card>
-      )}
-      
-      {insights && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
+
+      {analysisData ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Summary Card */}
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
+                <TrendingUp className="h-5 w-5" />
                 Shortlist Analysis
               </CardTitle>
+              <CardDescription>AI-powered analysis of your program selections</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 bg-accent/20 rounded-lg mb-4">
-                <p className="text-sm">{insights.summary}</p>
-              </div>
-              
-              <h3 className="font-medium">Recommendations</h3>
-              <ul className="space-y-3">
-                {insights.suggestions.map((suggestion: string, i: number) => (
-                  <li key={i} className="flex gap-2">
-                    <Badge variant="outline" className="shrink-0 mt-0.5 h-5 w-5 flex items-center justify-center p-0">
-                      {i + 1}
-                    </Badge>
-                    <p>{suggestion}</p>
-                  </li>
+            <CardContent>
+              <p className="mb-4">{analysisData.summary}</p>
+              <h3 className="font-medium mb-2">Suggestions:</h3>
+              <ul className="list-disc list-inside space-y-1">
+                {analysisData.suggestions.map((suggestion: string, index: number) => (
+                  <li key={index} className="text-sm">{suggestion}</li>
                 ))}
               </ul>
-              <div className="pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setInsights(null);
-                  }}
-                >
-                  Reset Analysis
-                </Button>
+            </CardContent>
+          </Card>
+
+          {/* Statistics Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Program Statistics
+              </CardTitle>
+              <CardDescription>Breakdown of your program selections</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="font-medium">Geographic Analysis</h3>
+                <p className="text-sm text-muted-foreground">{analysisData.countryAnalysis}</p>
+              </div>
+              <div>
+                <h3 className="font-medium">Degree Type Balance</h3>
+                <p className="text-sm text-muted-foreground">{analysisData.degreeTypeAnalysis}</p>
+              </div>
+              <div>
+                <h3 className="font-medium">Timeline Insights</h3>
+                <p className="text-sm text-muted-foreground">{analysisData.timelineInsight}</p>
+              </div>
+              <div>
+                <h3 className="font-medium">Financial Considerations</h3>
+                <p className="text-sm text-muted-foreground">{analysisData.financialInsight}</p>
               </div>
             </CardContent>
           </Card>
-          
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Country Distribution
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className="text-sm mb-2">{insights.countryAnalysis}</p>
-                  {Object.entries(countryDistribution).map(([country, count]) => (
-                    <div key={country} className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <Badge variant="outline" className="mr-2">
-                          {count}
-                        </Badge>
-                        {country}
-                      </div>
-                      <div className="w-1/2 bg-muted rounded-full h-2 overflow-hidden">
-                        <div 
-                          className="bg-primary h-full" 
-                          style={{ width: `${(count / programs.length) * 100}%` }} 
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <PieChart className="h-4 w-4" />
-                  Degree Types
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className="text-sm mb-2">{insights.degreeTypeAnalysis}</p>
-                  {Object.entries(degreeTypeDistribution).map(([degreeType, count]) => (
-                    <div key={degreeType} className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <Badge variant="outline" className="mr-2">
-                          {count}
-                        </Badge>
-                        {degreeType}
-                      </div>
-                      <div className="w-1/2 bg-muted rounded-full h-2 overflow-hidden">
-                        <div 
-                          className="bg-primary h-full" 
-                          style={{ width: `${(count / programs.length) * 100}%` }} 
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Timeline & Finances
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium mb-1">Timeline</h4>
-                  <p className="text-xs text-muted-foreground">{insights.timelineInsight}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium mb-1">Financial Outlook</h4>
-                  <p className="text-xs text-muted-foreground">{insights.financialInsight}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center p-12 text-center">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+          <h2 className="text-xl font-medium mb-2">No Analysis Available</h2>
+          <p className="text-muted-foreground max-w-md">
+            Click "Analyze My Shortlist" to generate AI-powered insights about your program selections.
+            You need at least 3 programs in your shortlist.
+          </p>
         </div>
       )}
     </div>
