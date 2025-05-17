@@ -1,10 +1,12 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, PlusCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useDocumentContext } from "@/contexts/DocumentContext";
 import { Document } from "@/types/document.types";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 interface DocumentViewerProps {
   selectedDocument: Document;
@@ -113,9 +115,5 @@ const DocumentViewer = ({
     </div>
   );
 };
-
-// Import statements
-import { useState } from "react";
-import { toast } from "sonner";
 
 export default DocumentViewer;

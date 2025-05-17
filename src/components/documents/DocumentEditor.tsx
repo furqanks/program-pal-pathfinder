@@ -10,12 +10,14 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Save, Sparkles, Send } from "lucide-react";
+import { Save, Sparkles } from "lucide-react";
 import { useDocumentContext } from "@/contexts/DocumentContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Card, CardContent } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface DocumentEditorProps {
   activeDocumentType: string;
@@ -44,6 +46,9 @@ const DocumentEditor = ({
     improvementPoints?: string[];
     score?: number;
   } | null>(null);
+  
+  // State to control visibility of feedback
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const handleCreateDocument = async () => {
     if (!documentContent.trim()) {
@@ -81,6 +86,7 @@ const DocumentEditor = ({
     }
     
     setIsGeneratingFeedback(true);
+    setShowFeedback(false); // Reset feedback visibility
     
     try {
       // Simulate feedback generation without saving
@@ -99,6 +105,7 @@ const DocumentEditor = ({
         };
         
         setTempFeedback(mockFeedback);
+        setShowFeedback(true); // Show feedback after generation
         toast.success("Test feedback generated");
         setIsGeneratingFeedback(false);
       }, 1500);
@@ -158,34 +165,36 @@ const DocumentEditor = ({
         />
       </div>
       
-      {/* Display temporary feedback if available */}
-      {tempFeedback && (
-        <div>
-          <h3 className="text-lg font-medium mb-2">Test Feedback (Not Saved)</h3>
-          <div className="border rounded-md p-4 bg-accent/20">
-            <div className="prose prose-sm max-w-none">
-              <p>{tempFeedback.feedback}</p>
+      {/* Display temporary feedback if available and showFeedback is true */}
+      {tempFeedback && showFeedback && (
+        <Card className="mt-4 border border-accent">
+          <CardContent className="pt-4">
+            <h3 className="text-lg font-medium mb-2">AI Feedback</h3>
+            <div className="bg-accent/20 p-4 rounded-md">
+              <div className="prose prose-sm max-w-none">
+                <p>{tempFeedback.feedback}</p>
+              </div>
+              
+              {tempFeedback.score !== undefined && (
+                <div className="mt-4 flex items-center gap-2">
+                  <span className="font-medium">Overall Score:</span>
+                  <Badge variant="secondary">{tempFeedback.score}/10</Badge>
+                </div>
+              )}
+  
+              {tempFeedback.improvementPoints && tempFeedback.improvementPoints.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-medium mb-2">Improvement Points</h4>
+                  <ul className="list-disc pl-5 space-y-2">
+                    {tempFeedback.improvementPoints.map((point, index) => (
+                      <li key={index} className="text-sm">{point}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
-            
-            {tempFeedback.score !== undefined && (
-              <div className="mt-4 flex items-center gap-2">
-                <span className="font-medium">Overall Score:</span>
-                <Badge>{tempFeedback.score}/10</Badge>
-              </div>
-            )}
-
-            {tempFeedback.improvementPoints && tempFeedback.improvementPoints.length > 0 && (
-              <div className="mt-4">
-                <h4 className="font-medium mb-2">Improvement Points</h4>
-                <ul className="list-disc pl-5 space-y-1">
-                  {tempFeedback.improvementPoints.map((point, index) => (
-                    <li key={index} className="text-sm">{point}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
       
       <div className={`flex ${isMobile ? "w-full flex-col" : ""} gap-2 ${!isMobile && "ml-auto"}`}>
@@ -215,7 +224,7 @@ const DocumentEditor = ({
           disabled={isGeneratingFeedback}
         >
           <Sparkles className="mr-2 h-4 w-4" />
-          {isGeneratingFeedback ? "Processing..." : "Test AI Feedback"}
+          {isGeneratingFeedback ? "Generating..." : "Test AI Feedback"}
         </Button>
       </div>
     </div>
