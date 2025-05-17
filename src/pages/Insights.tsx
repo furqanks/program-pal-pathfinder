@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,12 +8,14 @@ import { useOpenAI } from "@/contexts/OpenAIContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Insights = () => {
   const { programs } = useProgramContext();
   const { analyzeShortlist } = useOpenAI();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [insights, setInsights] = useState<string[] | null>(null);
+  const isMobile = useIsMobile();
   
   const hasEnoughPrograms = programs.length >= 3;
   
@@ -24,9 +27,11 @@ const Insights = () => {
       
       if (response) {
         setInsights(response.insights);
+        toast.success("Analysis complete");
       }
     } catch (error) {
       console.error("Shortlist analysis error:", error);
+      toast.error("Failed to analyze shortlist");
     } finally {
       setIsAnalyzing(false);
     }
@@ -44,16 +49,18 @@ const Insights = () => {
   }, {} as Record<string, number>);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Shortlist Insights</h1>
-        <p className="text-muted-foreground mt-1">
-          Get AI-powered analysis of your program shortlist
-        </p>
+    <div className="space-y-6 w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Shortlist Insights</h1>
+          <p className="text-muted-foreground mt-1">
+            Get AI-powered analysis of your program shortlist
+          </p>
+        </div>
       </div>
       
       {!hasEnoughPrograms && (
-        <Card>
+        <Card className="w-full">
           <CardContent className="flex flex-col items-center justify-center p-8">
             <BarChart className="h-16 w-16 text-muted-foreground opacity-50 mb-4" />
             <h3 className="text-xl font-medium mb-2">Add more programs to get insights</h3>
@@ -66,7 +73,7 @@ const Insights = () => {
       )}
       
       {hasEnoughPrograms && !insights && (
-        <Card>
+        <Card className="w-full">
           <CardContent className="flex flex-col items-center justify-center p-8">
             <Sparkles className="h-16 w-16 text-muted-foreground opacity-50 mb-4" />
             <h3 className="text-xl font-medium mb-2">Ready to analyze your shortlist</h3>
@@ -81,7 +88,7 @@ const Insights = () => {
       )}
       
       {isAnalyzing && (
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
@@ -123,6 +130,7 @@ const Insights = () => {
                   variant="outline"
                   onClick={() => {
                     setInsights(null);
+                    toast.info("Analysis reset");
                   }}
                 >
                   Reset Analysis
@@ -143,13 +151,13 @@ const Insights = () => {
                 <div className="space-y-2">
                   {Object.entries(countryDistribution).map(([country, count]) => (
                     <div key={country} className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <Badge variant="outline" className="mr-2">
+                      <div className="flex items-center truncate mr-2">
+                        <Badge variant="outline" className="mr-2 shrink-0">
                           {count}
                         </Badge>
-                        {country}
+                        <span className="truncate">{country}</span>
                       </div>
-                      <div className="w-1/2 bg-muted rounded-full h-2 overflow-hidden">
+                      <div className="w-24 sm:w-28 md:w-32 bg-muted rounded-full h-2 overflow-hidden shrink-0">
                         <div 
                           className="bg-primary h-full" 
                           style={{ width: `${(count / programs.length) * 100}%` }} 
@@ -172,13 +180,13 @@ const Insights = () => {
                 <div className="space-y-2">
                   {Object.entries(degreeTypeDistribution).map(([degreeType, count]) => (
                     <div key={degreeType} className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <Badge variant="outline" className="mr-2">
+                      <div className="flex items-center truncate mr-2">
+                        <Badge variant="outline" className="mr-2 shrink-0">
                           {count}
                         </Badge>
-                        {degreeType}
+                        <span className="truncate">{degreeType}</span>
                       </div>
-                      <div className="w-1/2 bg-muted rounded-full h-2 overflow-hidden">
+                      <div className="w-24 sm:w-28 md:w-32 bg-muted rounded-full h-2 overflow-hidden shrink-0">
                         <div 
                           className="bg-primary h-full" 
                           style={{ width: `${(count / programs.length) * 100}%` }} 
@@ -210,7 +218,7 @@ const Insights = () => {
                           {program.university}
                         </div>
                       </div>
-                      <Badge>
+                      <Badge className="shrink-0">
                         {new Date(program.deadline).toLocaleDateString()}
                       </Badge>
                     </div>
