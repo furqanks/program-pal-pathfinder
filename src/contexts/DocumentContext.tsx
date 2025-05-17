@@ -127,4 +127,5 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export { Document };
+// Change "export { Document };" to "export type { Document };"
+export type { Document };
