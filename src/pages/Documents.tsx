@@ -46,6 +46,12 @@ const Documents = () => {
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
+  const [tempFeedback, setTempFeedback] = useState<{
+    content: string;
+    feedback?: string;
+    improvementPoints?: string[];
+    score?: number;
+  } | null>(null);
   
   const documentTypes = {
     sop: "SOP",
@@ -79,14 +85,18 @@ const Documents = () => {
     } else {
       setSelectedDocumentId(null);
     }
+    // Clear any temporary feedback when changing tabs
+    setTempFeedback(null);
   }, [activeTab, selectedProgramId, documentVersions]);
   
   // Update content when selection changes
   useEffect(() => {
     if (selectedDocument) {
       setDocumentContent(selectedDocument.contentRaw);
+      setTempFeedback(null);
     } else {
       setDocumentContent("");
+      setTempFeedback(null);
     }
   }, [selectedDocument]);
   
@@ -131,6 +141,44 @@ const Documents = () => {
       } finally {
         setIsGeneratingFeedback(false);
       }
+    }
+  };
+
+  // New function to generate feedback without saving
+  const handleGenerateTempFeedback = async () => {
+    if (!documentContent.trim()) {
+      toast.error("Please enter document content");
+      return;
+    }
+    
+    setIsGeneratingFeedback(true);
+    
+    try {
+      // Simulate feedback generation without saving
+      // In a real implementation, this would call your feedback service directly
+      setTimeout(() => {
+        const mockFeedback = {
+          content: documentContent,
+          feedback: "This is sample feedback for testing purposes. In a production environment, this would be AI-generated feedback based on your document content.",
+          improvementPoints: [
+            "Consider adding more specific examples about your experience.",
+            "The introduction could be stronger to grab attention.",
+            "Make sure to align your skills with the program requirements.",
+            "Proofread for grammatical errors and clarity.",
+            "Add more details about your long-term goals."
+          ],
+          score: 7
+        };
+        
+        setTempFeedback(mockFeedback);
+        toast.success("Test feedback generated");
+        setIsGeneratingFeedback(false);
+      }, 1500);
+      
+    } catch (error) {
+      console.error("Error generating temporary feedback:", error);
+      toast.error("Failed to generate test feedback");
+      setIsGeneratingFeedback(false);
     }
   };
 
@@ -186,6 +234,7 @@ const Documents = () => {
                   onClick={() => {
                     setSelectedDocumentId(null);
                     setDocumentContent("");
+                    setTempFeedback(null);
                   }}
                   className="h-8 px-2"
                 >
@@ -343,6 +392,36 @@ const Documents = () => {
                       }}
                     />
                   </div>
+                  
+                  {/* Display temporary feedback if available */}
+                  {tempFeedback && (
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Test Feedback (Not Saved)</h3>
+                      <div className="border rounded-md p-4 bg-accent/20">
+                        <div className="prose prose-sm max-w-none">
+                          <p>{tempFeedback.feedback}</p>
+                        </div>
+                        
+                        {tempFeedback.score !== undefined && (
+                          <div className="mt-4 flex items-center gap-2">
+                            <span className="font-medium">Overall Score:</span>
+                            <Badge>{tempFeedback.score}/10</Badge>
+                          </div>
+                        )}
+
+                        {tempFeedback.improvementPoints && tempFeedback.improvementPoints.length > 0 && (
+                          <div className="mt-4">
+                            <h4 className="font-medium mb-2">Improvement Points</h4>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {tempFeedback.improvementPoints.map((point, index) => (
+                                <li key={index} className="text-sm">{point}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -355,6 +434,7 @@ const Documents = () => {
                     onClick={() => {
                       setSelectedDocumentId(null);
                       setDocumentContent(selectedDocument.contentRaw);
+                      setTempFeedback(null);
                     }}
                     className={isMobile ? "w-full" : ""}
                   >
@@ -419,6 +499,17 @@ const Documents = () => {
                   >
                     <Sparkles className="mr-2 h-4 w-4" />
                     {isSaving || isGeneratingFeedback ? "Processing..." : "Save & Get AI Feedback"}
+                  </Button>
+                  
+                  {/* New button for testing feedback without saving */}
+                  <Button 
+                    onClick={handleGenerateTempFeedback}
+                    variant="outline"
+                    className={isMobile ? "w-full" : ""}
+                    disabled={isGeneratingFeedback}
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    {isGeneratingFeedback ? "Processing..." : "Test AI Feedback"}
                   </Button>
                 </div>
               )}
