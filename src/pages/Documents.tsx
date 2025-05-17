@@ -1,26 +1,12 @@
-
 import { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDocumentContext, DocumentProvider } from "@/contexts/DocumentContext";
-import { Document } from "@/types/document.types";
-import { PlusCircle, FileText, Sparkles, Save, Send } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { useProgramContext } from "@/contexts/ProgramContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { toast } from "sonner";
-import { format } from "date-fns";
+import DocumentTypeSelector from "@/components/documents/DocumentTypeSelector";
+import DocumentsList from "@/components/documents/DocumentsList";
+import DocumentEditor from "@/components/documents/DocumentEditor";
+import DocumentViewer from "@/components/documents/DocumentViewer";
+import DocumentsProgramSelector from "@/components/documents/DocumentsProgramSelector";
 
 const DocumentsPage = () => {
   return (
@@ -33,25 +19,11 @@ const DocumentsPage = () => {
 const Documents = () => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("sop");
-  const { 
-    documents, 
-    addDocument, 
-    getVersions, 
-    generateFeedback 
-  } = useDocumentContext();
-  const { programs } = useProgramContext();
+  const { documents, getVersions } = useDocumentContext();
   
   const [documentContent, setDocumentContent] = useState("");
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
-  const [tempFeedback, setTempFeedback] = useState<{
-    content: string;
-    feedback?: string;
-    improvementPoints?: string[];
-    score?: number;
-  } | null>(null);
   
   const documentTypes = {
     sop: "SOP",
@@ -85,100 +57,21 @@ const Documents = () => {
     } else {
       setSelectedDocumentId(null);
     }
-    // Clear any temporary feedback when changing tabs
-    setTempFeedback(null);
   }, [activeTab, selectedProgramId, documentVersions]);
   
   // Update content when selection changes
   useEffect(() => {
     if (selectedDocument) {
       setDocumentContent(selectedDocument.contentRaw);
-      setTempFeedback(null);
     } else {
       setDocumentContent("");
-      setTempFeedback(null);
     }
   }, [selectedDocument]);
   
-  const handleCreateDocument = async () => {
-    if (!documentContent.trim()) {
-      toast.error("Please enter document content");
-      return;
-    }
-    
-    setIsSaving(true);
-    
-    try {
-      const savedDoc = await addDocument({
-        documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
-        linkedProgramId: selectedProgramId,
-        contentRaw: documentContent
-      });
-      
-      if (savedDoc) {
-        // Set the newly created document as selected
-        setSelectedDocumentId(savedDoc.id);
-        toast.success("Document saved successfully");
-      }
-      
-    } catch (error) {
-      console.error("Error creating document:", error);
-      toast.error("Failed to save document. Please try again.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-  
-  const handleGenerateFeedback = async () => {
-    if (selectedDocumentId) {
-      setIsGeneratingFeedback(true);
-      
-      try {
-        await generateFeedback(selectedDocumentId);
-      } catch (error) {
-        console.error("Error generating feedback:", error);
-        toast.error("Failed to generate feedback. Please try again.");
-      } finally {
-        setIsGeneratingFeedback(false);
-      }
-    }
-  };
-
-  // New function to generate feedback without saving
-  const handleGenerateTempFeedback = async () => {
-    if (!documentContent.trim()) {
-      toast.error("Please enter document content");
-      return;
-    }
-    
-    setIsGeneratingFeedback(true);
-    
-    try {
-      // Simulate feedback generation without saving
-      // In a real implementation, this would call your feedback service directly
-      setTimeout(() => {
-        const mockFeedback = {
-          content: documentContent,
-          feedback: "This is sample feedback for testing purposes. In a production environment, this would be AI-generated feedback based on your document content.",
-          improvementPoints: [
-            "Consider adding more specific examples about your experience.",
-            "The introduction could be stronger to grab attention.",
-            "Make sure to align your skills with the program requirements.",
-            "Proofread for grammatical errors and clarity.",
-            "Add more details about your long-term goals."
-          ],
-          score: 7
-        };
-        
-        setTempFeedback(mockFeedback);
-        toast.success("Test feedback generated");
-        setIsGeneratingFeedback(false);
-      }, 1500);
-      
-    } catch (error) {
-      console.error("Error generating temporary feedback:", error);
-      toast.error("Failed to generate test feedback");
-      setIsGeneratingFeedback(false);
+  const handleCreateNewVersion = () => {
+    if (selectedDocument) {
+      setSelectedDocumentId(null);
+      setDocumentContent(selectedDocument.contentRaw);
     }
   };
 
@@ -195,97 +88,20 @@ const Documents = () => {
         {/* Sidebar for document types and versions */}
         <div className={`${isMobile ? "w-full" : "w-64"}`}>
           <div className="space-y-4">
-            <Select 
-              value={selectedProgramId || "all-documents"} 
-              onValueChange={(value) => setSelectedProgramId(value === "all-documents" ? null : value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All documents" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-documents">All documents</SelectItem>
-                {programs.map(program => (
-                  <SelectItem key={program.id} value={program.id}>
-                    {program.programName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <DocumentTypeSelector
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              selectedProgramId={selectedProgramId}
+              setSelectedProgramId={setSelectedProgramId}
+              isMobile={isMobile}
+            />
             
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-3 mb-2">
-                <TabsTrigger value="sop">SOPs</TabsTrigger>
-                <TabsTrigger value="cv">CVs</TabsTrigger>
-                <TabsTrigger value="essay">Essays</TabsTrigger>
-              </TabsList>
-              <TabsList className="grid grid-cols-3">
-                <TabsTrigger value="lor">LORs</TabsTrigger>
-                <TabsTrigger value="personalEssay">Personal</TabsTrigger>
-                <TabsTrigger value="scholarshipEssay">Scholarship</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium">Versions</h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => {
-                    setSelectedDocumentId(null);
-                    setDocumentContent("");
-                    setTempFeedback(null);
-                  }}
-                  className="h-8 px-2"
-                >
-                  <PlusCircle className="h-4 w-4 mr-1" />
-                  New
-                </Button>
-              </div>
-              
-              {documentVersions.length === 0 ? (
-                <div className="text-sm text-muted-foreground py-4 text-center border rounded-md">
-                  No documents yet
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-[40vh] md:max-h-[50vh] overflow-y-auto pr-1">
-                  {documentVersions.map((doc) => {
-                    const program = doc.linkedProgramId 
-                      ? programs.find(p => p.id === doc.linkedProgramId) 
-                      : null;
-                    
-                    return (
-                      <Button
-                        key={doc.id}
-                        variant={selectedDocumentId === doc.id ? "default" : "outline"}
-                        className="w-full justify-start h-auto py-2 px-3"
-                        onClick={() => setSelectedDocumentId(doc.id)}
-                      >
-                        <div className="flex flex-col items-start text-left">
-                          <div className="flex items-center gap-1">
-                            <FileText className="h-3 w-3" />
-                            <span>v{doc.versionNumber}</span>
-                            {doc.score && (
-                              <Badge variant="outline" className="ml-1 text-xs">
-                                {doc.score}/10
-                              </Badge>
-                            )}
-                          </div>
-                          {program && (
-                            <span className="text-xs text-muted-foreground mt-1 truncate w-full">
-                              {program.programName}
-                            </span>
-                          )}
-                          <span className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(doc.createdAt), "MMM d, yyyy")}
-                          </span>
-                        </div>
-                      </Button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <DocumentsList
+              activeDocumentType={activeDocumentType}
+              selectedProgramId={selectedProgramId}
+              selectedDocumentId={selectedDocumentId}
+              onSelectDocument={setSelectedDocumentId}
+            />
           </div>
         </div>
         
@@ -301,219 +117,31 @@ const Documents = () => {
                 </CardTitle>
                 
                 {!selectedDocument && (
-                  <Select 
-                    value={selectedProgramId || "no-program"} 
-                    onValueChange={(value) => setSelectedProgramId(value === "no-program" ? null : value)}
-                  >
-                    <SelectTrigger className={isMobile ? "w-full" : "w-[200px]"}>
-                      <SelectValue placeholder="Link to program" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="no-program">No program link</SelectItem>
-                      {programs.map(program => (
-                        <SelectItem key={program.id} value={program.id}>
-                          {program.programName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <DocumentsProgramSelector
+                    selectedProgramId={selectedProgramId}
+                    setSelectedProgramId={setSelectedProgramId}
+                    isMobile={isMobile}
+                  />
                 )}
               </div>
             </CardHeader>
             
             <CardContent className="pb-2 h-[calc(100vh-7rem)] overflow-auto">
               {selectedDocument ? (
-                <div className="space-y-4">
-                  <div className="border rounded-md p-4 bg-muted/30">
-                    <pre className="whitespace-pre-wrap font-sans text-sm">
-                      {selectedDocument.contentRaw}
-                    </pre>
-                  </div>
-                  
-                  {selectedDocument.contentFeedback ? (
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">AI Feedback</h3>
-                      <div className="border rounded-md p-4 bg-accent/20">
-                        <div className="prose prose-sm max-w-none">
-                          <p>{selectedDocument.contentFeedback}</p>
-                        </div>
-                        
-                        {selectedDocument.score !== null && (
-                          <div className="mt-4 flex items-center gap-2">
-                            <span className="font-medium">Overall Score:</span>
-                            <Badge>{selectedDocument.score}/10</Badge>
-                          </div>
-                        )}
-
-                        {selectedDocument.improvementPoints && selectedDocument.improvementPoints.length > 0 && (
-                          <div className="mt-4">
-                            <h4 className="font-medium mb-2">Improvement Points</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                              {selectedDocument.improvementPoints.map((point, index) => (
-                                <li key={index} className="text-sm">{point}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center p-8">
-                      <Sparkles className="h-10 w-10 text-muted-foreground mb-2 opacity-50" />
-                      <p className="text-center text-muted-foreground mb-4">
-                        No feedback generated yet. Click "Get AI Feedback" to analyze this document.
-                      </p>
-                      <Button 
-                        onClick={handleGenerateFeedback}
-                        disabled={isGeneratingFeedback}
-                        className="gap-2"
-                      >
-                        <Sparkles className="h-4 w-4" />
-                        {isGeneratingFeedback ? "Generating..." : "Get AI Feedback"}
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                <DocumentViewer
+                  selectedDocument={selectedDocument}
+                  onCreateNewVersion={handleCreateNewVersion}
+                  documentTypeLabels={documentTypeLabels}
+                />
               ) : (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="document-content">
-                      {documentTypeLabels[activeDocumentType]} Content
-                    </Label>
-                    <Textarea
-                      id="document-content"
-                      value={documentContent}
-                      onChange={(e) => setDocumentContent(e.target.value)}
-                      placeholder={`Enter your ${documentTypeLabels[activeDocumentType]} content here...`}
-                      className="mt-1"
-                      style={{ 
-                        height: isMobile ? '280px' : 'calc(100vh - 25rem)',
-                        minHeight: '150px'
-                      }}
-                    />
-                  </div>
-                  
-                  {/* Display temporary feedback if available */}
-                  {tempFeedback && (
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">Test Feedback (Not Saved)</h3>
-                      <div className="border rounded-md p-4 bg-accent/20">
-                        <div className="prose prose-sm max-w-none">
-                          <p>{tempFeedback.feedback}</p>
-                        </div>
-                        
-                        {tempFeedback.score !== undefined && (
-                          <div className="mt-4 flex items-center gap-2">
-                            <span className="font-medium">Overall Score:</span>
-                            <Badge>{tempFeedback.score}/10</Badge>
-                          </div>
-                        )}
-
-                        {tempFeedback.improvementPoints && tempFeedback.improvementPoints.length > 0 && (
-                          <div className="mt-4">
-                            <h4 className="font-medium mb-2">Improvement Points</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                              {tempFeedback.improvementPoints.map((point, index) => (
-                                <li key={index} className="text-sm">{point}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <DocumentEditor
+                  activeDocumentType={activeDocumentType}
+                  documentTypeLabels={documentTypeLabels}
+                  selectedDocument={selectedDocument}
+                  onSaveSuccess={setSelectedDocumentId}
+                />
               )}
             </CardContent>
-            
-            <CardFooter className={isMobile ? "flex-col w-full gap-2" : ""}>
-              {selectedDocument ? (
-                <div className={`flex ${isMobile ? "w-full flex-col" : ""} gap-2 ${!isMobile && "justify-end"}`}>
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedDocumentId(null);
-                      setDocumentContent(selectedDocument.contentRaw);
-                      setTempFeedback(null);
-                    }}
-                    className={isMobile ? "w-full" : ""}
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Create New Version
-                  </Button>
-                  <Button 
-                    onClick={handleGenerateFeedback}
-                    disabled={!!selectedDocument.contentFeedback || isGeneratingFeedback}
-                    className={isMobile ? "w-full" : ""}
-                  >
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    {isGeneratingFeedback 
-                      ? "Generating..." 
-                      : selectedDocument.contentFeedback 
-                        ? "Feedback Generated" 
-                        : "Get AI Feedback"}
-                  </Button>
-                </div>
-              ) : (
-                <div className={`flex ${isMobile ? "w-full flex-col" : ""} gap-2 ${!isMobile && "ml-auto"}`}>
-                  <Button 
-                    onClick={handleCreateDocument} 
-                    className={isMobile ? "w-full" : ""}
-                    disabled={isSaving}
-                  >
-                    <Save className="mr-2 h-4 w-4" />
-                    {isSaving ? "Saving..." : "Save Document"}
-                  </Button>
-                  <Button 
-                    onClick={async () => {
-                      if (!documentContent.trim()) {
-                        toast.error("Please enter document content before generating feedback");
-                        return;
-                      }
-                      
-                      setIsSaving(true);
-                      try {
-                        const savedDoc = await addDocument({
-                          documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
-                          linkedProgramId: selectedProgramId,
-                          contentRaw: documentContent
-                        });
-                        
-                        if (savedDoc) {
-                          setSelectedDocumentId(savedDoc.id);
-                          toast.success("Document saved successfully");
-                          setIsGeneratingFeedback(true);
-                          await generateFeedback(savedDoc.id);
-                        }
-                      } catch (error) {
-                        console.error("Error creating document and generating feedback:", error);
-                        toast.error("Failed to save document and generate feedback");
-                      } finally {
-                        setIsSaving(false);
-                        setIsGeneratingFeedback(false);
-                      }
-                    }}
-                    variant="secondary"
-                    className={isMobile ? "w-full" : ""}
-                    disabled={isSaving || isGeneratingFeedback}
-                  >
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    {isSaving || isGeneratingFeedback ? "Processing..." : "Save & Get AI Feedback"}
-                  </Button>
-                  
-                  {/* New button for testing feedback without saving */}
-                  <Button 
-                    onClick={handleGenerateTempFeedback}
-                    variant="outline"
-                    className={isMobile ? "w-full" : ""}
-                    disabled={isGeneratingFeedback}
-                  >
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    {isGeneratingFeedback ? "Processing..." : "Test AI Feedback"}
-                  </Button>
-                </div>
-              )}
-            </CardFooter>
           </Card>
         </div>
       </div>

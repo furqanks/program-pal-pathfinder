@@ -1,0 +1,121 @@
+
+import { Button } from "@/components/ui/button";
+import { Sparkles, PlusCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useDocumentContext } from "@/contexts/DocumentContext";
+import { Document } from "@/types/document.types";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+interface DocumentViewerProps {
+  selectedDocument: Document;
+  onCreateNewVersion: () => void;
+  documentTypeLabels: Record<string, string>;
+}
+
+const DocumentViewer = ({
+  selectedDocument,
+  onCreateNewVersion,
+  documentTypeLabels
+}: DocumentViewerProps) => {
+  const isMobile = useIsMobile();
+  const { generateFeedback } = useDocumentContext();
+  const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
+  
+  const handleGenerateFeedback = async () => {
+    if (selectedDocument.id) {
+      setIsGeneratingFeedback(true);
+      
+      try {
+        await generateFeedback(selectedDocument.id);
+      } catch (error) {
+        console.error("Error generating feedback:", error);
+        toast.error("Failed to generate feedback. Please try again.");
+      } finally {
+        setIsGeneratingFeedback(false);
+      }
+    }
+  };
+  
+  return (
+    <div className="space-y-4">
+      <div className="border rounded-md p-4 bg-muted/30">
+        <pre className="whitespace-pre-wrap font-sans text-sm">
+          {selectedDocument.contentRaw}
+        </pre>
+      </div>
+      
+      {selectedDocument.contentFeedback ? (
+        <div>
+          <h3 className="text-lg font-medium mb-2">AI Feedback</h3>
+          <div className="border rounded-md p-4 bg-accent/20">
+            <div className="prose prose-sm max-w-none">
+              <p>{selectedDocument.contentFeedback}</p>
+            </div>
+            
+            {selectedDocument.score !== null && (
+              <div className="mt-4 flex items-center gap-2">
+                <span className="font-medium">Overall Score:</span>
+                <Badge>{selectedDocument.score}/10</Badge>
+              </div>
+            )}
+
+            {selectedDocument.improvementPoints && selectedDocument.improvementPoints.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-medium mb-2">Improvement Points</h4>
+                <ul className="list-disc pl-5 space-y-1">
+                  {selectedDocument.improvementPoints.map((point, index) => (
+                    <li key={index} className="text-sm">{point}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center p-8">
+          <Sparkles className="h-10 w-10 text-muted-foreground mb-2 opacity-50" />
+          <p className="text-center text-muted-foreground mb-4">
+            No feedback generated yet. Click "Get AI Feedback" to analyze this document.
+          </p>
+          <Button 
+            onClick={handleGenerateFeedback}
+            disabled={isGeneratingFeedback}
+            className="gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            {isGeneratingFeedback ? "Generating..." : "Get AI Feedback"}
+          </Button>
+        </div>
+      )}
+      
+      <div className={`flex ${isMobile ? "w-full flex-col" : ""} gap-2 ${!isMobile && "justify-end"}`}>
+        <Button 
+          variant="outline"
+          onClick={onCreateNewVersion}
+          className={isMobile ? "w-full" : ""}
+        >
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Create New Version
+        </Button>
+        <Button 
+          onClick={handleGenerateFeedback}
+          disabled={!!selectedDocument.contentFeedback || isGeneratingFeedback}
+          className={isMobile ? "w-full" : ""}
+        >
+          <Sparkles className="mr-2 h-4 w-4" />
+          {isGeneratingFeedback 
+            ? "Generating..." 
+            : selectedDocument.contentFeedback 
+              ? "Feedback Generated" 
+              : "Get AI Feedback"}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// Import statements
+import { useState } from "react";
+import { toast } from "sonner";
+
+export default DocumentViewer;
