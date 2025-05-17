@@ -1,4 +1,3 @@
-
 import { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -6,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface Document {
   id: string;
-  documentType: "SOP" | "CV" | "Essay";
+  documentType: "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay";
   linkedProgramId: string | null;
   contentRaw: string;
   contentFeedback?: string;

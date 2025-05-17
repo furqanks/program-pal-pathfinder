@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { toast } from "sonner";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 
 const DocumentsPage = () => {
   return (
@@ -46,7 +46,19 @@ const Documents = () => {
   const documentTypes = {
     sop: "SOP",
     cv: "CV",
-    essay: "Essay"
+    essay: "Essay",
+    lor: "LOR",
+    personalEssay: "PersonalEssay",
+    scholarshipEssay: "ScholarshipEssay"
+  };
+  
+  const documentTypeLabels = {
+    SOP: "Statement of Purpose",
+    CV: "Curriculum Vitae/Resume",
+    Essay: "General Essay",
+    LOR: "Letter of Recommendation",
+    PersonalEssay: "Personal Essay",
+    ScholarshipEssay: "Scholarship Essay"
   };
   
   // Get versions for the current document type
@@ -81,7 +93,7 @@ const Documents = () => {
     }
     
     await addDocument({
-      documentType: activeDocumentType as "SOP" | "CV" | "Essay",
+      documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
       linkedProgramId: selectedProgramId,
       contentRaw: documentContent
     });
@@ -126,10 +138,15 @@ const Documents = () => {
             </Select>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full">
-                <TabsTrigger value="sop" className="flex-1">SOPs</TabsTrigger>
-                <TabsTrigger value="cv" className="flex-1">CVs</TabsTrigger>
-                <TabsTrigger value="essay" className="flex-1">Essays</TabsTrigger>
+              <TabsList className="grid grid-cols-3 mb-2">
+                <TabsTrigger value="sop">SOPs</TabsTrigger>
+                <TabsTrigger value="cv">CVs</TabsTrigger>
+                <TabsTrigger value="essay">Essays</TabsTrigger>
+              </TabsList>
+              <TabsList className="grid grid-cols-3">
+                <TabsTrigger value="lor">LORs</TabsTrigger>
+                <TabsTrigger value="personalEssay">Personal</TabsTrigger>
+                <TabsTrigger value="scholarshipEssay">Scholarship</TabsTrigger>
               </TabsList>
             </Tabs>
             
@@ -202,8 +219,8 @@ const Documents = () => {
               <div className="flex justify-between items-center">
                 <CardTitle>
                   {selectedDocument 
-                    ? `${activeDocumentType} - Version ${selectedDocument.versionNumber}` 
-                    : `New ${activeDocumentType}`}
+                    ? `${documentTypeLabels[selectedDocument.documentType]} - Version ${selectedDocument.versionNumber}` 
+                    : `New ${documentTypeLabels[activeDocumentType]}`}
                 </CardTitle>
                 
                 {!selectedDocument && (
@@ -275,13 +292,13 @@ const Documents = () => {
               ) : (
                 <div>
                   <Label htmlFor="document-content">
-                    {activeDocumentType} Content
+                    {documentTypeLabels[activeDocumentType]} Content
                   </Label>
                   <Textarea
                     id="document-content"
                     value={documentContent}
                     onChange={(e) => setDocumentContent(e.target.value)}
-                    placeholder={`Enter your ${activeDocumentType} content here...`}
+                    placeholder={`Enter your ${documentTypeLabels[activeDocumentType]} content here...`}
                     className="mt-1 h-[calc(100vh-25rem)]"
                   />
                 </div>

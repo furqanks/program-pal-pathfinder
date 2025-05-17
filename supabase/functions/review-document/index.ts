@@ -72,6 +72,49 @@ serve(async (req) => {
     
     console.log(`Processing ${documentType} review for user ${userId}`);
 
+    // Set system prompt based on document type
+    let systemPrompt = '';
+    
+    switch(documentType) {
+      case 'SOP':
+        systemPrompt = `You are an expert academic application reviewer, specialized in reviewing Statements of Purpose for university applications.
+        Your task is to review the given Statement of Purpose and provide constructive feedback on how to improve it.`;
+        break;
+      case 'CV':
+        systemPrompt = `You are an expert academic application reviewer, specialized in reviewing CVs and resumes for university applications.
+        Your task is to review the given CV/resume and provide constructive feedback on how to improve it.`;
+        break;
+      case 'Essay':
+        systemPrompt = `You are an expert academic application reviewer, specialized in reviewing essays for university applications.
+        Your task is to review the given essay and provide constructive feedback on how to improve it.`;
+        break;
+      case 'LOR':
+        systemPrompt = `You are an expert academic application reviewer, specialized in reviewing Letters of Recommendation for university applications.
+        Your task is to review the given Letter of Recommendation and provide constructive feedback on how to improve it.`;
+        break;
+      case 'PersonalEssay':
+        systemPrompt = `You are an expert academic application reviewer, specialized in reviewing Personal Essays for university applications.
+        Your task is to review the given Personal Essay and provide constructive feedback on how to improve it.`;
+        break;
+      case 'ScholarshipEssay':
+        systemPrompt = `You are an expert academic application reviewer, specialized in reviewing Scholarship Essays for university applications.
+        Your task is to review the given Scholarship Essay and provide constructive feedback on how to improve it.`;
+        break;
+      default:
+        systemPrompt = `You are an expert academic application reviewer, specialized in reviewing ${documentType}s for university applications.
+        Your task is to review the given ${documentType} and provide constructive feedback.`;
+    }
+    
+    systemPrompt += `
+      Format your response as a JSON object with the following structure:
+      {
+        "summary": "One paragraph summarizing the quality of the document and overall assessment",
+        "score": A number between 1 and 10 representing the quality of the document,
+        "improvementPoints": ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5"]
+      }
+      
+      Provide 3-6 clear improvement points. Be specific, actionable, and constructive.`;
+
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -84,21 +127,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an expert academic application reviewer, specialized in reviewing ${documentType}s for university applications. 
-            Your task is to review the given ${documentType} and provide constructive feedback.
-            
-            Format your response as a JSON object with the following structure:
-            {
-              "summary": "One paragraph summarizing the quality of the document and overall assessment",
-              "score": A number between 1 and 10 representing the quality of the document,
-              "improvementPoints": ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5"]
-            }
-            
-            Provide 3-6 clear improvement points. Be specific, actionable, and constructive.`
+            content: systemPrompt
           },
           {
             role: 'user',
-            content: content
+            content
           }
         ],
         temperature: 0.5,
@@ -148,6 +181,7 @@ serve(async (req) => {
         original_text: content,
         feedback_summary: feedbackData.summary,
         improvement_points: feedbackData.improvementPoints,
+        score: feedbackData.score,
         version_number: versionNumber
       })
       .select('id')
