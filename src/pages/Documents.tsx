@@ -326,21 +326,23 @@ const Documents = () => {
                   )}
                 </div>
               ) : (
-                <div>
-                  <Label htmlFor="document-content">
-                    {documentTypeLabels[activeDocumentType]} Content
-                  </Label>
-                  <Textarea
-                    id="document-content"
-                    value={documentContent}
-                    onChange={(e) => setDocumentContent(e.target.value)}
-                    placeholder={`Enter your ${documentTypeLabels[activeDocumentType]} content here...`}
-                    className="mt-1"
-                    style={{ 
-                      height: isMobile ? '300px' : 'calc(100vh - 25rem)',
-                      minHeight: '150px'
-                    }}
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="document-content">
+                      {documentTypeLabels[activeDocumentType]} Content
+                    </Label>
+                    <Textarea
+                      id="document-content"
+                      value={documentContent}
+                      onChange={(e) => setDocumentContent(e.target.value)}
+                      placeholder={`Enter your ${documentTypeLabels[activeDocumentType]} content here...`}
+                      className="mt-1"
+                      style={{ 
+                        height: isMobile ? '280px' : 'calc(100vh - 25rem)',
+                        minHeight: '150px'
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -373,14 +375,52 @@ const Documents = () => {
                   </Button>
                 </div>
               ) : (
-                <Button 
-                  onClick={handleCreateDocument} 
-                  className={isMobile ? "w-full" : "ml-auto"}
-                  disabled={isSaving}
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  {isSaving ? "Saving..." : "Save Document"}
-                </Button>
+                <div className={`flex ${isMobile ? "w-full flex-col" : ""} gap-2 ${!isMobile && "ml-auto"}`}>
+                  <Button 
+                    onClick={handleCreateDocument} 
+                    className={isMobile ? "w-full" : ""}
+                    disabled={isSaving}
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    {isSaving ? "Saving..." : "Save Document"}
+                  </Button>
+                  <Button 
+                    onClick={async () => {
+                      if (!documentContent.trim()) {
+                        toast.error("Please enter document content before generating feedback");
+                        return;
+                      }
+                      
+                      setIsSaving(true);
+                      try {
+                        const savedDoc = await addDocument({
+                          documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
+                          linkedProgramId: selectedProgramId,
+                          contentRaw: documentContent
+                        });
+                        
+                        if (savedDoc) {
+                          setSelectedDocumentId(savedDoc.id);
+                          toast.success("Document saved successfully");
+                          setIsGeneratingFeedback(true);
+                          await generateFeedback(savedDoc.id);
+                        }
+                      } catch (error) {
+                        console.error("Error creating document and generating feedback:", error);
+                        toast.error("Failed to save document and generate feedback");
+                      } finally {
+                        setIsSaving(false);
+                        setIsGeneratingFeedback(false);
+                      }
+                    }}
+                    variant="secondary"
+                    className={isMobile ? "w-full" : ""}
+                    disabled={isSaving || isGeneratingFeedback}
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    {isSaving || isGeneratingFeedback ? "Processing..." : "Save & Get AI Feedback"}
+                  </Button>
+                </div>
               )}
             </CardFooter>
           </Card>
