@@ -63,7 +63,7 @@ const Documents = () => {
     } else {
       setSelectedDocumentId(null);
     }
-  }, [activeTab, selectedProgramId]);
+  }, [activeTab, selectedProgramId, documentVersions]);
   
   // Update content when selection changes
   useEffect(() => {
@@ -74,13 +74,13 @@ const Documents = () => {
     }
   }, [selectedDocument]);
   
-  const handleCreateDocument = () => {
+  const handleCreateDocument = async () => {
     if (!documentContent.trim()) {
       toast.error("Please enter document content");
       return;
     }
     
-    addDocument({
+    await addDocument({
       documentType: activeDocumentType as "SOP" | "CV" | "Essay",
       linkedProgramId: selectedProgramId,
       contentRaw: documentContent
@@ -88,12 +88,11 @@ const Documents = () => {
     
     // Reset content
     setDocumentContent("");
-    toast.success("Document created successfully");
   };
   
-  const handleGenerateFeedback = () => {
+  const handleGenerateFeedback = async () => {
     if (selectedDocumentId) {
-      generateFeedback(selectedDocumentId);
+      await generateFeedback(selectedDocumentId);
     }
   };
 
@@ -185,7 +184,7 @@ const Documents = () => {
                             </span>
                           )}
                           <span className="text-xs text-muted-foreground mt-1">
-                            {format(parseISO(doc.createdAt), "MMM d, yyyy")}
+                            {format(new Date(doc.createdAt), "MMM d, yyyy")}
                           </span>
                         </div>
                       </Button>
@@ -249,6 +248,17 @@ const Documents = () => {
                           <div className="mt-4 flex items-center gap-2">
                             <span className="font-medium">Overall Score:</span>
                             <Badge>{selectedDocument.score}/10</Badge>
+                          </div>
+                        )}
+
+                        {selectedDocument.improvementPoints && selectedDocument.improvementPoints.length > 0 && (
+                          <div className="mt-4">
+                            <h4 className="font-medium mb-2">Improvement Points</h4>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {selectedDocument.improvementPoints.map((point, index) => (
+                                <li key={index} className="text-sm">{point}</li>
+                              ))}
+                            </ul>
                           </div>
                         )}
                       </div>

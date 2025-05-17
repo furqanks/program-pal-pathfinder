@@ -1,6 +1,7 @@
 
 import { createContext, useState, useContext, ReactNode } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export type SearchResult = {
   programName: string;
@@ -11,8 +12,6 @@ export type SearchResult = {
 };
 
 type PerplexityContextType = {
-  apiKey: string | null;
-  setApiKey: (key: string | null) => void;
   isLoading: boolean;
   searchResults: SearchResult[];
   searchPrograms: (query: string) => Promise<void>;
@@ -29,22 +28,39 @@ export const usePerplexityContext = () => {
 };
 
 export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
-  const [apiKey, setApiKey] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 
   const searchPrograms = async (query: string): Promise<void> => {
-    if (!apiKey) {
-      toast.error("Please enter your Perplexity API key first");
+    if (!query.trim()) {
+      toast.error("Please enter a search query");
       return;
     }
 
     setIsLoading(true);
     try {
-      // In a real integration, this would call the Perplexity API
-      // For demo purposes, we'll simulate results after a delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call the search-programs edge function
+      const { data, error } = await supabase.functions.invoke('search-programs', {
+        body: { query },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Error searching programs');
+      }
+
+      if (data && data.searchResults && Array.isArray(data.searchResults)) {
+        setSearchResults(data.searchResults);
+        toast.success(`Found ${data.searchResults.length} programs related to "${query}"`);
+      } else if (data && data.error) {
+        throw new Error(data.error);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      toast.error(error instanceof Error ? error.message : 'Failed to search programs. Please try again.');
       
+      // For development, simulate results after API failure
       const mockResults: SearchResult[] = [
         {
           programName: `${query} Engineering`,
@@ -77,10 +93,6 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
       ];
 
       setSearchResults(mockResults);
-      toast.success(`Found ${mockResults.length} programs related to "${query}"`);
-    } catch (error) {
-      console.error("Search error:", error);
-      toast.error("Failed to search programs. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -89,8 +101,6 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
   return (
     <PerplexityContext.Provider
       value={{
-        apiKey,
-        setApiKey,
         isLoading,
         searchResults,
         searchPrograms,

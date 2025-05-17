@@ -8,87 +8,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
 const Insights = () => {
-  const { programs } = useProgramContext();
+  const { programs, analyzeShortlist } = useProgramContext();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [insights, setInsights] = useState<string[] | null>(null);
+  const [insights, setInsights] = useState<any | null>(null);
   
   const hasEnoughPrograms = programs.length >= 3;
   
-  const analyzeShortlist = () => {
+  const handleAnalyzeShortlist = async () => {
     setIsAnalyzing(true);
-    setTimeout(() => {
-      // Generate insights
-      const generatedInsights = generateInsights();
-      setInsights(generatedInsights);
+    try {
+      const analysisResults = await analyzeShortlist();
+      if (analysisResults) {
+        setInsights(analysisResults);
+      }
+    } finally {
       setIsAnalyzing(false);
-    }, 1500);
-  };
-  
-  // Helper function to simulate AI analysis
-  const generateInsights = () => {
-    // This would be replaced by actual AI analysis
-    const countries = [...new Set(programs.map(p => p.country))];
-    const deadlines = programs.filter(p => p.deadline).map(p => new Date(p.deadline));
-    
-    const insights: string[] = [];
-    
-    // Country diversity
-    if (countries.length === 1) {
-      insights.push(`All your programs are in ${countries[0]}. Consider diversifying your applications across different countries for better odds.`);
-    } else {
-      insights.push(`You have a good mix of programs across ${countries.length} countries (${countries.join(", ")}). This gives you geographical flexibility.`);
     }
-    
-    // Deadline clustering
-    if (deadlines.length > 0) {
-      deadlines.sort((a, b) => a.getTime() - b.getTime());
-      const earliestDeadline = deadlines[0];
-      const latestDeadline = deadlines[deadlines.length - 1];
-      
-      const timeSpan = Math.ceil((latestDeadline.getTime() - earliestDeadline.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (timeSpan < 30 && deadlines.length > 1) {
-        insights.push(`You have ${deadlines.length} deadlines within a ${timeSpan} day period. Prepare your application materials well in advance to avoid last-minute stress.`);
-      } else if (deadlines.length > 1) {
-        insights.push(`Your application deadlines are spread across ${timeSpan} days, giving you good time to prepare materials sequentially.`);
-      }
-    } else {
-      insights.push("Consider adding application deadlines to better plan your application timeline.");
-    }
-    
-    // Tuition analysis
-    const tuitionsWithValues = programs.filter(p => p.tuition && p.tuition.trim() !== '');
-    if (tuitionsWithValues.length > 0) {
-      if (tuitionsWithValues.length === programs.length) {
-        insights.push("You have entered tuition information for all programs, which is excellent for financial planning.");
-      } else {
-        insights.push(`You have tuition information for ${tuitionsWithValues.length} out of ${programs.length} programs. Complete this information to better plan finances.`);
-      }
-    } else {
-      insights.push("Add tuition information to your programs to get insights on financial planning.");
-    }
-    
-    // Program type balance
-    const degreeTypes = [...new Set(programs.map(p => p.degreeType))];
-    if (degreeTypes.length > 1) {
-      insights.push(`You're considering multiple degree types: ${degreeTypes.join(", ")}. Ensure your application strategy aligns with the different requirements for each.`);
-    }
-    
-    // Task completion status
-    const tasksTotal = programs.reduce((sum, program) => sum + program.tasks.length, 0);
-    const tasksCompleted = programs.reduce((sum, program) => sum + program.tasks.filter(t => t.completed).length, 0);
-    
-    if (tasksTotal > 0) {
-      const completionPercentage = Math.round((tasksCompleted / tasksTotal) * 100);
-      insights.push(`You have completed ${completionPercentage}% of your application tasks (${tasksCompleted}/${tasksTotal}). ${completionPercentage < 50 ? "Keep up the momentum!" : "Great progress!"}`);
-    } else {
-      insights.push("Start adding tasks to your programs to track your application progress.");
-    }
-    
-    // Extra recommendation
-    insights.push(`Based on your current shortlist, consider exploring programs in ${countries.includes("USA") ? "Europe" : "USA"} to diversify your options.`);
-    
-    return insights;
   };
   
   // Extract some statistics for the charts
@@ -132,7 +67,7 @@ const Insights = () => {
             <p className="text-center text-muted-foreground mb-4">
               Get AI-powered insights on your {programs.length} shortlisted programs.
             </p>
-            <Button onClick={analyzeShortlist} disabled={isAnalyzing} size="lg">
+            <Button onClick={handleAnalyzeShortlist} disabled={isAnalyzing} size="lg">
               {isAnalyzing ? "Analyzing..." : "Analyze My Shortlist"}
             </Button>
           </CardContent>
@@ -167,13 +102,18 @@ const Insights = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="p-4 bg-accent/20 rounded-lg mb-4">
+                <p className="text-sm">{insights.summary}</p>
+              </div>
+              
+              <h3 className="font-medium">Recommendations</h3>
               <ul className="space-y-3">
-                {insights.map((insight, i) => (
+                {insights.suggestions.map((suggestion: string, i: number) => (
                   <li key={i} className="flex gap-2">
                     <Badge variant="outline" className="shrink-0 mt-0.5 h-5 w-5 flex items-center justify-center p-0">
                       {i + 1}
                     </Badge>
-                    <p>{insight}</p>
+                    <p>{suggestion}</p>
                   </li>
                 ))}
               </ul>
@@ -200,6 +140,7 @@ const Insights = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
+                  <p className="text-sm mb-2">{insights.countryAnalysis}</p>
                   {Object.entries(countryDistribution).map(([country, count]) => (
                     <div key={country} className="flex justify-between items-center">
                       <div className="flex items-center">
@@ -229,6 +170,7 @@ const Insights = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
+                  <p className="text-sm mb-2">{insights.degreeTypeAnalysis}</p>
                   {Object.entries(degreeTypeDistribution).map(([degreeType, count]) => (
                     <div key={degreeType} className="flex justify-between items-center">
                       <div className="flex items-center">
@@ -253,33 +195,18 @@ const Insights = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  Upcoming Deadlines
+                  Timeline & Finances
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                {programs
-                  .filter(p => p.deadline && p.deadline.trim() !== '')
-                  .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-                  .slice(0, 3)
-                  .map(program => (
-                    <div key={program.id} className="flex justify-between items-center mb-2">
-                      <div className="truncate mr-2">
-                        <div className="font-medium truncate">{program.programName}</div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {program.university}
-                        </div>
-                      </div>
-                      <Badge>
-                        {new Date(program.deadline).toLocaleDateString()}
-                      </Badge>
-                    </div>
-                  ))}
-                
-                {programs.filter(p => p.deadline && p.deadline.trim() !== '').length === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    No deadlines set yet
-                  </p>
-                )}
+              <CardContent className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Timeline</h4>
+                  <p className="text-xs text-muted-foreground">{insights.timelineInsight}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Financial Outlook</h4>
+                  <p className="text-xs text-muted-foreground">{insights.financialInsight}</p>
+                </div>
               </CardContent>
             </Card>
           </div>
