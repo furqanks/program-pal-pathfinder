@@ -1,7 +1,6 @@
 
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useState, useContext, ReactNode } from "react";
 import { toast } from "sonner";
-import { getApiKey, setApiKey, API_KEYS } from "@/utils/apiKeys";
 
 export type SearchResult = {
   programName: string;
@@ -13,10 +12,10 @@ export type SearchResult = {
 
 type PerplexityContextType = {
   apiKey: string | null;
-  setApiKey: (key: string) => void;
-  searchPrograms: (query: string) => Promise<void>;
-  searchResults: SearchResult[];
+  setApiKey: (key: string | null) => void;
   isLoading: boolean;
+  searchResults: SearchResult[];
+  searchPrograms: (query: string) => Promise<void>;
 };
 
 const PerplexityContext = createContext<PerplexityContextType | undefined>(undefined);
@@ -30,51 +29,55 @@ export const usePerplexityContext = () => {
 };
 
 export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
-  const [apiKey, setApiKeyState] = useState<string | null>(null);
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [apiKey, setApiKey] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Load API key on mount
-  useEffect(() => {
-    const storedKey = getApiKey(API_KEYS.PERPLEXITY);
-    if (storedKey) {
-      setApiKeyState(storedKey);
-    }
-  }, []);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 
-  // Save API key to localStorage when set
-  const handleSetApiKey = (key: string) => {
-    setApiKey(API_KEYS.PERPLEXITY, key);
-    setApiKeyState(key);
-  };
-
-  // Search programs using Perplexity API
-  const searchPrograms = async (query: string) => {
-    const currentApiKey = apiKey || getApiKey(API_KEYS.PERPLEXITY);
-    
-    if (!currentApiKey) {
-      toast.error("API key not set. Please add your Perplexity API key in Settings.");
+  const searchPrograms = async (query: string): Promise<void> => {
+    if (!apiKey) {
+      toast.error("Please enter your Perplexity API key first");
       return;
     }
 
     setIsLoading(true);
-    setSearchResults([]);
-
     try {
-      const response = await fetch("/api/search-programs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      // In a real integration, this would call the Perplexity API
+      // For demo purposes, we'll simulate results after a delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const mockResults: SearchResult[] = [
+        {
+          programName: `${query} Engineering`,
+          university: "MIT",
+          degreeType: "Masters",
+          country: "USA",
+          description: `The ${query} Engineering program at MIT offers cutting-edge research opportunities in ${query} and related technologies.`,
         },
-        body: JSON.stringify({ query, apiKey: currentApiKey }),
-      });
+        {
+          programName: `${query} Science`,
+          university: "Stanford University",
+          degreeType: "PhD",
+          country: "USA",
+          description: `Stanford's ${query} Science program is renowned for its interdisciplinary approach integrating ${query} with applied research.`,
+        },
+        {
+          programName: `${query} Technology`,
+          university: "ETH Zurich",
+          degreeType: "Masters",
+          country: "Switzerland",
+          description: `ETH Zurich's ${query} Technology program provides a comprehensive curriculum with strong industry connections.`,
+        },
+        {
+          programName: `${query} Innovation`,
+          university: "University of Tokyo",
+          degreeType: "Masters",
+          country: "Japan",
+          description: `The University of Tokyo's ${query} Innovation program focuses on emerging technologies and entrepreneurship in ${query} fields.`,
+        },
+      ];
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setSearchResults(data.results);
+      setSearchResults(mockResults);
+      toast.success(`Found ${mockResults.length} programs related to "${query}"`);
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Failed to search programs. Please try again.");
@@ -87,10 +90,10 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
     <PerplexityContext.Provider
       value={{
         apiKey,
-        setApiKey: handleSetApiKey,
-        searchPrograms,
-        searchResults,
+        setApiKey,
         isLoading,
+        searchResults,
+        searchPrograms,
       }}
     >
       {children}

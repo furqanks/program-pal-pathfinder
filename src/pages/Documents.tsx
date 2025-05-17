@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDocumentContext, Document } from "@/contexts/DocumentContext";
 import { DocumentProvider } from "@/contexts/DocumentContext";
-import { useOpenAI } from "@/contexts/OpenAIContext";
 import { PlusCircle, FileText, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -35,15 +34,14 @@ const Documents = () => {
   const { 
     documents, 
     addDocument, 
-    getVersions,
+    getVersions, 
+    generateFeedback 
   } = useDocumentContext();
-  const { reviewDocument } = useOpenAI();
   const { programs } = useProgramContext();
   
   const [documentContent, setDocumentContent] = useState("");
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
-  const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
   
   const documentTypes = {
     sop: "SOP",
@@ -93,48 +91,9 @@ const Documents = () => {
     toast.success("Document created successfully");
   };
   
-  const handleGenerateFeedback = async () => {
-    if (!selectedDocumentId) return;
-    
-    setIsGeneratingFeedback(true);
-    
-    try {
-      const document = documents.find(doc => doc.id === selectedDocumentId);
-      if (!document) throw new Error("Document not found");
-      
-      const response = await reviewDocument(
-        document.documentType, 
-        document.contentRaw,
-        document.linkedProgramId
-      );
-      
-      if (response) {
-        // Update document with feedback and score
-        const updatedDocument: Document = {
-          ...document,
-          contentFeedback: response.feedback,
-          score: response.score
-        };
-        
-        // Save the updated document
-        const index = documents.findIndex(d => d.id === selectedDocumentId);
-        const updatedDocuments = [...documents];
-        updatedDocuments[index] = updatedDocument;
-        
-        // If using local storage, save updated documents
-        localStorage.setItem('documents', JSON.stringify(updatedDocuments));
-        
-        // Force a re-render by updating the selected document
-        setSelectedDocumentId(null);
-        setTimeout(() => setSelectedDocumentId(document.id), 10);
-        
-        toast.success("Feedback generated successfully");
-      }
-    } catch (error) {
-      console.error("Error generating feedback:", error);
-      toast.error("Failed to generate feedback");
-    } finally {
-      setIsGeneratingFeedback(false);
+  const handleGenerateFeedback = () => {
+    if (selectedDocumentId) {
+      generateFeedback(selectedDocumentId);
     }
   };
 
@@ -333,11 +292,10 @@ const Documents = () => {
                   </Button>
                   <Button 
                     onClick={handleGenerateFeedback}
-                    disabled={!!selectedDocument.contentFeedback || isGeneratingFeedback}
+                    disabled={!!selectedDocument.contentFeedback}
                   >
                     <Sparkles className="mr-2 h-4 w-4" />
-                    {isGeneratingFeedback ? "Generating..." : 
-                      selectedDocument.contentFeedback ? "Feedback Generated" : "Get AI Feedback"}
+                    {selectedDocument.contentFeedback ? "Feedback Generated" : "Get AI Feedback"}
                   </Button>
                 </div>
               ) : (
