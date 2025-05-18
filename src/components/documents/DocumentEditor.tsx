@@ -1,23 +1,12 @@
 
 import { useState } from "react";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Save, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { useDocumentContext } from "@/contexts/DocumentContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Card, CardContent } from "@/components/ui/card";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import DocumentContentEditor from "./editor/DocumentContentEditor";
+import FeedbackPreview from "./editor/FeedbackPreview";
+import EditorActions from "./editor/EditorActions";
 
 interface DocumentEditorProps {
   activeDocumentType: string;
@@ -148,85 +137,26 @@ const DocumentEditor = ({
 
   return (
     <div className="space-y-4">
-      <div>
-        <Label htmlFor="document-content">
-          {documentTypeLabels[activeDocumentType]} Content
-        </Label>
-        <Textarea
-          id="document-content"
-          value={documentContent}
-          onChange={(e) => setDocumentContent(e.target.value)}
-          placeholder={`Enter your ${documentTypeLabels[activeDocumentType]} content here...`}
-          className="mt-1"
-          style={{ 
-            height: isMobile ? '280px' : 'calc(100vh - 25rem)',
-            minHeight: '150px'
-          }}
-        />
-      </div>
+      <DocumentContentEditor
+        documentContent={documentContent}
+        setDocumentContent={setDocumentContent}
+        documentTypeLabel={documentTypeLabels[activeDocumentType]}
+        isMobile={isMobile}
+      />
       
-      {/* Display temporary feedback if available and showFeedback is true */}
-      {tempFeedback && showFeedback && (
-        <Card className="mt-4 border border-accent">
-          <CardContent className="pt-4">
-            <h3 className="text-lg font-medium mb-2">AI Feedback</h3>
-            <div className="bg-accent/20 p-4 rounded-md">
-              <div className="prose prose-sm max-w-none">
-                <p>{tempFeedback.feedback}</p>
-              </div>
-              
-              {tempFeedback.score !== undefined && (
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="font-medium">Overall Score:</span>
-                  <Badge variant="secondary">{tempFeedback.score}/10</Badge>
-                </div>
-              )}
-  
-              {tempFeedback.improvementPoints && tempFeedback.improvementPoints.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="font-medium mb-2">Improvement Points</h4>
-                  <ul className="list-disc pl-5 space-y-2">
-                    {tempFeedback.improvementPoints.map((point, index) => (
-                      <li key={index} className="text-sm">{point}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <FeedbackPreview 
+        feedback={tempFeedback} 
+        showFeedback={showFeedback} 
+      />
       
-      <div className={`flex ${isMobile ? "w-full flex-col" : ""} gap-2 ${!isMobile && "ml-auto"}`}>
-        <Button 
-          onClick={handleCreateDocument} 
-          className={isMobile ? "w-full" : ""}
-          disabled={isSaving}
-        >
-          <Save className="mr-2 h-4 w-4" />
-          {isSaving ? "Saving..." : "Save Document"}
-        </Button>
-        <Button 
-          onClick={saveAndGenerateFeedback}
-          variant="secondary"
-          className={isMobile ? "w-full" : ""}
-          disabled={isSaving || isGeneratingFeedback}
-        >
-          <Sparkles className="mr-2 h-4 w-4" />
-          {isSaving || isGeneratingFeedback ? "Processing..." : "Save & Get AI Feedback"}
-        </Button>
-        
-        {/* Button for testing feedback without saving */}
-        <Button 
-          onClick={handleGenerateTempFeedback}
-          variant="outline"
-          className={isMobile ? "w-full" : ""}
-          disabled={isGeneratingFeedback}
-        >
-          <Sparkles className="mr-2 h-4 w-4" />
-          {isGeneratingFeedback ? "Generating..." : "Test AI Feedback"}
-        </Button>
-      </div>
+      <EditorActions
+        isMobile={isMobile}
+        isSaving={isSaving}
+        isGeneratingFeedback={isGeneratingFeedback}
+        onSave={handleCreateDocument}
+        onSaveAndGenerateFeedback={saveAndGenerateFeedback}
+        onGenerateTempFeedback={handleGenerateTempFeedback}
+      />
     </div>
   );
 };
