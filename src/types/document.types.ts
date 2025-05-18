@@ -1,4 +1,10 @@
 
+export interface QuotedImprovement {
+  originalText: string;
+  improvedText: string;
+  explanation: string;
+}
+
 export interface Document {
   id: string;
   documentType: "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay";
@@ -6,6 +12,7 @@ export interface Document {
   contentRaw: string;
   contentFeedback?: string;
   improvementPoints?: string[];
+  quotedImprovements?: QuotedImprovement[];
   score?: number;
   versionNumber: number;
   createdAt: string;

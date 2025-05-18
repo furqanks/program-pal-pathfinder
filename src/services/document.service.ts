@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Document } from "@/types/document.types";
@@ -10,6 +11,7 @@ export const formatDocumentFromDb = (doc: any): Document => ({
   contentRaw: doc.original_text,
   contentFeedback: doc.feedback_summary,
   improvementPoints: doc.improvement_points,
+  quotedImprovements: doc.quoted_improvements,
   score: doc.score,
   versionNumber: doc.version_number,
   createdAt: doc.created_at
@@ -86,6 +88,11 @@ export const addDocument = async (
 export const generateDocumentFeedback = async (documentId: string): Promise<{
   summary?: string;
   improvementPoints?: string[];
+  quotedImprovements?: Array<{
+    originalText: string;
+    improvedText: string;
+    explanation: string;
+  }>;
   score?: number;
 } | undefined> => {
   try {
@@ -118,6 +125,7 @@ export const generateDocumentFeedback = async (documentId: string): Promise<{
         .update({
           feedback_summary: data.summary,
           improvement_points: data.improvementPoints,
+          quoted_improvements: data.quotedImprovements || [],
           score: data.score
         })
         .eq('id', documentId);
@@ -127,6 +135,7 @@ export const generateDocumentFeedback = async (documentId: string): Promise<{
       return {
         summary: data.summary,
         improvementPoints: data.improvementPoints,
+        quotedImprovements: data.quotedImprovements || [],
         score: data.score
       };
     } else {
@@ -146,6 +155,11 @@ export const generateTestFeedback = async (
 ): Promise<{
   summary: string;
   improvementPoints: string[];
+  quotedImprovements: Array<{
+    originalText: string;
+    improvedText: string;
+    explanation: string;
+  }>;
   score: number;
 }> => {
   try {
@@ -164,6 +178,7 @@ export const generateTestFeedback = async (
       return {
         summary: data.summary,
         improvementPoints: data.improvementPoints,
+        quotedImprovements: data.quotedImprovements || [],
         score: data.score
       };
     } else {
@@ -186,11 +201,29 @@ export const generateMockFeedback = () => {
     "Proofread for grammatical errors and clarity.",
     "Add more details about your long-term goals."
   ];
+  const mockQuotedImprovements = [
+    {
+      originalText: "I am a hard worker with good grades.",
+      improvedText: "My dedication to academic excellence has resulted in maintaining a 3.9 GPA while participating in multiple research projects.",
+      explanation: "This revision provides specific evidence of your work ethic and academic achievements."
+    },
+    {
+      originalText: "I have always been interested in this field.",
+      improvedText: "My passion for biomechanical engineering was ignited during my sophomore year when I designed a prosthetic hand prototype that won the university innovation challenge.",
+      explanation: "This gives a specific origin story for your interest and provides evidence of your engagement with the field."
+    },
+    {
+      originalText: "I hope to make a difference someday.",
+      improvedText: "I aim to leverage my technical skills and innovative thinking to develop affordable medical devices that can serve underrepresented communities worldwide.",
+      explanation: "This statement provides a specific vision and demonstrates thoughtful consideration of how your work can impact society."
+    }
+  ];
   const mockScore = 7;
   
   return {
     summary: mockFeedback,
     improvementPoints: mockPoints,
+    quotedImprovements: mockQuotedImprovements,
     score: mockScore
   };
 };

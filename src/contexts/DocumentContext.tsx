@@ -90,6 +90,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
             ...doc,
             contentFeedback: feedback.summary,
             improvementPoints: feedback.improvementPoints,
+            quotedImprovements: feedback.quotedImprovements,
             score: feedback.score
           } : doc
         ));
@@ -109,6 +110,7 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
           ...doc,
           contentFeedback: mockFeedback.summary,
           improvementPoints: mockFeedback.improvementPoints,
+          quotedImprovements: mockFeedback.quotedImprovements,
           score: mockFeedback.score
         } : doc
       ));
@@ -131,5 +133,4 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Change "export { Document };" to "export type { Document };"
 export type { Document };

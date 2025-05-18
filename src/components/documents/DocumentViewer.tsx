@@ -39,7 +39,7 @@ const DocumentViewer = ({
   };
   
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="border rounded-md p-4 bg-muted/30">
         <pre className="whitespace-pre-wrap font-sans text-sm">
           {selectedDocument.contentRaw}
@@ -47,31 +47,59 @@ const DocumentViewer = ({
       </div>
       
       {selectedDocument.contentFeedback ? (
-        <div>
-          <h3 className="text-lg font-medium mb-2">AI Feedback</h3>
-          <div className="border rounded-md p-4 bg-accent/20">
-            <div className="prose prose-sm max-w-none">
-              <p>{selectedDocument.contentFeedback}</p>
-            </div>
-            
-            {selectedDocument.score !== null && (
-              <div className="mt-4 flex items-center gap-2">
-                <span className="font-medium">Overall Score:</span>
-                <Badge>{selectedDocument.score}/10</Badge>
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-lg font-medium mb-2">AI Feedback</h3>
+            <div className="border rounded-md p-4 bg-accent/20">
+              <div className="prose prose-sm max-w-none">
+                <p>{selectedDocument.contentFeedback}</p>
               </div>
-            )}
+              
+              {selectedDocument.score !== null && (
+                <div className="mt-4 flex items-center gap-2">
+                  <span className="font-medium">Overall Score:</span>
+                  <Badge>{selectedDocument.score}/10</Badge>
+                </div>
+              )}
 
-            {selectedDocument.improvementPoints && selectedDocument.improvementPoints.length > 0 && (
-              <div className="mt-4">
-                <h4 className="font-medium mb-2">Improvement Points</h4>
-                <ul className="list-disc pl-5 space-y-1">
-                  {selectedDocument.improvementPoints.map((point, index) => (
-                    <li key={index} className="text-sm">{point}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+              {selectedDocument.improvementPoints && selectedDocument.improvementPoints.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-medium mb-2">Improvement Points</h4>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {selectedDocument.improvementPoints.map((point, index) => (
+                      <li key={index} className="text-sm">{point}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           </div>
+          
+          {selectedDocument.quotedImprovements && selectedDocument.quotedImprovements.length > 0 && (
+            <div>
+              <h3 className="text-lg font-medium mb-3">Suggested Text Improvements</h3>
+              <div className="space-y-4">
+                {selectedDocument.quotedImprovements.map((improvement, index) => (
+                  <div key={index} className="border border-border rounded-md p-4">
+                    <div className="bg-muted/50 p-3 rounded mb-3">
+                      <h5 className="text-xs uppercase text-muted-foreground mb-1">Original Text:</h5>
+                      <p className="text-sm italic">"{improvement.originalText}"</p>
+                    </div>
+                    
+                    <div className="bg-accent/20 p-3 rounded mb-3">
+                      <h5 className="text-xs uppercase text-muted-foreground mb-1">Improved Version:</h5>
+                      <p className="text-sm font-medium">"{improvement.improvedText}"</p>
+                    </div>
+                    
+                    <div className="text-sm text-muted-foreground mt-2">
+                      <h5 className="text-xs uppercase mb-1">Why it's better:</h5>
+                      <p>{improvement.explanation}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center p-8">

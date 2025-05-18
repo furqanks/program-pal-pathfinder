@@ -8,6 +8,7 @@ import DocumentContentEditor from "./editor/DocumentContentEditor";
 import FeedbackPreview from "./editor/FeedbackPreview";
 import EditorActions from "./editor/EditorActions";
 import { generateTestFeedback } from "@/services/document.service";
+import { QuotedImprovement } from "@/types/document.types";
 
 interface DocumentEditorProps {
   activeDocumentType: string;
@@ -34,6 +35,7 @@ const DocumentEditor = ({
     content: string;
     feedback?: string;
     improvementPoints?: string[];
+    quotedImprovements?: QuotedImprovement[];
     score?: number;
   } | null>(null);
   
@@ -92,6 +94,7 @@ const DocumentEditor = ({
         content: documentContent,
         feedback: feedback.summary,
         improvementPoints: feedback.improvementPoints,
+        quotedImprovements: feedback.quotedImprovements,
         score: feedback.score
       });
       
@@ -135,7 +138,7 @@ const DocumentEditor = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <DocumentContentEditor
         documentContent={documentContent}
         setDocumentContent={setDocumentContent}

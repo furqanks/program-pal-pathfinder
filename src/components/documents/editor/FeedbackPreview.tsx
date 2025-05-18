@@ -1,12 +1,14 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { QuotedImprovement } from "@/types/document.types";
 
 interface FeedbackPreviewProps {
   feedback: {
     content: string;
     feedback?: string;
     improvementPoints?: string[];
+    quotedImprovements?: QuotedImprovement[];
     score?: number;
   } | null;
   showFeedback: boolean;
@@ -39,6 +41,32 @@ const FeedbackPreview = ({ feedback, showFeedback }: FeedbackPreviewProps) => {
                   <li key={index} className="text-sm">{point}</li>
                 ))}
               </ul>
+            </div>
+          )}
+          
+          {feedback.quotedImprovements && feedback.quotedImprovements.length > 0 && (
+            <div className="mt-6">
+              <h4 className="font-medium mb-3">Suggested Text Improvements</h4>
+              <div className="space-y-4">
+                {feedback.quotedImprovements.map((improvement, index) => (
+                  <div key={index} className="border border-border rounded-md p-3">
+                    <div className="bg-muted/50 p-2 rounded mb-2">
+                      <h5 className="text-xs uppercase text-muted-foreground mb-1">Original Text:</h5>
+                      <p className="text-sm italic">"{improvement.originalText}"</p>
+                    </div>
+                    
+                    <div className="bg-accent/20 p-2 rounded mb-2">
+                      <h5 className="text-xs uppercase text-muted-foreground mb-1">Improved Version:</h5>
+                      <p className="text-sm font-medium">"{improvement.improvedText}"</p>
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground mt-2">
+                      <h5 className="uppercase mb-1">Why it's better:</h5>
+                      <p>{improvement.explanation}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

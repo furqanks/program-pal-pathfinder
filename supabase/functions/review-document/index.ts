@@ -111,14 +111,28 @@ serve(async (req) => {
     }
     
     systemPrompt += `
+      I want you to identify 3-5 specific sections/sentences from the document that could be improved.
+      For each identified section:
+      1. Quote the original text exactly as it appears in the document
+      2. Provide a specific, improved version of that text
+      3. Explain why your version is better
+      
       Format your response as a JSON object with the following structure:
       {
         "summary": "One paragraph summarizing the quality of the document and overall assessment",
         "score": A number between 1 and 10 representing the quality of the document,
-        "improvementPoints": ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5"]
+        "improvementPoints": ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5"],
+        "quotedImprovements": [
+          {
+            "originalText": "Exact quote from the document",
+            "improvedText": "Your improved version of the text",
+            "explanation": "Brief explanation of why this improvement helps"
+          }
+        ]
       }
       
-      Provide 3-6 clear improvement points. Be specific, actionable, and constructive.`;
+      The quotedImprovements array should contain 3-5 items.
+      Be specific, actionable, and constructive.`;
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -163,7 +177,8 @@ serve(async (req) => {
       feedbackData = {
         summary: "There was an error processing the feedback. Please try again later.",
         score: 5,
-        improvementPoints: ["Could not generate specific feedback points."]
+        improvementPoints: ["Could not generate specific feedback points."],
+        quotedImprovements: []
       };
     }
 
@@ -174,6 +189,7 @@ serve(async (req) => {
           summary: feedbackData.summary,
           score: feedbackData.score,
           improvementPoints: feedbackData.improvementPoints,
+          quotedImprovements: feedbackData.quotedImprovements || []
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -204,6 +220,7 @@ serve(async (req) => {
         original_text: content,
         feedback_summary: feedbackData.summary,
         improvement_points: feedbackData.improvementPoints,
+        quoted_improvements: feedbackData.quotedImprovements || [],
         score: feedbackData.score,
         version_number: versionNumber
       })
@@ -224,6 +241,7 @@ serve(async (req) => {
         summary: feedbackData.summary,
         score: feedbackData.score,
         improvementPoints: feedbackData.improvementPoints,
+        quotedImprovements: feedbackData.quotedImprovements || [],
         versionNumber
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
