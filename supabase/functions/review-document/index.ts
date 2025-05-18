@@ -11,7 +11,8 @@ interface ReviewDocumentBody {
   content: string;
   documentType: string;
   programId: string | null;
-  testMode?: boolean; // Flag to indicate if this is just for testing
+  testMode?: boolean;
+  fileName?: string;
 }
 
 // Helper function to handle CORS preflight requests
@@ -53,9 +54,10 @@ async function getUserIdFromJwt(jwt: string) {
 }
 
 // Function to get the system prompt based on document type
-function getSystemPrompt(documentType: string) {
+function getSystemPrompt(documentType: string, fileName?: string) {
   let systemPrompt = '';
   
+  // Base prompt by document type
   switch(documentType) {
     case 'SOP':
       systemPrompt = `You are an expert academic application reviewer, specialized in reviewing Statements of Purpose for university applications.
@@ -86,6 +88,12 @@ function getSystemPrompt(documentType: string) {
       Your task is to review the given ${documentType} and provide constructive feedback.`;
   }
   
+  // Add information about file if it's an uploaded document
+  if (fileName) {
+    systemPrompt += `\nNote: This content was extracted from the uploaded file "${fileName}".`;
+  }
+  
+  // Add instructions for response format
   systemPrompt += `
     I want you to identify 3-5 specific sections/sentences from the document that could be improved.
     For each identified section:
@@ -122,7 +130,7 @@ async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: s
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini', // Using a more affordable model
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
@@ -167,7 +175,8 @@ async function saveFeedbackToDatabase(
   documentType: string, 
   programId: string | null, 
   content: string, 
-  feedbackData: any
+  feedbackData: any,
+  fileName?: string
 ) {
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -190,6 +199,7 @@ async function saveFeedbackToDatabase(
       document_type: documentType,
       program_id: programId,
       original_text: content,
+      file_name: fileName || null,
       feedback_summary: feedbackData.summary,
       improvement_points: feedbackData.improvementPoints,
       quoted_improvements: feedbackData.quotedImprovements || [],
@@ -210,7 +220,7 @@ async function saveFeedbackToDatabase(
 // Main function to review document
 async function reviewDocument(req: Request) {
   // Get request data
-  const { content, documentType, programId, testMode } = await req.json() as ReviewDocumentBody;
+  const { content, documentType, programId, testMode, fileName } = await req.json() as ReviewDocumentBody;
   
   // Validate request data
   const validation = validateRequestData(content);
@@ -245,11 +255,11 @@ async function reviewDocument(req: Request) {
     userId = userIdResult.userId;
   }
   
-  console.log(`Processing ${documentType} review ${testMode ? 'in test mode' : `for user ${userId}`}`);
+  console.log(`Processing ${documentType} review ${testMode ? 'in test mode' : `for user ${userId}`}${fileName ? ` (file: ${fileName})` : ''}`);
 
   try {
     // Get system prompt
-    const systemPrompt = getSystemPrompt(documentType);
+    const systemPrompt = getSystemPrompt(documentType, fileName);
     
     // Call OpenAI API
     const aiResponse = await callOpenAI(content, systemPrompt, openaiApiKey);
@@ -276,7 +286,8 @@ async function reviewDocument(req: Request) {
       documentType, 
       programId, 
       content, 
-      feedbackData
+      feedbackData,
+      fileName
     );
 
     // Return response

@@ -15,6 +15,7 @@ export interface Document {
   quotedImprovements?: QuotedImprovement[];
   score?: number;
   versionNumber: number;
+  fileName?: string | null;
   createdAt: string;
 }
 

@@ -39,8 +39,17 @@ const DocumentEditor = ({
     score?: number;
   } | null>(null);
   
+  // State for uploaded file
+  const [fileName, setFileName] = useState<string | null>(null);
+  
   // State to control visibility of feedback
   const [showFeedback, setShowFeedback] = useState(false);
+
+  const handleFileContent = (content: string, uploadedFileName: string) => {
+    setDocumentContent(content);
+    setFileName(uploadedFileName);
+    toast.success(`File "${uploadedFileName}" processed successfully`);
+  };
 
   const handleCreateDocument = async () => {
     if (!documentContent.trim()) {
@@ -54,7 +63,8 @@ const DocumentEditor = ({
       const savedDoc = await addDocument({
         documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
         linkedProgramId: selectedProgramId,
-        contentRaw: documentContent
+        contentRaw: documentContent,
+        fileName: fileName
       });
       
       if (savedDoc) {
@@ -87,7 +97,8 @@ const DocumentEditor = ({
       const feedback = await generateTestFeedback(
         documentContent,
         activeDocumentType,
-        selectedProgramId
+        selectedProgramId,
+        fileName || undefined
       );
       
       setTempFeedback({
@@ -119,7 +130,8 @@ const DocumentEditor = ({
       const savedDoc = await addDocument({
         documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
         linkedProgramId: selectedProgramId,
-        contentRaw: documentContent
+        contentRaw: documentContent,
+        fileName: fileName
       });
       
       if (savedDoc) {

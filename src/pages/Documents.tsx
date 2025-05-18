@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDocumentContext, DocumentProvider } from "@/contexts/DocumentContext";
@@ -80,7 +81,7 @@ const Documents = () => {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Document Assistant</h1>
         <p className="text-muted-foreground mt-1">
-          Get AI feedback on your applications and essays
+          Get AI feedback on your applications, essays, and uploaded documents
         </p>
       </div>
       

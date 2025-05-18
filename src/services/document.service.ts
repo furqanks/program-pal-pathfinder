@@ -14,6 +14,7 @@ export const formatDocumentFromDb = (doc: any): Document => ({
   quotedImprovements: doc.quoted_improvements,
   score: doc.score,
   versionNumber: doc.version_number,
+  fileName: doc.file_name || null,
   createdAt: doc.created_at
 });
 
@@ -68,6 +69,7 @@ export const addDocument = async (
         document_type: doc.documentType,
         program_id: doc.linkedProgramId,
         original_text: doc.contentRaw,
+        file_name: doc.fileName || null,
         version_number: versionNumber || 1
       })
       .select()
@@ -113,7 +115,8 @@ export const generateDocumentFeedback = async (documentId: string): Promise<{
       body: {
         content: document.original_text,
         documentType: document.document_type,
-        programId: document.program_id
+        programId: document.program_id,
+        fileName: document.file_name
       }
     });
 
@@ -151,7 +154,8 @@ export const generateDocumentFeedback = async (documentId: string): Promise<{
 export const generateTestFeedback = async (
   content: string,
   documentType: string,
-  programId: string | null
+  programId: string | null,
+  fileName?: string
 ): Promise<{
   summary: string;
   improvementPoints: string[];
@@ -168,7 +172,8 @@ export const generateTestFeedback = async (
         content,
         documentType,
         programId,
-        testMode: true // Flag to indicate this is just for testing
+        testMode: true,
+        fileName
       }
     });
 
