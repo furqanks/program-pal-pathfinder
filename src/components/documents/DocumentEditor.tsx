@@ -7,6 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import DocumentContentEditor from "./editor/DocumentContentEditor";
 import FeedbackPreview from "./editor/FeedbackPreview";
 import EditorActions from "./editor/EditorActions";
+import { generateTestFeedback } from "@/services/document.service";
 
 interface DocumentEditorProps {
   activeDocumentType: string;
@@ -67,7 +68,7 @@ const DocumentEditor = ({
     }
   };
 
-  // Generate feedback without saving
+  // Generate feedback without saving - now using real API
   const handleGenerateTempFeedback = async () => {
     if (!documentContent.trim()) {
       toast.error("Please enter document content");
@@ -78,30 +79,28 @@ const DocumentEditor = ({
     setShowFeedback(false); // Reset feedback visibility
     
     try {
-      // Simulate feedback generation without saving
-      setTimeout(() => {
-        const mockFeedback = {
-          content: documentContent,
-          feedback: "This is sample feedback for testing purposes. In a production environment, this would be AI-generated feedback based on your document content.",
-          improvementPoints: [
-            "Consider adding more specific examples about your experience.",
-            "The introduction could be stronger to grab attention.",
-            "Make sure to align your skills with the program requirements.",
-            "Proofread for grammatical errors and clarity.",
-            "Add more details about your long-term goals."
-          ],
-          score: 7
-        };
-        
-        setTempFeedback(mockFeedback);
-        setShowFeedback(true); // Show feedback after generation
-        toast.success("Test feedback generated");
-        setIsGeneratingFeedback(false);
-      }, 1500);
+      toast.info("Generating AI feedback...");
       
+      // Use the real API to generate feedback without saving to the database
+      const feedback = await generateTestFeedback(
+        documentContent,
+        activeDocumentType,
+        selectedProgramId
+      );
+      
+      setTempFeedback({
+        content: documentContent,
+        feedback: feedback.summary,
+        improvementPoints: feedback.improvementPoints,
+        score: feedback.score
+      });
+      
+      setShowFeedback(true);
+      toast.success("AI feedback generated");
     } catch (error) {
       console.error("Error generating temporary feedback:", error);
-      toast.error("Failed to generate test feedback");
+      toast.error("Failed to generate feedback");
+    } finally {
       setIsGeneratingFeedback(false);
     }
   };

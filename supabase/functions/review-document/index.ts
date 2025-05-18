@@ -11,6 +11,7 @@ interface ReviewDocumentBody {
   content: string;
   documentType: string;
   programId: string | null;
+  testMode?: boolean; // Flag to indicate if this is just for testing
 }
 
 serve(async (req) => {
@@ -32,7 +33,7 @@ serve(async (req) => {
     }
 
     // Get request data
-    const { content, documentType, programId } = await req.json() as ReviewDocumentBody;
+    const { content, documentType, programId, testMode } = await req.json() as ReviewDocumentBody;
     
     if (!content) {
       return new Response(
@@ -41,36 +42,40 @@ serve(async (req) => {
       );
     }
 
-    // Extract JWT token from request
-    const authHeader = req.headers.get('authorization') || '';
-    const jwt = authHeader.replace('Bearer ', '');
-    
-    if (!jwt) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // For test mode, we don't need to validate the auth token
+    let userId;
+    if (!testMode) {
+      // Extract JWT token from request
+      const authHeader = req.headers.get('authorization') || '';
+      const jwt = authHeader.replace('Bearer ', '');
+      
+      if (!jwt) {
+        return new Response(
+          JSON.stringify({ error: 'Missing authorization token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-    // Initialize Supabase client with JWT
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Get user ID from JWT
-    const { data: userData, error: userError } = await supabase.auth.getUser(jwt);
-    
-    if (userError || !userData) {
-      console.error('Error getting user data:', userError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid authorization token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Initialize Supabase client with JWT
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      
+      // Get user ID from JWT
+      const { data: userData, error: userError } = await supabase.auth.getUser(jwt);
+      
+      if (userError || !userData) {
+        console.error('Error getting user data:', userError);
+        return new Response(
+          JSON.stringify({ error: 'Invalid authorization token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      userId = userData.user.id;
     }
     
-    const userId = userData.user.id;
-    
-    console.log(`Processing ${documentType} review for user ${userId}`);
+    console.log(`Processing ${documentType} review ${testMode ? 'in test mode' : `for user ${userId}`}`);
 
     // Set system prompt based on document type
     let systemPrompt = '';
@@ -161,6 +166,24 @@ serve(async (req) => {
         improvementPoints: ["Could not generate specific feedback points."]
       };
     }
+
+    // For test mode, just return the feedback without saving to database
+    if (testMode) {
+      return new Response(
+        JSON.stringify({
+          summary: feedbackData.summary,
+          score: feedbackData.score,
+          improvementPoints: feedbackData.improvementPoints,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // If not in test mode, proceed with database operations
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Get next version number
     const { data: versionData } = await supabase.rpc('get_next_version_number', {

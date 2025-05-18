@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Document } from "@/types/document.types";
@@ -43,7 +42,6 @@ export const addDocument = async (
   doc: Omit<Document, "id" | "versionNumber" | "createdAt">
 ): Promise<Document | undefined> => {
   try {
-    // Get the current user's ID
     const currentUser = await supabase.auth.getUser();
     
     if (!currentUser.data.user) {
@@ -51,7 +49,6 @@ export const addDocument = async (
       return;
     }
     
-    // Get the next version number from Supabase
     const { data: versionNumber, error: versionError } = await supabase.rpc(
       'get_next_version_number',
       {
@@ -63,7 +60,6 @@ export const addDocument = async (
 
     if (versionError) throw versionError;
 
-    // Insert the document into Supabase
     const { data, error } = await supabase
       .from('user_documents')
       .insert({
@@ -77,7 +73,6 @@ export const addDocument = async (
 
     if (error) throw error;
 
-    // Format and return the new document
     const newDocument = formatDocumentFromDb(data);
     toast.success("Document saved successfully");
     return newDocument;
@@ -94,7 +89,6 @@ export const generateDocumentFeedback = async (documentId: string): Promise<{
   score?: number;
 } | undefined> => {
   try {
-    // Find document in database
     const { data: document, error: docError } = await supabase
       .from('user_documents')
       .select('*')
@@ -108,7 +102,6 @@ export const generateDocumentFeedback = async (documentId: string): Promise<{
       return;
     }
     
-    // Call the review-document edge function
     const { data, error } = await supabase.functions.invoke('review-document', {
       body: {
         content: document.original_text,
@@ -120,7 +113,6 @@ export const generateDocumentFeedback = async (documentId: string): Promise<{
     if (error) throw error;
     
     if (data && data.summary) {
-      // Update the document with the feedback
       const { error: updateError } = await supabase
         .from('user_documents')
         .update({
@@ -143,6 +135,44 @@ export const generateDocumentFeedback = async (documentId: string): Promise<{
   } catch (error) {
     console.error("Error generating feedback:", error);
     throw error;
+  }
+};
+
+// Generate real test feedback without saving to database
+export const generateTestFeedback = async (
+  content: string,
+  documentType: string,
+  programId: string | null
+): Promise<{
+  summary: string;
+  improvementPoints: string[];
+  score: number;
+}> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('review-document', {
+      body: {
+        content,
+        documentType,
+        programId,
+        testMode: true // Flag to indicate this is just for testing
+      }
+    });
+
+    if (error) throw error;
+    
+    if (data && data.summary) {
+      return {
+        summary: data.summary,
+        improvementPoints: data.improvementPoints,
+        score: data.score
+      };
+    } else {
+      throw new Error(data?.error || "Failed to generate test feedback");
+    }
+  } catch (error) {
+    console.error("Error generating test feedback:", error);
+    toast.error("Error generating feedback. Using fallback mock data.");
+    return generateMockFeedback();
   }
 };
 
