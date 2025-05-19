@@ -92,6 +92,51 @@ function getSystemPrompt(documentType: string, fileName?: string) {
   return systemPrompt;
 }
 
+// Function to get the system prompt for generating an improved draft
+function getImprovedDraftPrompt(documentType: string) {
+  let systemPrompt = '';
+  
+  // Base prompt by document type
+  switch(documentType) {
+    case 'SOP':
+      systemPrompt = `You are an expert academic application writer, specialized in improving Statements of Purpose for university applications.`;
+      break;
+    case 'CV':
+      systemPrompt = `You are an expert academic application writer, specialized in improving CVs and resumes for university applications.`;
+      break;
+    case 'Essay':
+      systemPrompt = `You are an expert academic application writer, specialized in improving essays for university applications.`;
+      break;
+    case 'LOR':
+      systemPrompt = `You are an expert academic application writer, specialized in improving Letters of Recommendation for university applications.`;
+      break;
+    case 'PersonalEssay':
+      systemPrompt = `You are an expert academic application writer, specialized in improving Personal Essays for university applications.`;
+      break;
+    case 'ScholarshipEssay':
+      systemPrompt = `You are an expert academic application writer, specialized in improving Scholarship Essays for university applications.`;
+      break;
+    default:
+      systemPrompt = `You are an expert academic application writer, specialized in improving ${documentType}s for university applications.`;
+  }
+  
+  systemPrompt += `
+    Your task is to improve the provided document based on the feedback given.
+    
+    IMPORTANT:
+    1. Maintain the SAME OVERALL STRUCTURE and FORMAT as the original document
+    2. Keep the same topics, themes, and personal experiences
+    3. Preserve the author's voice and personal style
+    4. Apply the specific improvements suggested in the feedback
+    5. Make additional improvements to the document's clarity, flow, and impact
+    6. Do not add fictional details or experiences that weren't in the original
+    
+    Return ONLY the improved document text, with no additional comments or explanations.
+    The improved version should be ready to use as-is.`;
+
+  return systemPrompt;
+}
+
 // Function to call OpenAI API
 async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: string) {
   console.log(`Analyzing document content (length: ${content.length})`);
@@ -133,6 +178,48 @@ async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: s
   }
 }
 
+// Function to generate an improved draft based on original content and feedback
+async function generateImprovedDraft(originalContent: string, feedbackData: any, documentType: string, openaiApiKey: string) {
+  console.log(`Generating improved draft for ${documentType} (length: ${originalContent.length})`);
+  
+  // Prepare the feedback in a readable format for the AI
+  const feedbackForAI = `
+  The original document received the following feedback:
+  
+  Overall assessment: ${feedbackData.summary}
+  
+  Key improvement points:
+  ${feedbackData.improvementPoints.map((point: string) => `- ${point}`).join('\n')}
+  
+  Specific text improvements suggested:
+  ${feedbackData.quotedImprovements.map((improvement: any) => 
+    `Original: "${improvement.originalText}"
+    Suggested improvement: "${improvement.improvedText}"
+    Reason: ${improvement.explanation}`
+  ).join('\n\n')}
+  `;
+  
+  // Combine original content with feedback for context
+  const promptContent = `
+  ORIGINAL DOCUMENT:
+  ${originalContent}
+  
+  FEEDBACK:
+  ${feedbackForAI}
+  
+  Please generate an improved version of this document that addresses all the feedback points while maintaining the author's voice and the document's purpose.
+  `;
+  
+  try {
+    const systemPrompt = getImprovedDraftPrompt(documentType);
+    const improvedContent = await callOpenAI(promptContent, systemPrompt, openaiApiKey);
+    return improvedContent;
+  } catch (error) {
+    console.error('Error generating improved draft:', error);
+    throw new Error('Failed to generate improved document draft');
+  }
+}
+
 // Main handler function
 serve(async (req) => {
   // CORS preflight
@@ -142,10 +229,11 @@ serve(async (req) => {
 
   try {
     // Get request data
-    const { content, documentType, programId, testMode, fileName } = await req.json();
+    const requestData = await req.json();
+    const { content, documentType, programId, testMode, fileName, action, originalContent, feedback } = requestData;
     
     // Validate request data
-    if (!content) {
+    if (!content && !originalContent) {
       return createErrorResponse('Missing document content', 400);
     }
 
@@ -156,41 +244,63 @@ serve(async (req) => {
       return createErrorResponse('Server configuration error: Missing API key', 500);
     }
     
-    // Log request information
-    console.log(`Processing ${documentType} review ${testMode ? 'in test mode' : 'for saving to DB'}${fileName ? ` (file: ${fileName})` : ''}`);
-    console.log(`Content length: ${content.length} characters`);
-    console.log(`Content sample: ${content.substring(0, 100)}...`);
-
-    try {
-      // Get system prompt
-      const systemPrompt = getSystemPrompt(documentType, fileName);
-      
-      // Call OpenAI API
-      const aiResponse = await callOpenAI(content, systemPrompt, openaiApiKey);
-      
-      // Parse the AI response
-      let feedbackData;
-      try {
-        feedbackData = JSON.parse(aiResponse);
-      } catch (parseError) {
-        console.error('Error parsing AI response:', parseError);
-        console.error('Raw AI response:', aiResponse);
-        return createErrorResponse('Failed to parse AI response', 500);
+    // Handle different actions
+    if (action === 'generate-improved-draft') {
+      if (!originalContent || !feedback) {
+        return createErrorResponse('Missing original content or feedback for draft generation', 400);
       }
+      
+      try {
+        console.log(`Generating improved draft for ${documentType}`);
+        const improvedDraft = await generateImprovedDraft(originalContent, feedback, documentType, openaiApiKey);
+        
+        return new Response(
+          JSON.stringify({ improvedDraft }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (error) {
+        console.error('Error generating improved draft:', error);
+        return createErrorResponse(error.message, 500);
+      }
+    } else {
+      // Default action: review document
+      
+      // Log request information
+      console.log(`Processing ${documentType} review ${testMode ? 'in test mode' : 'for saving to DB'}${fileName ? ` (file: ${fileName})` : ''}`);
+      console.log(`Content length: ${content.length} characters`);
+      console.log(`Content sample: ${content.substring(0, 100)}...`);
 
-      // Return response
-      return new Response(
-        JSON.stringify({
-          summary: feedbackData.summary,
-          score: feedbackData.score,
-          improvementPoints: feedbackData.improvementPoints,
-          quotedImprovements: feedbackData.quotedImprovements || []
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } catch (error) {
-      console.error('Error in review-document function:', error);
-      return createErrorResponse(error.message, 500);
+      try {
+        // Get system prompt
+        const systemPrompt = getSystemPrompt(documentType, fileName);
+        
+        // Call OpenAI API
+        const aiResponse = await callOpenAI(content, systemPrompt, openaiApiKey);
+        
+        // Parse the AI response
+        let feedbackData;
+        try {
+          feedbackData = JSON.parse(aiResponse);
+        } catch (parseError) {
+          console.error('Error parsing AI response:', parseError);
+          console.error('Raw AI response:', aiResponse);
+          return createErrorResponse('Failed to parse AI response', 500);
+        }
+
+        // Return response
+        return new Response(
+          JSON.stringify({
+            summary: feedbackData.summary,
+            score: feedbackData.score,
+            improvementPoints: feedbackData.improvementPoints,
+            quotedImprovements: feedbackData.quotedImprovements || []
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (error) {
+        console.error('Error in review-document function:', error);
+        return createErrorResponse(error.message, 500);
+      }
     }
   } catch (error) {
     console.error('Unhandled error in review-document function:', error);

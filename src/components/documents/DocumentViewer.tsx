@@ -1,12 +1,13 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sparkles, PlusCircle, FileText } from "lucide-react";
+import { Sparkles, PlusCircle, FileText, Wand } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useDocumentContext } from "@/contexts/DocumentContext";
 import { Document } from "@/types/document.types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
+import { generateImprovedDraft } from "@/services/document.service";
 
 interface DocumentViewerProps {
   selectedDocument: Document;
@@ -20,8 +21,9 @@ const DocumentViewer = ({
   documentTypeLabels
 }: DocumentViewerProps) => {
   const isMobile = useIsMobile();
-  const { generateFeedback } = useDocumentContext();
+  const { generateFeedback, addDocument } = useDocumentContext();
   const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
+  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   
   const handleGenerateFeedback = async () => {
     if (selectedDocument.id) {
@@ -35,6 +37,50 @@ const DocumentViewer = ({
       } finally {
         setIsGeneratingFeedback(false);
       }
+    }
+  };
+  
+  const handleGenerateImprovedDraft = async () => {
+    if (!selectedDocument.contentFeedback) {
+      toast.error("Feedback must be generated before creating an improved draft");
+      return;
+    }
+    
+    setIsGeneratingDraft(true);
+    toast.info("Generating improved draft...");
+    
+    try {
+      // Get the feedback data
+      const feedbackData = {
+        summary: selectedDocument.contentFeedback,
+        improvementPoints: selectedDocument.improvementPoints || [],
+        quotedImprovements: selectedDocument.quotedImprovements || [],
+        score: selectedDocument.score || 0
+      };
+      
+      // Generate improved draft
+      const improvedContent = await generateImprovedDraft(
+        selectedDocument.contentRaw,
+        feedbackData,
+        selectedDocument.documentType
+      );
+      
+      // Create a new document with the improved content
+      const newDocument = await addDocument({
+        documentType: selectedDocument.documentType,
+        linkedProgramId: selectedDocument.linkedProgramId,
+        contentRaw: improvedContent,
+        fileName: null
+      });
+      
+      if (newDocument) {
+        toast.success("Improved draft created as a new version");
+      }
+    } catch (error) {
+      console.error("Error generating improved draft:", error);
+      toast.error("Failed to generate improved draft");
+    } finally {
+      setIsGeneratingDraft(false);
     }
   };
   
@@ -134,6 +180,19 @@ const DocumentViewer = ({
           <PlusCircle className="mr-2 h-4 w-4" />
           Create New Version
         </Button>
+        
+        {selectedDocument.contentFeedback && (
+          <Button 
+            onClick={handleGenerateImprovedDraft}
+            disabled={isGeneratingDraft}
+            variant="secondary"
+            className={isMobile ? "w-full" : ""}
+          >
+            <Wand className="mr-2 h-4 w-4" />
+            {isGeneratingDraft ? "Generating..." : "Generate Improved Draft"}
+          </Button>
+        )}
+        
         <Button 
           onClick={handleGenerateFeedback}
           disabled={!!selectedDocument.contentFeedback || isGeneratingFeedback}

@@ -150,6 +150,51 @@ export const generateDocumentFeedback = async (documentId: string): Promise<{
   }
 };
 
+// Generate an improved draft based on feedback
+export const generateImprovedDraft = async (
+  originalContent: string,
+  feedback: {
+    summary: string;
+    improvementPoints: string[];
+    quotedImprovements: Array<{
+      originalText: string;
+      improvedText: string;
+      explanation: string;
+    }>;
+    score: number;
+  },
+  documentType: string
+): Promise<string> => {
+  try {
+    console.log("Requesting improved draft for document...");
+    
+    const { data, error } = await supabase.functions.invoke('review-document', {
+      body: {
+        action: 'generate-improved-draft',
+        documentType,
+        originalContent,
+        feedback
+      }
+    });
+
+    if (error) {
+      console.error("Error from generate-improved-draft function:", error);
+      throw error;
+    }
+    
+    if (data && data.improvedDraft) {
+      console.log("Received improved draft from AI");
+      return data.improvedDraft;
+    } else {
+      throw new Error(data?.error || "Failed to generate improved draft");
+    }
+  } catch (error) {
+    console.error("Error generating improved draft:", error);
+    toast.error("Error generating improved draft. Please try again.");
+    throw error;
+  }
+};
+
 // Generate real test feedback without saving to database
 export const generateTestFeedback = async (
   content: string,
