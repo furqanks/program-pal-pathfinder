@@ -77,7 +77,7 @@ const FileUploadButton = ({
       // Log the extracted content for debugging
       console.log("Extracted document content:", data.text.substring(0, 100) + "...");
       
-      // Pass extracted text back to parent component
+      // Pass extracted text back to parent component WITHOUT MODIFICATION
       onFileContent(data.text, file.name);
       setUploadProgress(100);
       toast.success(`File "${file.name}" processed successfully`);

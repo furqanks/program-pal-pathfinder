@@ -44,8 +44,12 @@ const DocumentEditor = ({
   
   // State to control visibility of feedback
   const [showFeedback, setShowFeedback] = useState(false);
+  
+  // State to control file uploading
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileUploaded = (uploadedFileName: string) => {
+  const handleFileContent = (content: string, uploadedFileName: string) => {
+    setDocumentContent(content);
     setFileName(uploadedFileName);
     toast.success(`File "${uploadedFileName}" processed successfully`);
   };
@@ -79,7 +83,7 @@ const DocumentEditor = ({
     }
   };
 
-  // Generate feedback without saving - now using real API
+  // Generate feedback without saving - using real uploaded content
   const handleGenerateTempFeedback = async () => {
     if (!documentContent.trim()) {
       toast.error("Please enter document content");
@@ -93,8 +97,9 @@ const DocumentEditor = ({
       toast.info("Generating AI feedback...");
       
       // Use the real API to generate feedback without saving to the database
+      // Pass the unmodified uploaded content to the API
       const feedback = await generateTestFeedback(
-        documentContent,
+        documentContent, // Pass the exact document content from state
         activeDocumentType,
         selectedProgramId,
         fileName || undefined
@@ -155,7 +160,9 @@ const DocumentEditor = ({
         setDocumentContent={setDocumentContent}
         documentTypeLabel={documentTypeLabels[activeDocumentType]}
         isMobile={isMobile}
-        onFileUploaded={handleFileUploaded}
+        onFileContent={handleFileContent}
+        isUploading={isUploading}
+        setIsUploading={setIsUploading}
       />
       
       <FeedbackPreview 

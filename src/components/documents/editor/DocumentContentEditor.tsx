@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import FileUploadButton from "./FileUploadButton";
@@ -9,7 +8,9 @@ interface DocumentContentEditorProps {
   setDocumentContent: (content: string) => void;
   documentTypeLabel: string;
   isMobile: boolean;
-  onFileUploaded?: (fileName: string) => void;
+  onFileContent: (content: string, fileName: string) => void;
+  isUploading: boolean;
+  setIsUploading: (value: boolean) => void;
 }
 
 const DocumentContentEditor = ({ 
@@ -17,16 +18,10 @@ const DocumentContentEditor = ({
   setDocumentContent, 
   documentTypeLabel,
   isMobile,
-  onFileUploaded
+  onFileContent,
+  isUploading,
+  setIsUploading
 }: DocumentContentEditorProps) => {
-  const [isUploading, setIsUploading] = useState(false);
-  
-  const handleFileContent = (content: string, fileName: string) => {
-    setDocumentContent(content);
-    if (onFileUploaded) {
-      onFileUploaded(fileName);
-    }
-  };
   
   return (
     <div className="space-y-2">
@@ -35,7 +30,7 @@ const DocumentContentEditor = ({
           <Badge variant="outline">{documentTypeLabel}</Badge>
         </div>
         <FileUploadButton 
-          onFileContent={handleFileContent}
+          onFileContent={onFileContent}
           isUploading={isUploading}
           setIsUploading={setIsUploading}
         />

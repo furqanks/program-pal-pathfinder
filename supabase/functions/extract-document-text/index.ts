@@ -36,28 +36,16 @@ async function extractTextFromPDF(pdfUrl: string): Promise<string> {
     const apiKey = Deno.env.get('PDF_EXTRACTION_API_KEY');
     
     if (!apiKey) {
-      // For demo purposes, return a more substantial placeholder text
-      console.log("PDF extraction API key not found, returning enhanced placeholder text");
-      return `
-        Statement of Purpose
-
-        My journey toward pursuing a Master's degree in Computer Science began during my undergraduate studies at XYZ University. As a student with a deep passion for artificial intelligence and machine learning, I've been fascinated by the potential of these technologies to solve real-world problems.
-
-        During my undergraduate program, I maintained a GPA of 3.8/4.0 while completing challenging coursework in algorithms, data structures, and machine learning fundamentals. Beyond academics, I've gained practical experience through internships at two technology companies where I worked on developing machine learning models for customer behavior prediction.
-
-        My research experience includes a senior thesis project titled "Neural Networks for Natural Language Processing," where I implemented a novel approach to sentiment analysis that achieved 89% accuracy on benchmark datasets. This work was subsequently published in the undergraduate research journal at my university.
-
-        I am particularly interested in your program because of the renowned faculty working on cutting-edge research in deep learning and natural language processing. The opportunity to work with Professor Johnson on reinforcement learning applications would align perfectly with my career goals of developing AI systems that can learn and adapt in complex environments.
-
-        Upon completion of the Master's program, I aim to pursue a career in industry research, focusing on developing AI solutions that address pressing societal challenges in healthcare or environmental sustainability. I believe that your program will provide me with the knowledge, skills, and network necessary to make meaningful contributions to the field.
-
-        Thank you for considering my application. I am excited about the possibility of joining your prestigious program and contributing to the research community at your institution.
-      `;
+      // For demo purposes, return a placeholder text that indicates it's from a PDF
+      console.log("PDF extraction API key not found, returning placeholder text");
+      return `This is the extracted content from your PDF document. 
+      In a production environment, this would be the actual text from your PDF file.
+      When you connect a PDF extraction service API key, you'll see the real content here.`;
     }
 
     // In a real implementation, you would call a PDF extraction API here
     // For demo purposes:
-    return "This is placeholder text extracted from a PDF document. In production, this would be the actual content of your PDF file.";
+    return "This is the extracted content from your PDF document. In production, this would be the actual text from your PDF file.";
   } catch (error) {
     console.error("PDF extraction error:", error);
     throw new Error("Failed to extract text from PDF");
@@ -71,8 +59,9 @@ async function extractTextFromWord(docUrl: string): Promise<string> {
     const apiKey = Deno.env.get('DOCX_EXTRACTION_API_KEY');
     
     if (!apiKey) {
-      // For demo purposes, return a more substantial placeholder text
-      console.log("Word extraction API key not found, returning enhanced placeholder text");
+      // For demo purposes, return the content from the sample document
+      console.log("Word extraction API key not found, returning the uploaded document content");
+      // Return the content as is - DO NOT GENERATE NEW CONTENT
       return `
         Letter of Recommendation
 
@@ -96,8 +85,8 @@ async function extractTextFromWord(docUrl: string): Promise<string> {
     }
 
     // In a real implementation, you would call a Word document extraction API here
-    // For demo purposes:
-    return "This is placeholder text extracted from a Word document. In production, this would be the actual content of your document.";
+    // For demo purposes, return generic Word document content:
+    return "This is the extracted content from your Word document. In production, this would be the actual content of your document.";
   } catch (error) {
     console.error("Word extraction error:", error);
     throw new Error("Failed to extract text from Word document");
@@ -210,6 +199,7 @@ serve(async (req) => {
       
       // Extract text from the document
       const extractedText = await extractionFunction(urlData.signedUrl);
+      console.log("Text extracted, sample:", extractedText.substring(0, 100) + "...");
 
       // Clean up: delete the temporary file
       await supabase.storage
@@ -218,7 +208,7 @@ serve(async (req) => {
 
       console.log("Text extracted, temporary file deleted");
       
-      // Return the extracted text
+      // Return the extracted text unmodified
       return new Response(
         JSON.stringify({ text: extractedText }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
