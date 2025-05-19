@@ -62,6 +62,7 @@ export type Database = {
           created_at: string
           document_type: string
           feedback_summary: string | null
+          file_name: string | null
           id: string
           improvement_points: string[] | null
           original_text: string
@@ -73,6 +74,7 @@ export type Database = {
           created_at?: string
           document_type: string
           feedback_summary?: string | null
+          file_name?: string | null
           id?: string
           improvement_points?: string[] | null
           original_text: string
@@ -84,6 +86,7 @@ export type Database = {
           created_at?: string
           document_type?: string
           feedback_summary?: string | null
+          file_name?: string | null
           id?: string
           improvement_points?: string[] | null
           original_text?: string

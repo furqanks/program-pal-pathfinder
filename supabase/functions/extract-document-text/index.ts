@@ -134,12 +134,6 @@ serve(async (req) => {
     // Upload file to Supabase Storage
     const storageKey = generateStorageKey(fileExtension);
     
-    // Create temp bucket if it doesn't exist
-    const { data: buckets } = await supabase.storage.listBuckets();
-    if (!buckets?.find(b => b.name === 'temp')) {
-      await supabase.storage.createBucket('temp', { public: false });
-    }
-
     // Upload file
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('temp')

@@ -45,8 +45,7 @@ const DocumentEditor = ({
   // State to control visibility of feedback
   const [showFeedback, setShowFeedback] = useState(false);
 
-  const handleFileContent = (content: string, uploadedFileName: string) => {
-    setDocumentContent(content);
+  const handleFileUploaded = (uploadedFileName: string) => {
     setFileName(uploadedFileName);
     toast.success(`File "${uploadedFileName}" processed successfully`);
   };
@@ -156,6 +155,7 @@ const DocumentEditor = ({
         setDocumentContent={setDocumentContent}
         documentTypeLabel={documentTypeLabels[activeDocumentType]}
         isMobile={isMobile}
+        onFileUploaded={handleFileUploaded}
       />
       
       <FeedbackPreview 

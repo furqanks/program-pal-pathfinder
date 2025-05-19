@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sparkles, PlusCircle } from "lucide-react";
+import { Sparkles, PlusCircle, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useDocumentContext } from "@/contexts/DocumentContext";
 import { Document } from "@/types/document.types";
@@ -40,6 +40,13 @@ const DocumentViewer = ({
   
   return (
     <div className="space-y-6">
+      {selectedDocument.fileName && (
+        <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-2">
+          <FileText className="h-4 w-4" />
+          <span>Uploaded file: {selectedDocument.fileName}</span>
+        </div>
+      )}
+      
       <div className="border rounded-md p-4 bg-muted/30">
         <pre className="whitespace-pre-wrap font-sans text-sm">
           {selectedDocument.contentRaw}
