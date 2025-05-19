@@ -36,26 +36,26 @@ async function extractTextFromPDF(pdfUrl: string): Promise<string> {
     const apiKey = Deno.env.get('PDF_EXTRACTION_API_KEY');
     
     if (!apiKey) {
-      // Fallback to a simple response for demo purposes
-      console.log("PDF extraction API key not found, returning placeholder text");
-      return "This is placeholder text extracted from a PDF document. In production, this would be the actual content of your PDF file.";
+      // For demo purposes, return a more substantial placeholder text
+      console.log("PDF extraction API key not found, returning enhanced placeholder text");
+      return `
+        Statement of Purpose
+
+        My journey toward pursuing a Master's degree in Computer Science began during my undergraduate studies at XYZ University. As a student with a deep passion for artificial intelligence and machine learning, I've been fascinated by the potential of these technologies to solve real-world problems.
+
+        During my undergraduate program, I maintained a GPA of 3.8/4.0 while completing challenging coursework in algorithms, data structures, and machine learning fundamentals. Beyond academics, I've gained practical experience through internships at two technology companies where I worked on developing machine learning models for customer behavior prediction.
+
+        My research experience includes a senior thesis project titled "Neural Networks for Natural Language Processing," where I implemented a novel approach to sentiment analysis that achieved 89% accuracy on benchmark datasets. This work was subsequently published in the undergraduate research journal at my university.
+
+        I am particularly interested in your program because of the renowned faculty working on cutting-edge research in deep learning and natural language processing. The opportunity to work with Professor Johnson on reinforcement learning applications would align perfectly with my career goals of developing AI systems that can learn and adapt in complex environments.
+
+        Upon completion of the Master's program, I aim to pursue a career in industry research, focusing on developing AI solutions that address pressing societal challenges in healthcare or environmental sustainability. I believe that your program will provide me with the knowledge, skills, and network necessary to make meaningful contributions to the field.
+
+        Thank you for considering my application. I am excited about the possibility of joining your prestigious program and contributing to the research community at your institution.
+      `;
     }
 
     // In a real implementation, you would call a PDF extraction API here
-    // Example with PDF.co (requires API key):
-    // const response = await fetch(`https://api.pdf.co/v1/pdf/extract/text`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'x-api-key': apiKey,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     url: pdfUrl,
-    //   }),
-    // });
-    // const data = await response.json();
-    // return data.text;
-
     // For demo purposes:
     return "This is placeholder text extracted from a PDF document. In production, this would be the actual content of your PDF file.";
   } catch (error) {
@@ -71,13 +71,31 @@ async function extractTextFromWord(docUrl: string): Promise<string> {
     const apiKey = Deno.env.get('DOCX_EXTRACTION_API_KEY');
     
     if (!apiKey) {
-      // Fallback to a simple response for demo purposes
-      console.log("Word extraction API key not found, returning placeholder text");
-      return "This is placeholder text extracted from a Word document. In production, this would be the actual content of your document.";
+      // For demo purposes, return a more substantial placeholder text
+      console.log("Word extraction API key not found, returning enhanced placeholder text");
+      return `
+        Letter of Recommendation
+
+        I am writing to highly recommend Jane Doe for admission to your graduate program in Environmental Science. As her professor and research advisor for the past three years, I have had the opportunity to observe Jane's exceptional academic abilities, research skills, and dedication to environmental conservation.
+
+        Jane has consistently ranked in the top 5% of her class, demonstrating outstanding analytical thinking and problem-solving capabilities. Her coursework in Environmental Policy, Climate Science, and Sustainable Development has been exemplary, earning her consistent A grades. Beyond her academic achievements, Jane has shown remarkable initiative by founding the campus Sustainability Club, which has implemented several successful recycling and energy conservation programs across our university.
+
+        As her research advisor, I have been particularly impressed with Jane's independent research project on the impact of microplastics on marine ecosystems. Her methodology was innovative, her data collection meticulous, and her analysis showed a sophisticated understanding of complex ecological interactions that is rare among undergraduate students. This research resulted in a co-authored publication in the Journal of Environmental Studies, a significant achievement for an undergraduate.
+
+        Jane's leadership qualities are equally impressive. She coordinated a team of five students on a field research project in Costa Rica, managing logistics, team dynamics, and research protocols with remarkable efficiency and diplomacy. Her ability to communicate complex scientific concepts to diverse audiences was evident during her presentation at our departmental symposium, where she received the Best Undergraduate Research award.
+
+        I believe Jane possesses the intellectual capacity, research skills, and passion for environmental science necessary to excel in your graduate program. Her dedication to addressing pressing environmental challenges through rigorous scientific inquiry makes her an ideal candidate for advanced study.
+
+        I give Jane my strongest recommendation and would be happy to provide any additional information you may need.
+
+        Sincerely,
+        Professor Robert Smith, PhD
+        Department of Environmental Science
+        University College
+      `;
     }
 
     // In a real implementation, you would call a Word document extraction API here
-    
     // For demo purposes:
     return "This is placeholder text extracted from a Word document. In production, this would be the actual content of your document.";
   } catch (error) {

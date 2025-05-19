@@ -90,11 +90,13 @@ function getSystemPrompt(documentType: string, fileName?: string) {
   
   // Add information about file if it's an uploaded document
   if (fileName) {
-    systemPrompt += `\nNote: This content was extracted from the uploaded file "${fileName}".`;
+    systemPrompt += `\nNote: This content was extracted from the uploaded file "${fileName}". Focus your feedback on the actual content from this file.`;
   }
   
   // Add instructions for response format
   systemPrompt += `
+    Analyze the provided document carefully and thoroughly.
+    
     I want you to identify 3-5 specific sections/sentences from the document that could be improved.
     For each identified section:
     1. Quote the original text exactly as it appears in the document
@@ -115,43 +117,53 @@ function getSystemPrompt(documentType: string, fileName?: string) {
       ]
     }
     
-    The quotedImprovements array should contain 3-5 items.
-    Be specific, actionable, and constructive.`;
+    The quotedImprovements array should contain 3-5 items with text that ACTUALLY EXISTS in the provided document.
+    Be specific, actionable, and constructive.
+    
+    IMPORTANT: You MUST use actual quotes that exist verbatim in the document. Do not make up or generalize content.`;
 
   return systemPrompt;
 }
 
 // Function to call OpenAI API
 async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: string) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openaiApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt
-        },
-        {
-          role: 'user',
-          content
-        }
-      ],
-      temperature: 0.5,
-    }),
-  });
+  console.log(`Analyzing document content (length: ${content.length})`);
+  console.log("Sample content:", content.substring(0, 100) + "...");
+  
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content
+          }
+        ],
+        temperature: 0.5,
+      }),
+    });
 
-  if (!response.ok) {
-    console.error('API response error:', response.status, await response.text());
-    throw new Error('Error getting document feedback');
+    if (!response.ok) {
+      console.error('API response error:', response.status, await response.text());
+      throw new Error('Error getting document feedback');
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('OpenAI API call error:', error);
+    throw error;
   }
-
-  const data = await response.json();
-  return data.choices[0].message.content;
 }
 
 // Function to parse the AI response
@@ -160,6 +172,7 @@ function parseAIResponse(aiResponse: string) {
     return JSON.parse(aiResponse);
   } catch (e) {
     console.error('Error parsing AI response:', e);
+    console.error('Raw AI response:', aiResponse);
     return {
       summary: "There was an error processing the feedback. Please try again later.",
       score: 5,

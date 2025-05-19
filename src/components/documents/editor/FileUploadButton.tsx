@@ -55,9 +55,8 @@ const FileUploadButton = ({
       const response = await fetch(`https://ljoxowcnyiqsbmzkkudn.supabase.co/functions/v1/extract-document-text`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${supabase.auth.getSession().then(({ data }) => data.session?.access_token)}`,
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
           'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxqb3hvd2NueWlxc2JtemtrdWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0ODIwMzEsImV4cCI6MjA2MzA1ODAzMX0.Ogn9ZXzTrEwKns_EQXrH1g04GXbnSPAUDN4-0hEHcHw'
-          // Note: Don't set Content-Type here - the browser will set it automatically with the correct boundary
         },
         body: formData,
       });
@@ -75,9 +74,13 @@ const FileUploadButton = ({
         throw new Error("No content extracted from document");
       }
       
+      // Log the extracted content for debugging
+      console.log("Extracted document content:", data.text.substring(0, 100) + "...");
+      
       // Pass extracted text back to parent component
       onFileContent(data.text, file.name);
       setUploadProgress(100);
+      toast.success(`File "${file.name}" processed successfully`);
       
     } catch (err) {
       console.error("File upload error:", err);

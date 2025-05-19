@@ -167,6 +167,9 @@ export const generateTestFeedback = async (
   score: number;
 }> => {
   try {
+    console.log(`Sending content for review. Content length: ${content.length}, File: ${fileName || 'No file'}`);
+    console.log("First 100 chars of content:", content.substring(0, 100) + "...");
+    
     const { data, error } = await supabase.functions.invoke('review-document', {
       body: {
         content,
@@ -177,9 +180,13 @@ export const generateTestFeedback = async (
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error from review-document function:", error);
+      throw error;
+    }
     
     if (data && data.summary) {
+      console.log("Received feedback from AI:", data);
       return {
         summary: data.summary,
         improvementPoints: data.improvementPoints,

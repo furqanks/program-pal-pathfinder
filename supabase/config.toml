@@ -69,3 +69,6 @@ feature_function_path_named = true
 
 [functions.extract-document-text]
 verify_jwt = false
+
+[functions.review-document]
+verify_jwt = false
