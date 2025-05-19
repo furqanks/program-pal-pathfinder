@@ -72,7 +72,7 @@ function getSystemPrompt(documentType: string, fileName?: string) {
     2. Provide a specific, improved version of that text
     3. Explain why your version is better
     
-    Format your response as a JSON object with the following structure:
+    Format your response as a JSON object with the following structure (DO NOT include markdown formatting or code blocks in your response):
     {
       "summary": "One paragraph summarizing the quality of the document and overall assessment",
       "score": A number between 1 and 10 representing the quality of the document,
@@ -87,7 +87,8 @@ function getSystemPrompt(documentType: string, fileName?: string) {
     }
     
     CRITICAL: The originalText MUST be exact quotes that exist verbatim in the provided document.
-    DO NOT INVENT OR MAKE UP quotes that don't exist in the document!`;
+    DO NOT INVENT OR MAKE UP quotes that don't exist in the document!
+    Return ONLY the JSON object with no additional text or markdown.`;
 
   return systemPrompt;
 }
@@ -150,7 +151,7 @@ async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: s
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o', // Changed from gpt-4o-mini to gpt-4o for better feedback quality
+        model: 'gpt-4o', 
         messages: [
           {
             role: 'system',
@@ -220,6 +221,43 @@ async function generateImprovedDraft(originalContent: string, feedbackData: any,
   }
 }
 
+// Helper function to parse OpenAI response that might be wrapped in markdown code blocks
+function parseJsonResponse(response: string) {
+  try {
+    // First try to parse it directly (if it's already valid JSON)
+    return JSON.parse(response);
+  } catch (e) {
+    // If direct parsing fails, try to extract JSON from markdown code blocks
+    const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonMatch && jsonMatch[1]) {
+      try {
+        return JSON.parse(jsonMatch[1]);
+      } catch (innerError) {
+        console.error('Failed to parse JSON from markdown block:', innerError);
+        console.error('Extracted content:', jsonMatch[1]);
+        throw new Error('Failed to parse JSON from OpenAI response');
+      }
+    }
+    
+    // If we couldn't find a code block, try to find anything that looks like JSON
+    const possibleJson = response.match(/(\{[\s\S]*\})/);
+    if (possibleJson && possibleJson[1]) {
+      try {
+        return JSON.parse(possibleJson[1]);
+      } catch (innerError) {
+        console.error('Failed to parse JSON from possible JSON match:', innerError);
+        console.error('Extracted content:', possibleJson[1]);
+        throw new Error('Failed to parse JSON from OpenAI response');
+      }
+    }
+    
+    // If all else fails, throw the original error
+    console.error('Original parsing error:', e);
+    console.error('Raw response:', response);
+    throw new Error('Failed to parse JSON from OpenAI response');
+  }
+}
+
 // Main handler function
 serve(async (req) => {
   // CORS preflight
@@ -277,10 +315,10 @@ serve(async (req) => {
         // Call OpenAI API
         const aiResponse = await callOpenAI(content, systemPrompt, openaiApiKey);
         
-        // Parse the AI response
+        // Parse the AI response using our enhanced parsing function
         let feedbackData;
         try {
-          feedbackData = JSON.parse(aiResponse);
+          feedbackData = parseJsonResponse(aiResponse);
         } catch (parseError) {
           console.error('Error parsing AI response:', parseError);
           console.error('Raw AI response:', aiResponse);
