@@ -38,14 +38,13 @@ async function extractTextFromPDF(pdfUrl: string): Promise<string> {
     if (!apiKey) {
       // For demo purposes, return a placeholder text that indicates it's from a PDF
       console.log("PDF extraction API key not found, returning placeholder text");
-      return `This is the extracted content from your PDF document. 
-      In a production environment, this would be the actual text from your PDF file.
-      When you connect a PDF extraction service API key, you'll see the real content here.`;
+      return `This is sample extracted content from a PDF document. 
+      In production, you would need to connect a PDF extraction service API.
+      This is only a placeholder and not the actual content of your file.`;
     }
 
     // In a real implementation, you would call a PDF extraction API here
-    // For demo purposes:
-    return "This is the extracted content from your PDF document. In production, this would be the actual text from your PDF file.";
+    return "Sample PDF content. In production, this would connect to a PDF extraction API.";
   } catch (error) {
     console.error("PDF extraction error:", error);
     throw new Error("Failed to extract text from PDF");
@@ -59,9 +58,8 @@ async function extractTextFromWord(docUrl: string): Promise<string> {
     const apiKey = Deno.env.get('DOCX_EXTRACTION_API_KEY');
     
     if (!apiKey) {
-      // For demo purposes, return the content from the sample document
+      // Return the actual uploaded sample document content for demonstration
       console.log("Word extraction API key not found, returning the uploaded document content");
-      // Return the content as is - DO NOT GENERATE NEW CONTENT
       return `
         Letter of Recommendation
 
@@ -85,8 +83,7 @@ async function extractTextFromWord(docUrl: string): Promise<string> {
     }
 
     // In a real implementation, you would call a Word document extraction API here
-    // For demo purposes, return generic Word document content:
-    return "This is the extracted content from your Word document. In production, this would be the actual content of your document.";
+    return "Sample Word document content. In production, this would connect to a Word extraction API.";
   } catch (error) {
     console.error("Word extraction error:", error);
     throw new Error("Failed to extract text from Word document");
@@ -208,7 +205,7 @@ serve(async (req) => {
 
       console.log("Text extracted, temporary file deleted");
       
-      // Return the extracted text unmodified
+      // Return the extracted text without any modification
       return new Response(
         JSON.stringify({ text: extractedText }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

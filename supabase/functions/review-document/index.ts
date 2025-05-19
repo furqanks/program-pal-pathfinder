@@ -7,14 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface ReviewDocumentBody {
-  content: string;
-  documentType: string;
-  programId: string | null;
-  testMode?: boolean;
-  fileName?: string;
-}
-
 // Helper function to handle CORS preflight requests
 function handleCorsPreflightRequest() {
   return new Response(null, { headers: corsHeaders });
@@ -27,30 +19,6 @@ function createErrorResponse(message: string, status: number) {
     JSON.stringify({ error: message }),
     { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
-}
-
-// Helper to validate request data
-function validateRequestData(content: string) {
-  if (!content) {
-    return { isValid: false, error: 'Missing document content' };
-  }
-  return { isValid: true, error: null };
-}
-
-// Helper to get user ID from JWT
-async function getUserIdFromJwt(jwt: string) {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
-  
-  const { data: userData, error: userError } = await supabase.auth.getUser(jwt);
-  
-  if (userError || !userData) {
-    console.error('Error getting user data:', userError);
-    return { userId: null, error: 'Invalid authorization token' };
-  }
-  
-  return { userId: userData.user.id, error: null };
 }
 
 // Function to get the system prompt based on document type
@@ -95,11 +63,12 @@ function getSystemPrompt(documentType: string, fileName?: string) {
   
   // Add instructions for response format
   systemPrompt += `
-    Analyze the provided document carefully and thoroughly.
+    IMPORTANT: Analyze ONLY the provided document content. Do NOT create your own examples or content.
+    Review EXACTLY what was provided, without modifications or additions.
     
-    I want you to identify 3-5 specific sections/sentences from the document that could be improved.
+    You MUST identify 3-5 specific sections/sentences from the ACTUAL document that could be improved.
     For each identified section:
-    1. Quote the original text exactly as it appears in the document
+    1. Quote the original text EXACTLY as it appears in the document (do not make up text)
     2. Provide a specific, improved version of that text
     3. Explain why your version is better
     
@@ -117,10 +86,8 @@ function getSystemPrompt(documentType: string, fileName?: string) {
       ]
     }
     
-    The quotedImprovements array should contain 3-5 items with text that ACTUALLY EXISTS in the provided document.
-    Be specific, actionable, and constructive.
-    
-    IMPORTANT: You MUST use actual quotes that exist verbatim in the document. Do not make up or generalize content.`;
+    CRITICAL: The originalText MUST be exact quotes that exist verbatim in the provided document.
+    DO NOT INVENT OR MAKE UP quotes that don't exist in the document!`;
 
   return systemPrompt;
 }
@@ -166,122 +133,52 @@ async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: s
   }
 }
 
-// Function to parse the AI response
-function parseAIResponse(aiResponse: string) {
-  try {
-    return JSON.parse(aiResponse);
-  } catch (e) {
-    console.error('Error parsing AI response:', e);
-    console.error('Raw AI response:', aiResponse);
-    return {
-      summary: "There was an error processing the feedback. Please try again later.",
-      score: 5,
-      improvementPoints: ["Could not generate specific feedback points."],
-      quotedImprovements: []
-    };
+// Main handler function
+serve(async (req) => {
+  // CORS preflight
+  if (req.method === 'OPTIONS') {
+    return handleCorsPreflightRequest();
   }
-}
-
-// Function to save feedback to database
-async function saveFeedbackToDatabase(
-  userId: string, 
-  documentType: string, 
-  programId: string | null, 
-  content: string, 
-  feedbackData: any,
-  fileName?: string
-) {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
-  
-  // Get next version number
-  const { data: versionData } = await supabase.rpc('get_next_version_number', {
-    p_user_id: userId,
-    p_document_type: documentType,
-    p_program_id: programId
-  });
-  
-  const versionNumber = versionData || 1;
-  
-  // Insert document and feedback into database
-  const { data: insertData, error: insertError } = await supabase
-    .from('user_documents')
-    .insert({
-      user_id: userId,
-      document_type: documentType,
-      program_id: programId,
-      original_text: content,
-      file_name: fileName || null,
-      feedback_summary: feedbackData.summary,
-      improvement_points: feedbackData.improvementPoints,
-      quoted_improvements: feedbackData.quotedImprovements || [],
-      score: feedbackData.score,
-      version_number: versionNumber
-    })
-    .select('id')
-    .single();
-  
-  if (insertError) {
-    console.error('Error inserting document data:', insertError);
-    throw new Error('Error saving document feedback');
-  }
-
-  return { insertData, versionNumber };
-}
-
-// Main function to review document
-async function reviewDocument(req: Request) {
-  // Get request data
-  const { content, documentType, programId, testMode, fileName } = await req.json() as ReviewDocumentBody;
-  
-  // Validate request data
-  const validation = validateRequestData(content);
-  if (!validation.isValid) {
-    return createErrorResponse(validation.error!, 400);
-  }
-
-  // Get OpenAI API key
-  const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openaiApiKey) {
-    console.error('Missing OpenAI API key');
-    return createErrorResponse('Server configuration error: Missing API key', 500);
-  }
-  
-  // Log request information
-  let userId;
-  if (!testMode) {
-    // Extract JWT token from request
-    const authHeader = req.headers.get('authorization') || '';
-    const jwt = authHeader.replace('Bearer ', '');
-    
-    if (!jwt) {
-      return createErrorResponse('Missing authorization token', 401);
-    }
-
-    // Get user ID from JWT
-    const userIdResult = await getUserIdFromJwt(jwt);
-    if (userIdResult.error) {
-      return createErrorResponse(userIdResult.error, 401);
-    }
-    
-    userId = userIdResult.userId;
-  }
-  
-  console.log(`Processing ${documentType} review ${testMode ? 'in test mode' : `for user ${userId}`}${fileName ? ` (file: ${fileName})` : ''}`);
 
   try {
-    // Get system prompt
-    const systemPrompt = getSystemPrompt(documentType, fileName);
+    // Get request data
+    const { content, documentType, programId, testMode, fileName } = await req.json();
     
-    // Call OpenAI API
-    const aiResponse = await callOpenAI(content, systemPrompt, openaiApiKey);
-    
-    // Parse the AI response
-    const feedbackData = parseAIResponse(aiResponse);
+    // Validate request data
+    if (!content) {
+      return createErrorResponse('Missing document content', 400);
+    }
 
-    // For test mode, just return the feedback without saving to database
-    if (testMode) {
+    // Get OpenAI API key
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiApiKey) {
+      console.error('Missing OpenAI API key');
+      return createErrorResponse('Server configuration error: Missing API key', 500);
+    }
+    
+    // Log request information
+    console.log(`Processing ${documentType} review ${testMode ? 'in test mode' : 'for saving to DB'}${fileName ? ` (file: ${fileName})` : ''}`);
+    console.log(`Content length: ${content.length} characters`);
+    console.log(`Content sample: ${content.substring(0, 100)}...`);
+
+    try {
+      // Get system prompt
+      const systemPrompt = getSystemPrompt(documentType, fileName);
+      
+      // Call OpenAI API
+      const aiResponse = await callOpenAI(content, systemPrompt, openaiApiKey);
+      
+      // Parse the AI response
+      let feedbackData;
+      try {
+        feedbackData = JSON.parse(aiResponse);
+      } catch (parseError) {
+        console.error('Error parsing AI response:', parseError);
+        console.error('Raw AI response:', aiResponse);
+        return createErrorResponse('Failed to parse AI response', 500);
+      }
+
+      // Return response
       return new Response(
         JSON.stringify({
           summary: feedbackData.summary,
@@ -291,45 +188,10 @@ async function reviewDocument(req: Request) {
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    } catch (error) {
+      console.error('Error in review-document function:', error);
+      return createErrorResponse(error.message, 500);
     }
-    
-    // Save feedback to database
-    const { insertData, versionNumber } = await saveFeedbackToDatabase(
-      userId!, 
-      documentType, 
-      programId, 
-      content, 
-      feedbackData,
-      fileName
-    );
-
-    // Return response
-    return new Response(
-      JSON.stringify({
-        id: insertData.id,
-        summary: feedbackData.summary,
-        score: feedbackData.score,
-        improvementPoints: feedbackData.improvementPoints,
-        quotedImprovements: feedbackData.quotedImprovements || [],
-        versionNumber
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    console.error('Error in review-document function:', error);
-    return createErrorResponse(error.message, 500);
-  }
-}
-
-// Main handler function
-serve(async (req) => {
-  // CORS preflight
-  if (req.method === 'OPTIONS') {
-    return handleCorsPreflightRequest();
-  }
-
-  try {
-    return await reviewDocument(req);
   } catch (error) {
     console.error('Unhandled error in review-document function:', error);
     return createErrorResponse(error.message || 'Internal server error', 500);

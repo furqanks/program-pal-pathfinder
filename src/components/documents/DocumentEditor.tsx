@@ -25,7 +25,6 @@ const DocumentEditor = ({
 }: DocumentEditorProps) => {
   const isMobile = useIsMobile();
   const { addDocument, generateFeedback } = useDocumentContext();
-  const { programs } = useProgramContext();
   
   const [documentContent, setDocumentContent] = useState("");
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
@@ -51,6 +50,8 @@ const DocumentEditor = ({
   const handleFileContent = (content: string, uploadedFileName: string) => {
     setDocumentContent(content);
     setFileName(uploadedFileName);
+    console.log("File content set:", content.substring(0, 100) + "...");
+    console.log("File name set:", uploadedFileName);
     toast.success(`File "${uploadedFileName}" processed successfully`);
   };
 
@@ -95,11 +96,11 @@ const DocumentEditor = ({
     
     try {
       toast.info("Generating AI feedback...");
+      console.log("Generating feedback for content:", documentContent.substring(0, 100) + "...");
       
       // Use the real API to generate feedback without saving to the database
-      // Pass the unmodified uploaded content to the API
       const feedback = await generateTestFeedback(
-        documentContent, // Pass the exact document content from state
+        documentContent, 
         activeDocumentType,
         selectedProgramId,
         fileName || undefined

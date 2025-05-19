@@ -170,9 +170,10 @@ export const generateTestFeedback = async (
     console.log(`Sending content for review. Content length: ${content.length}, File: ${fileName || 'No file'}`);
     console.log("First 100 chars of content:", content.substring(0, 100) + "...");
     
+    // Make sure we use the exact content provided without any modification
     const { data, error } = await supabase.functions.invoke('review-document', {
       body: {
-        content,
+        content, // Send the exact content without any modification
         documentType,
         programId,
         testMode: true,
@@ -198,8 +199,8 @@ export const generateTestFeedback = async (
     }
   } catch (error) {
     console.error("Error generating test feedback:", error);
-    toast.error("Error generating feedback. Using fallback mock data.");
-    return generateMockFeedback();
+    toast.error("Error generating feedback. Please try again.");
+    throw error;
   }
 };
 
