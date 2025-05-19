@@ -45,23 +45,31 @@ const FileUploadButton = ({
     setUploadProgress(10);
     
     try {
-      // Create form data to send to the edge function
+      // Create form data for the file upload
       const formData = new FormData();
       formData.append('file', file);
       
       setUploadProgress(30);
       
-      // Send file to edge function for text extraction
-      const { data, error } = await supabase.functions.invoke('extract-document-text', {
+      // Use direct fetch instead of supabase.functions.invoke for proper FormData handling
+      const response = await fetch(`https://ljoxowcnyiqsbmzkkudn.supabase.co/functions/v1/extract-document-text`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabase.auth.getSession().then(({ data }) => data.session?.access_token)}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxqb3hvd2NueWlxc2JtemtrdWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0ODIwMzEsImV4cCI6MjA2MzA1ODAzMX0.Ogn9ZXzTrEwKns_EQXrH1g04GXbnSPAUDN4-0hEHcHw'
+          // Note: Don't set Content-Type here - the browser will set it automatically with the correct boundary
+        },
         body: formData,
-        headers: { 'Content-Type': 'multipart/form-data' },
       });
       
       setUploadProgress(90);
       
-      if (error) {
-        throw new Error(error.message || "Failed to extract text from document");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to extract text from document");
       }
+      
+      const data = await response.json();
       
       if (!data || !data.text) {
         throw new Error("No content extracted from document");

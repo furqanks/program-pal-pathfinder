@@ -94,9 +94,11 @@ serve(async (req) => {
   }
 
   try {
-    // Check if request is multipart/form-data
+    // Check if request is multipart/form-data by examining Content-Type header
     const contentType = req.headers.get("content-type") || "";
+    
     if (!contentType.includes("multipart/form-data")) {
+      console.error(`Invalid content type: ${contentType}`);
       return createErrorResponse("Request must be multipart/form-data", 400);
     }
 
@@ -106,69 +108,107 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get form data and file
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
-    
-    if (!file) {
-      return createErrorResponse("No file uploaded", 400);
+    try {
+      const formData = await req.formData();
+      const file = formData.get("file") as File;
+      
+      if (!file) {
+        return createErrorResponse("No file uploaded", 400);
+      }
+
+      // Check file type
+      const fileType = file.type;
+      let fileExtension = "";
+      let extractionFunction: (url: string) => Promise<string>;
+
+      if (fileType === "application/pdf") {
+        fileExtension = "pdf";
+        extractionFunction = extractTextFromPDF;
+      } else if (
+        fileType === "application/msword" || 
+        fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ) {
+        fileExtension = fileType === "application/msword" ? "doc" : "docx";
+        extractionFunction = extractTextFromWord;
+      } else {
+        return createErrorResponse("Unsupported file type. Only PDF and Word documents are supported.", 400);
+      }
+
+      // Generate a storage key for the file
+      const storageKey = generateStorageKey(fileExtension);
+      const fileKey = storageKey.replace('temp/', '');
+
+      console.log(`Processing ${fileType} file, storage key: ${fileKey}`);
+      
+      // Create the 'temp' bucket if it doesn't exist
+      try {
+        const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('temp');
+        
+        if (bucketError && bucketError.code === '404') {
+          console.log("Creating 'temp' bucket");
+          const { error: createBucketError } = await supabase.storage
+            .createBucket('temp', { public: false });
+          
+          if (createBucketError) {
+            console.error("Error creating bucket:", createBucketError);
+            return createErrorResponse(`Failed to create storage bucket: ${createBucketError.message}`, 500);
+          }
+        }
+      } catch (bucketCheckError) {
+        console.error("Error checking bucket:", bucketCheckError);
+      }
+      
+      // Upload file to Supabase Storage
+      console.log("Uploading file to storage");
+      
+      // Convert the File to Uint8Array for upload
+      const fileBuffer = await file.arrayBuffer();
+      const fileUint8Array = new Uint8Array(fileBuffer);
+      
+      // Upload file
+      const { error: uploadError } = await supabase.storage
+        .from('temp')
+        .upload(fileKey, fileUint8Array, {
+          contentType: fileType,
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        return createErrorResponse(`Failed to upload file: ${uploadError.message}`, 500);
+      }
+
+      // Get file URL
+      const { data: urlData, error: urlError } = await supabase.storage
+        .from('temp')
+        .createSignedUrl(fileKey, 60); // URL valid for 60 seconds
+
+      if (urlError || !urlData?.signedUrl) {
+        console.error("URL generation error:", urlError);
+        return createErrorResponse("Failed to generate file URL", 500);
+      }
+
+      console.log("File uploaded, signed URL generated");
+      
+      // Extract text from the document
+      const extractedText = await extractionFunction(urlData.signedUrl);
+
+      // Clean up: delete the temporary file
+      await supabase.storage
+        .from('temp')
+        .remove([fileKey]);
+
+      console.log("Text extracted, temporary file deleted");
+      
+      // Return the extracted text
+      return new Response(
+        JSON.stringify({ text: extractedText }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (formDataError) {
+      console.error("Form data parsing error:", formDataError);
+      return createErrorResponse(`Failed to process form data: ${formDataError.message}`, 400);
     }
-
-    // Check file type
-    const fileType = file.type;
-    let fileExtension = "";
-    let extractionFunction: (url: string) => Promise<string>;
-
-    if (fileType === "application/pdf") {
-      fileExtension = "pdf";
-      extractionFunction = extractTextFromPDF;
-    } else if (
-      fileType === "application/msword" || 
-      fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
-      fileExtension = fileType === "application/msword" ? "doc" : "docx";
-      extractionFunction = extractTextFromWord;
-    } else {
-      return createErrorResponse("Unsupported file type. Only PDF and Word documents are supported.", 400);
-    }
-
-    // Upload file to Supabase Storage
-    const storageKey = generateStorageKey(fileExtension);
-    
-    // Upload file
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('temp')
-      .upload(storageKey.replace('temp/', ''), file, {
-        contentType: fileType,
-        upsert: true
-      });
-
-    if (uploadError) {
-      console.error("Upload error:", uploadError);
-      return createErrorResponse(`Failed to upload file: ${uploadError.message}`, 500);
-    }
-
-    // Get file URL
-    const { data: urlData } = await supabase.storage
-      .from('temp')
-      .createSignedUrl(storageKey.replace('temp/', ''), 60); // URL valid for 60 seconds
-
-    if (!urlData?.signedUrl) {
-      return createErrorResponse("Failed to generate file URL", 500);
-    }
-
-    // Extract text from the document
-    const extractedText = await extractionFunction(urlData.signedUrl);
-
-    // Clean up: delete the temporary file
-    await supabase.storage
-      .from('temp')
-      .remove([storageKey.replace('temp/', '')]);
-
-    // Return the extracted text
-    return new Response(
-      JSON.stringify({ text: extractedText }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
     console.error("Document processing error:", error);
     return createErrorResponse(`Document processing failed: ${error.message}`, 500);
