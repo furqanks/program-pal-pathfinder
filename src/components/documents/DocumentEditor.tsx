@@ -8,7 +8,9 @@ import DocumentContentEditor from "./editor/DocumentContentEditor";
 import FeedbackPreview from "./editor/FeedbackPreview";
 import EditorActions from "./editor/EditorActions";
 import { generateTestFeedback } from "@/services/document.service";
+import { FileText } from "lucide-react";
 import { QuotedImprovement } from "@/types/document.types";
+import { Badge } from "@/components/ui/badge";
 
 interface DocumentEditorProps {
   activeDocumentType: string;
@@ -27,6 +29,7 @@ const DocumentEditor = ({
   const { addDocument, generateFeedback } = useDocumentContext();
   
   const [documentContent, setDocumentContent] = useState("");
+  const [uploadedFileContent, setUploadedFileContent] = useState<string | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
@@ -48,16 +51,19 @@ const DocumentEditor = ({
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileContent = (content: string, uploadedFileName: string) => {
-    setDocumentContent(content);
+    setUploadedFileContent(content); // Store uploaded content separately
     setFileName(uploadedFileName);
-    console.log("File content set:", content.substring(0, 100) + "...");
+    console.log("File content set (length):", content.length);
     console.log("File name set:", uploadedFileName);
     toast.success(`File "${uploadedFileName}" processed successfully`);
   };
 
   const handleCreateDocument = async () => {
-    if (!documentContent.trim()) {
-      toast.error("Please enter document content");
+    // Check if we have either editor content or uploaded file content
+    const contentToSave = uploadedFileContent || documentContent;
+    
+    if (!contentToSave.trim()) {
+      toast.error("Please enter document content or upload a file");
       return;
     }
     
@@ -67,7 +73,7 @@ const DocumentEditor = ({
       const savedDoc = await addDocument({
         documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
         linkedProgramId: selectedProgramId,
-        contentRaw: documentContent,
+        contentRaw: contentToSave,
         fileName: fileName
       });
       
@@ -84,10 +90,13 @@ const DocumentEditor = ({
     }
   };
 
-  // Generate feedback without saving - using real uploaded content
+  // Generate feedback without saving - using the correct content
   const handleGenerateTempFeedback = async () => {
-    if (!documentContent.trim()) {
-      toast.error("Please enter document content");
+    // Use uploaded file content if available, otherwise use editor content
+    const contentToAnalyze = uploadedFileContent || documentContent;
+    
+    if (!contentToAnalyze.trim()) {
+      toast.error("Please enter document content or upload a file");
       return;
     }
     
@@ -96,18 +105,19 @@ const DocumentEditor = ({
     
     try {
       toast.info("Generating AI feedback...");
-      console.log("Generating feedback for content:", documentContent.substring(0, 100) + "...");
+      console.log("Generating feedback for content (length):", contentToAnalyze.length);
+      console.log("Using file:", fileName || "No file (direct input)");
       
       // Use the real API to generate feedback without saving to the database
       const feedback = await generateTestFeedback(
-        documentContent, 
+        contentToAnalyze, 
         activeDocumentType,
         selectedProgramId,
         fileName || undefined
       );
       
       setTempFeedback({
-        content: documentContent,
+        content: contentToAnalyze,
         feedback: feedback.summary,
         improvementPoints: feedback.improvementPoints,
         quotedImprovements: feedback.quotedImprovements,
@@ -125,8 +135,11 @@ const DocumentEditor = ({
   };
 
   const saveAndGenerateFeedback = async () => {
-    if (!documentContent.trim()) {
-      toast.error("Please enter document content before generating feedback");
+    // Use uploaded file content if available, otherwise use editor content
+    const contentToSave = uploadedFileContent || documentContent;
+    
+    if (!contentToSave.trim()) {
+      toast.error("Please enter document content or upload a file before generating feedback");
       return;
     }
     
@@ -135,7 +148,7 @@ const DocumentEditor = ({
       const savedDoc = await addDocument({
         documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
         linkedProgramId: selectedProgramId,
-        contentRaw: documentContent,
+        contentRaw: contentToSave,
         fileName: fileName
       });
       
@@ -156,6 +169,23 @@ const DocumentEditor = ({
 
   return (
     <div className="space-y-6">
+      {/* File upload indicator */}
+      {fileName && (
+        <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/30">
+          <FileText className="h-5 w-5 text-primary" />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Uploaded document:</span>
+              <span>{fileName}</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              This document has been processed and will be used for feedback generation.
+            </p>
+          </div>
+          <Badge variant="outline" className="ml-auto">Ready for review</Badge>
+        </div>
+      )}
+      
       <DocumentContentEditor
         documentContent={documentContent}
         setDocumentContent={setDocumentContent}

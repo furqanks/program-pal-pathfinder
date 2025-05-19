@@ -75,7 +75,8 @@ const FileUploadButton = ({
       }
       
       // Log the extracted content for debugging
-      console.log("Extracted document content:", data.text.substring(0, 100) + "...");
+      console.log("Extracted document content length:", data.text.length);
+      console.log("Extracted content sample:", data.text.substring(0, 100) + "...");
       
       // Pass extracted text back to parent component WITHOUT MODIFICATION
       onFileContent(data.text, file.name);
