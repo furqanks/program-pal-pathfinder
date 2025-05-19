@@ -1,7 +1,6 @@
 
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import FileUploadButton from "./FileUploadButton";
 
 interface DocumentContentEditorProps {
   documentContent: string;
@@ -29,11 +28,7 @@ const DocumentContentEditor = ({
         <div className="flex items-center">
           <Badge variant="outline">{documentTypeLabel}</Badge>
         </div>
-        <FileUploadButton 
-          onFileContent={onFileContent}
-          isUploading={isUploading}
-          setIsUploading={setIsUploading}
-        />
+        {/* File upload button removed temporarily */}
       </div>
       <Textarea
         value={documentContent}

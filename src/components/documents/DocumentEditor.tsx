@@ -8,9 +8,7 @@ import DocumentContentEditor from "./editor/DocumentContentEditor";
 import FeedbackPreview from "./editor/FeedbackPreview";
 import EditorActions from "./editor/EditorActions";
 import { generateTestFeedback } from "@/services/document.service";
-import { FileText } from "lucide-react";
 import { QuotedImprovement } from "@/types/document.types";
-import { Badge } from "@/components/ui/badge";
 
 interface DocumentEditorProps {
   activeDocumentType: string;
@@ -29,7 +27,6 @@ const DocumentEditor = ({
   const { addDocument, generateFeedback } = useDocumentContext();
   
   const [documentContent, setDocumentContent] = useState("");
-  const [uploadedFileContent, setUploadedFileContent] = useState<string | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
@@ -41,29 +38,22 @@ const DocumentEditor = ({
     score?: number;
   } | null>(null);
   
-  // State for uploaded file
-  const [fileName, setFileName] = useState<string | null>(null);
+  // State for file upload related functionality removed
+  const [isUploading, setIsUploading] = useState(false);
   
   // State to control visibility of feedback
   const [showFeedback, setShowFeedback] = useState(false);
-  
-  // State to control file uploading
-  const [isUploading, setIsUploading] = useState(false);
 
+  // Simplified version that only passes along empty values
   const handleFileContent = (content: string, uploadedFileName: string) => {
-    setUploadedFileContent(content); // Store uploaded content separately
-    setFileName(uploadedFileName);
-    console.log("File content set (length):", content.length);
-    console.log("File name set:", uploadedFileName);
-    toast.success(`File "${uploadedFileName}" processed successfully`);
+    // This is kept as a placeholder to maintain the component interface
+    console.log("File upload functionality temporarily removed");
   };
 
   const handleCreateDocument = async () => {
-    // Check if we have either editor content or uploaded file content
-    const contentToSave = uploadedFileContent || documentContent;
-    
-    if (!contentToSave.trim()) {
-      toast.error("Please enter document content or upload a file");
+    // Check if we have editor content
+    if (!documentContent.trim()) {
+      toast.error("Please enter document content");
       return;
     }
     
@@ -73,8 +63,8 @@ const DocumentEditor = ({
       const savedDoc = await addDocument({
         documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
         linkedProgramId: selectedProgramId,
-        contentRaw: contentToSave,
-        fileName: fileName
+        contentRaw: documentContent,
+        fileName: null
       });
       
       if (savedDoc) {
@@ -90,13 +80,10 @@ const DocumentEditor = ({
     }
   };
 
-  // Generate feedback without saving - using the correct content
+  // Generate feedback without saving - using only editor content
   const handleGenerateTempFeedback = async () => {
-    // Use uploaded file content if available, otherwise use editor content
-    const contentToAnalyze = uploadedFileContent || documentContent;
-    
-    if (!contentToAnalyze.trim()) {
-      toast.error("Please enter document content or upload a file");
+    if (!documentContent.trim()) {
+      toast.error("Please enter document content");
       return;
     }
     
@@ -105,19 +92,17 @@ const DocumentEditor = ({
     
     try {
       toast.info("Generating AI feedback...");
-      console.log("Generating feedback for content (length):", contentToAnalyze.length);
-      console.log("Using file:", fileName || "No file (direct input)");
+      console.log("Generating feedback for content (length):", documentContent.length);
       
       // Use the real API to generate feedback without saving to the database
       const feedback = await generateTestFeedback(
-        contentToAnalyze, 
+        documentContent, 
         activeDocumentType,
-        selectedProgramId,
-        fileName || undefined
+        selectedProgramId
       );
       
       setTempFeedback({
-        content: contentToAnalyze,
+        content: documentContent,
         feedback: feedback.summary,
         improvementPoints: feedback.improvementPoints,
         quotedImprovements: feedback.quotedImprovements,
@@ -135,11 +120,8 @@ const DocumentEditor = ({
   };
 
   const saveAndGenerateFeedback = async () => {
-    // Use uploaded file content if available, otherwise use editor content
-    const contentToSave = uploadedFileContent || documentContent;
-    
-    if (!contentToSave.trim()) {
-      toast.error("Please enter document content or upload a file before generating feedback");
+    if (!documentContent.trim()) {
+      toast.error("Please enter document content before generating feedback");
       return;
     }
     
@@ -148,8 +130,8 @@ const DocumentEditor = ({
       const savedDoc = await addDocument({
         documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
         linkedProgramId: selectedProgramId,
-        contentRaw: contentToSave,
-        fileName: fileName
+        contentRaw: documentContent,
+        fileName: null
       });
       
       if (savedDoc) {
@@ -169,23 +151,6 @@ const DocumentEditor = ({
 
   return (
     <div className="space-y-6">
-      {/* File upload indicator */}
-      {fileName && (
-        <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/30">
-          <FileText className="h-5 w-5 text-primary" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-medium">Uploaded document:</span>
-              <span>{fileName}</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              This document has been processed and will be used for feedback generation.
-            </p>
-          </div>
-          <Badge variant="outline" className="ml-auto">Ready for review</Badge>
-        </div>
-      )}
-      
       <DocumentContentEditor
         documentContent={documentContent}
         setDocumentContent={setDocumentContent}
