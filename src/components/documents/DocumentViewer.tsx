@@ -153,6 +153,27 @@ const DocumentViewer = ({
               </div>
             </div>
           )}
+          
+          <div className={`flex ${isMobile ? "flex-col" : ""} gap-3 w-full`}>
+            <Button 
+              variant="outline"
+              onClick={onCreateNewVersion}
+              className={isMobile ? "w-full" : ""}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create New Version
+            </Button>
+            
+            <Button 
+              onClick={handleGenerateImprovedDraft}
+              disabled={isGeneratingDraft}
+              variant="secondary"
+              className={`${isMobile ? "w-full" : ""} gap-2`}
+            >
+              <Wand className="h-4 w-4" />
+              {isGeneratingDraft ? "Generating..." : "Generate Improved Draft"}
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center p-8">
@@ -170,42 +191,6 @@ const DocumentViewer = ({
           </Button>
         </div>
       )}
-      
-      <div className={`flex ${isMobile ? "flex-col w-full" : ""} gap-2 ${!isMobile && "justify-end"}`}>
-        <Button 
-          variant="outline"
-          onClick={onCreateNewVersion}
-          className={isMobile ? "w-full" : ""}
-        >
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create New Version
-        </Button>
-        
-        {selectedDocument.contentFeedback && (
-          <Button 
-            onClick={handleGenerateImprovedDraft}
-            disabled={isGeneratingDraft}
-            variant="secondary"
-            className={`${isMobile ? "w-full" : ""} gap-2`}
-          >
-            <Wand className="h-4 w-4" />
-            {isGeneratingDraft ? "Generating..." : "Generate Improved Draft"}
-          </Button>
-        )}
-        
-        <Button 
-          onClick={handleGenerateFeedback}
-          disabled={!!selectedDocument.contentFeedback || isGeneratingFeedback}
-          className={isMobile ? "w-full" : ""}
-        >
-          <Sparkles className="mr-2 h-4 w-4" />
-          {isGeneratingFeedback 
-            ? "Generating..." 
-            : selectedDocument.contentFeedback 
-              ? "Feedback Generated" 
-              : "Get AI Feedback"}
-        </Button>
-      </div>
     </div>
   );
 };
