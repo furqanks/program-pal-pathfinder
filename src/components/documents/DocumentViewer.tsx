@@ -171,7 +171,7 @@ const DocumentViewer = ({
         </div>
       )}
       
-      <div className={`flex ${isMobile ? "w-full flex-col" : ""} gap-2 ${!isMobile && "justify-end"}`}>
+      <div className={`flex ${isMobile ? "flex-col w-full" : ""} gap-2 ${!isMobile && "justify-end"}`}>
         <Button 
           variant="outline"
           onClick={onCreateNewVersion}
@@ -186,9 +186,9 @@ const DocumentViewer = ({
             onClick={handleGenerateImprovedDraft}
             disabled={isGeneratingDraft}
             variant="secondary"
-            className={isMobile ? "w-full" : ""}
+            className={`${isMobile ? "w-full" : ""} gap-2`}
           >
-            <Wand className="mr-2 h-4 w-4" />
+            <Wand className="h-4 w-4" />
             {isGeneratingDraft ? "Generating..." : "Generate Improved Draft"}
           </Button>
         )}
