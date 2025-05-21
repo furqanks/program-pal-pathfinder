@@ -121,6 +121,7 @@ const FeedbackPreview = ({
         </div>
       )}
       
+      {/* Always show the Generate AI Draft button when feedback is available */}
       <Button
         onClick={handleGenerateImprovedDraft}
         disabled={isGeneratingDraft}
