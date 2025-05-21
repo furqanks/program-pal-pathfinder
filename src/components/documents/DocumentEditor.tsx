@@ -149,6 +149,11 @@ const DocumentEditor = ({
     }
   };
 
+  // Handle receiving a generated draft
+  const handleDraftGenerated = (draft: string) => {
+    setDocumentContent(draft);
+  };
+
   return (
     <div className="space-y-6">
       <DocumentContentEditor
@@ -163,7 +168,9 @@ const DocumentEditor = ({
       
       <FeedbackPreview 
         feedback={tempFeedback} 
-        showFeedback={showFeedback} 
+        showFeedback={showFeedback}
+        documentType={activeDocumentType}
+        onDraftGenerated={handleDraftGenerated}
       />
       
       <EditorActions
