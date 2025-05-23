@@ -11,8 +11,8 @@ import { Program, useProgramContext } from "@/contexts/ProgramContext";
 import { useTagContext } from "@/contexts/TagContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, CalendarIcon } from "lucide-react";
-import { format, isValid, parseISO } from "date-fns";
+import { Pencil, Trash2, Download } from "lucide-react";
+import { format, isValid, parseISO, differenceInDays } from "date-fns";
 import { useState } from "react";
 import {
   Dialog,
@@ -22,6 +22,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import EditProgramForm from "./EditProgramForm";
+import DeadlineCountdown from "./DeadlineCountdown";
+import { exportProgramsToCsv } from "@/utils/exportToCsv";
+import { toast } from "sonner";
 
 interface ProgramTableViewProps {
   programs: Program[];
@@ -48,9 +51,21 @@ const ProgramTableView = ({ programs }: ProgramTableViewProps) => {
         return "bg-gray-100 text-gray-800";
     }
   };
+  
+  const handleExportCsv = () => {
+    exportProgramsToCsv(programs);
+    toast.success(`${programs.length} programs exported to CSV`);
+  };
 
   return (
     <>
+      <div className="flex justify-end mb-4">
+        <Button variant="outline" onClick={handleExportCsv}>
+          <Download className="h-4 w-4 mr-2" />
+          Export to CSV
+        </Button>
+      </div>
+    
       <div className="rounded-md border overflow-hidden">
         <Table>
           <TableHeader>
@@ -91,9 +106,11 @@ const ProgramTableView = ({ programs }: ProgramTableViewProps) => {
                   </TableCell>
                   <TableCell>{program.country}</TableCell>
                   <TableCell>
-                    {program.deadline && isValid(parseISO(program.deadline))
-                      ? format(parseISO(program.deadline), "MMM d, yyyy")
-                      : "No deadline"}
+                    {program.deadline && isValid(parseISO(program.deadline)) ? (
+                      <DeadlineCountdown deadline={program.deadline} />
+                    ) : (
+                      "No deadline"
+                    )}
                   </TableCell>
                   <TableCell>{program.tuition || "Not specified"}</TableCell>
                   <TableCell>

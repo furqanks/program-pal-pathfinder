@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   MoreVertical, 
-  Calendar, 
-  DollarSign, 
   Pencil, 
   Trash2,
   ChevronDown, 
   ChevronUp,
   GraduationCap,
-  MapPin
+  MapPin,
+  Plus,
+  Download
 } from 'lucide-react';
 import { 
   DropdownMenu,
@@ -26,6 +26,9 @@ import { toast } from 'sonner';
 import TaskList from './TaskList';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import EditProgramForm from './EditProgramForm';
+import DeadlineCountdown from './DeadlineCountdown';
+import ProgramProgress from './ProgramProgress';
+import { exportProgramsToCsv } from '@/utils/exportToCsv';
 
 interface ProgramCardProps {
   program: Program;
@@ -34,7 +37,9 @@ interface ProgramCardProps {
 const ProgramCard = ({ program }: ProgramCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const { deleteProgram, addTask } = useProgramContext();
+  const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const { deleteProgram, addTask, programs } = useProgramContext();
   const { getStatusTag, getCustomTag } = useTagContext();
   
   const handleDelete = () => {
@@ -53,12 +58,29 @@ const ProgramCard = ({ program }: ProgramCardProps) => {
   };
 
   const handleAddTask = () => {
-    // Example of adding a task
+    if (!newTaskTitle.trim()) {
+      toast.error("Task title cannot be empty");
+      return;
+    }
+    
     addTask(program.id, {
-      title: "Complete application form",
+      title: newTaskTitle.trim(),
       completed: false
     });
+    
     toast.success("Task added successfully");
+    setNewTaskTitle('');
+    setIsAddTaskDialogOpen(false);
+  };
+
+  const handleExportCsv = () => {
+    exportProgramsToCsv([program]);
+    toast.success("Program exported to CSV");
+  };
+
+  const handleExportAllCsv = () => {
+    exportProgramsToCsv(programs);
+    toast.success("All programs exported to CSV");
   };
 
   // Get the status tag data
@@ -92,6 +114,10 @@ const ProgramCard = ({ program }: ProgramCardProps) => {
               <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit Program
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportCsv}>
+                <Download className="h-4 w-4 mr-2" />
+                Export to CSV
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDelete} className="text-destructive">
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -134,24 +160,22 @@ const ProgramCard = ({ program }: ProgramCardProps) => {
             );
           })}
         </div>
+        
+        {/* Add deadline countdown outside of expanded section */}
+        <DeadlineCountdown deadline={program.deadline} className="mt-2" />
+        
+        {/* Add progress bar */}
+        <div className="mt-3">
+          <ProgramProgress program={program} />
+        </div>
       </CardHeader>
       
       {expanded && (
         <CardContent className="pb-3 pt-0">
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-sm mb-4">
             <div>
               <p className="text-muted-foreground">Tuition</p>
-              <p className="flex items-center">
-                <DollarSign className="h-4 w-4 mr-1 text-muted-foreground" />
-                {program.tuition || 'Not specified'}
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Deadline</p>
-              <p className="flex items-center">
-                <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                {program.deadline || 'Not specified'}
-              </p>
+              <p>{program.tuition || 'Not specified'}</p>
             </div>
           </div>
           
@@ -162,7 +186,19 @@ const ProgramCard = ({ program }: ProgramCardProps) => {
             </div>
           )}
 
-          <TaskList programId={program.id} />
+          <div className="mt-4">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-sm font-medium">Tasks</h4>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setIsAddTaskDialogOpen(true)}
+              >
+                <Plus className="h-3 w-3 mr-1" /> Add Task
+              </Button>
+            </div>
+            <TaskList programId={program.id} />
+          </div>
         </CardContent>
       )}
       
@@ -196,6 +232,38 @@ const ProgramCard = ({ program }: ProgramCardProps) => {
             program={program}
             onClose={() => setIsEditDialogOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isAddTaskDialogOpen} onOpenChange={setIsAddTaskDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="grid w-full gap-2">
+              <label htmlFor="task-title" className="text-sm font-medium">Task Title</label>
+              <input 
+                id="task-title"
+                type="text" 
+                className="border rounded-md p-2"
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                placeholder="Enter task title"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsAddTaskDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleAddTask}>
+                Add Task
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>

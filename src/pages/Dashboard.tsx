@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProgramContext } from "@/contexts/ProgramContext";
@@ -6,12 +5,13 @@ import { useTagContext } from "@/contexts/TagContext";
 import ProgramCard from "@/components/program/ProgramCard";
 import ProgramTableView from "@/components/program/ProgramTableView";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Download } from "lucide-react";
 import AddProgramDialog from "@/components/program/AddProgramDialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tag } from "@/contexts/TagContext";
+import { exportProgramsToCsv } from "@/utils/exportToCsv";
+import { toast } from "sonner";
 
 const Dashboard = () => {
   const { programs } = useProgramContext();
@@ -34,6 +34,12 @@ const Dashboard = () => {
 
   // Get custom tags for filter
   const customTags = tags.filter((tag) => tag.type === "custom");
+
+  // Export all programs to CSV
+  const handleExportCsv = () => {
+    exportProgramsToCsv(filteredPrograms);
+    toast.success(`${filteredPrograms.length} programs exported to CSV`);
+  };
 
   // Filter and sort programs
   const filteredPrograms = programs
@@ -71,10 +77,10 @@ const Dashboard = () => {
         case "university":
           return a.university.localeCompare(b.university);
         case "deadline":
-          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+          return new Date(a.deadline || "").getTime() - new Date(b.deadline || "").getTime();
         case "createdAt":
         default:
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return new Date(b.createdAt || "").getTime() - new Date(a.createdAt || "").getTime();
       }
     });
 
@@ -87,10 +93,16 @@ const Dashboard = () => {
             Manage your saved programs and application progress
           </p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)} className="shrink-0">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Program
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsAddDialogOpen(true)} className="shrink-0">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Program
+          </Button>
+          <Button variant="outline" onClick={handleExportCsv} className="shrink-0">
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
