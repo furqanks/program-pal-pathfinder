@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Program, useProgramContext } from "@/contexts/ProgramContext";
 import { useTagContext } from "@/contexts/TagContext";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { format, parseISO } from "date-fns";
 import TagSelector from "../tags/TagSelector";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface EditProgramFormProps {
   program: Program;
@@ -24,6 +25,7 @@ interface EditProgramFormProps {
 const EditProgramForm = ({ program, onClose }: EditProgramFormProps) => {
   const { updateProgram } = useProgramContext();
   const { tags } = useTagContext();
+  const isMobile = useIsMobile();
   const statusTags = tags.filter((tag) => tag.type === "status");
   const customTags = tags.filter((tag) => tag.type === "custom");
 
@@ -52,9 +54,9 @@ const EditProgramForm = ({ program, onClose }: EditProgramFormProps) => {
     onClose();
   };
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+  const formContent = (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="programName">Program Name</Label>
           <Input
@@ -77,13 +79,24 @@ const EditProgramForm = ({ program, onClose }: EditProgramFormProps) => {
         </div>
         <div className="space-y-2">
           <Label htmlFor="degreeType">Degree Type</Label>
-          <Input
-            id="degreeType"
-            name="degreeType"
+          <Select
             value={formData.degreeType}
-            onChange={handleChange}
-            required
-          />
+            onValueChange={(value) =>
+              setFormData((prev) => ({ ...prev, degreeType: value }))
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select degree type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Associate">Associate</SelectItem>
+              <SelectItem value="Bachelor">Bachelor</SelectItem>
+              <SelectItem value="Masters">Masters</SelectItem>
+              <SelectItem value="PhD">PhD</SelectItem>
+              <SelectItem value="Certificate">Certificate</SelectItem>
+              <SelectItem value="Diploma">Diploma</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="country">Country</Label>
@@ -126,9 +139,7 @@ const EditProgramForm = ({ program, onClose }: EditProgramFormProps) => {
             placeholder="Add any notes about this program..."
           />
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div className="space-y-2">
           <Label>Status</Label>
           <Select
@@ -168,6 +179,14 @@ const EditProgramForm = ({ program, onClose }: EditProgramFormProps) => {
         <Button type="submit">Save Changes</Button>
       </div>
     </form>
+  );
+
+  return isMobile ? (
+    <ScrollArea className="h-[60vh] pr-4">
+      {formContent}
+    </ScrollArea>
+  ) : (
+    formContent
   );
 };
 

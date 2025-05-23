@@ -93,6 +93,22 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Better tap targets on mobile */
+  @media (max-width: 768px) {
+    button, 
+    .button, 
+    [role="button"],
+    a {
+      @apply min-h-[44px] min-w-[44px];
+    }
+    
+    input,
+    select,
+    textarea {
+      @apply p-3;
+    }
+  }
 }
 
 /* Custom scrollbar */
@@ -111,6 +127,21 @@
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-muted-foreground/60;
+}
+
+/* Dialog mobile improvements */
+@media (max-width: 640px) {
+  .DialogContent {
+    @apply p-4 w-[calc(100%-32px)] max-h-[85vh] rounded-t-lg;
+  }
+  
+  .DialogFooter {
+    @apply flex-col gap-2;
+  }
+  
+  .DialogFooter > button {
+    @apply w-full;
+  }
 }
 
 /* For multiple tag input */
@@ -161,4 +192,29 @@
 
 .prose ol {
   @apply list-decimal;
+}
+
+/* Dialog content improvements */
+.DialogContent, 
+[data-radix-dialog-content] {
+  @apply overflow-hidden;
+}
+
+/* Sheet content improvements */
+.SheetContent,
+[data-radix-sheet-content] {
+  @apply overflow-hidden;
+}
+
+/* Fix dropdown menus on mobile */
+.SelectContent,
+[data-radix-select-content],
+.DropdownMenuContent,
+[data-radix-dropdown-menu-content] {
+  @apply bg-popover z-50;
+}
+
+/* Improved card padding */
+.card-content-compact {
+  @apply p-4;
 }

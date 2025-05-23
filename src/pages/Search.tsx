@@ -16,12 +16,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import AddProgramDialog from "@/components/program/AddProgramDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Search = () => {
   const { searchPrograms, searchResults, isLoading } = usePerplexityContext();
   const { addProgram } = useProgramContext();
   const [query, setQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
   
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +46,7 @@ const Search = () => {
       statusTagId: "status-considering",
       customTagIds: [],
     });
+    toast.success(`${result.programName} added to your shortlist`);
   };
   
   const handleGoogleSearch = (result: SearchResult) => {
@@ -53,17 +56,17 @@ const Search = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Program Search</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Program Search</h1>
         <p className="text-muted-foreground mt-1">
           Search for academic programs powered by Perplexity AI
         </p>
       </div>
       
-      <Card>
-        <CardContent className="pt-6">
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
+      <Card className="overflow-hidden">
+        <CardContent className="pt-6 pb-4">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
             <Input
-              placeholder="Search for programs (e.g. Computer Science, Data Science, MBA...)"
+              placeholder="Search for programs (e.g. Computer Science, Data Science...)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="flex-1"
@@ -95,11 +98,11 @@ const Search = () => {
           <div className="grid grid-cols-1 gap-4">
             {[1, 2, 3].map((i) => (
               <Card key={i}>
-                <CardHeader>
+                <CardHeader className="pb-2">
                   <Skeleton className="h-5 w-2/3" />
                   <Skeleton className="h-4 w-1/3 mt-2" />
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pb-2">
                   <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-5/6 mt-2" />
                   <Skeleton className="h-4 w-2/3 mt-2" />
@@ -114,9 +117,9 @@ const Search = () => {
           <div className="grid grid-cols-1 gap-4">
             {searchResults.length === 0 ? (
               <Card className="border-dashed">
-                <CardContent className="flex flex-col items-center justify-center h-40">
+                <CardContent className="flex flex-col items-center justify-center h-40 p-6">
                   <SearchIcon className="h-10 w-10 text-muted-foreground mb-2 opacity-50" />
-                  <p className="text-lg text-muted-foreground">
+                  <p className="text-lg text-muted-foreground text-center">
                     {query ? "No results found. Try another search." : "Search for programs to see results"}
                   </p>
                 </CardContent>
@@ -124,35 +127,35 @@ const Search = () => {
             ) : (
               searchResults.map((result, index) => (
                 <Card key={index} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
+                  <CardHeader className="pb-2 md:pb-3">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
                       <div>
                         <CardTitle className="text-lg">{result.programName}</CardTitle>
                         <p className="text-sm text-muted-foreground">
                           {result.university}
                         </p>
                       </div>
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
                         <Badge>{result.degreeType}</Badge>
                         <Badge variant="outline">{result.country}</Badge>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="pb-2">
+                  <CardContent className="pb-2 md:pb-3">
                     <p className="text-sm">{result.description}</p>
                   </CardContent>
-                  <CardFooter className="flex justify-between gap-2">
+                  <CardFooter className="flex flex-col sm:flex-row gap-2">
                     <Button 
                       variant="outline"
                       onClick={() => handleGoogleSearch(result)}
-                      className="flex-1"
+                      className="w-full sm:w-auto"
                     >
                       <ExternalLink className="mr-2 h-4 w-4" />
                       Search on Google
                     </Button>
                     <Button 
                       onClick={() => handleAddToShortlist(result)}
-                      className="flex-1"
+                      className="w-full sm:w-auto"
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Save to Shortlist
