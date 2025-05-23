@@ -1,3 +1,4 @@
+
 import { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -42,6 +43,7 @@ type ProgramContextType = {
   toggleTask: (programId: string, taskId: string) => void;
   deleteTask: (programId: string, taskId: string) => void;
   analyzeShortlist: () => Promise<AnalysisResult | undefined>;
+  isLocalMode: boolean;
 };
 
 const ProgramContext = createContext<ProgramContextType | undefined>(undefined);
@@ -54,21 +56,47 @@ export const useProgramContext = () => {
   return context;
 };
 
+// Helper for local storage
+const LOCAL_STORAGE_KEY = 'lovable_programs';
+
+const saveToLocalStorage = (programs: Program[]) => {
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(programs));
+};
+
+const loadFromLocalStorage = (): Program[] => {
+  try {
+    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    console.error("Error loading programs from local storage:", e);
+    return [];
+  }
+};
+
 export const ProgramProvider = ({ children }: { children: ReactNode }) => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLocalMode, setIsLocalMode] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
 
   // Fetch programs from Supabase on component mount
   useEffect(() => {
     const fetchPrograms = async () => {
       try {
+        // Try to fetch from Supabase first
         const { data, error } = await supabase
           .from('programs_saved')
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          // If there's an error with Supabase, switch to local storage mode
+          console.warn("Supabase error, using local storage mode:", error);
+          setIsLocalMode(true);
+          const localPrograms = loadFromLocalStorage();
+          setPrograms(localPrograms);
+          return;
+        }
 
         if (data) {
           // Convert Supabase format to our Program interface
@@ -91,7 +119,12 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error('Error fetching programs:', error);
-        toast.error('Failed to load your programs');
+        toast.error('Failed to load programs, using local storage');
+        
+        // Fallback to local storage
+        setIsLocalMode(true);
+        const localPrograms = loadFromLocalStorage();
+        setPrograms(localPrograms);
       } finally {
         setLoading(false);
       }
@@ -100,44 +133,78 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
     fetchPrograms();
   }, []);
 
+  // Save to local storage whenever programs change if in local mode
+  useEffect(() => {
+    if (isLocalMode && programs.length > 0) {
+      saveToLocalStorage(programs);
+    }
+  }, [programs, isLocalMode]);
+
   const addProgram = async (program: Omit<Program, "id" | "tasks" | "createdAt">) => {
     try {
-      // Insert into Supabase
-      const { data, error } = await supabase
-        .from('programs_saved')
-        .insert({
-          program_name: program.programName,
-          university: program.university,
-          degree_type: program.degreeType,
-          country: program.country,
-          tuition: program.tuition,
-          deadline: program.deadline,
-          notes: program.notes,
-          status_tag: program.statusTagId,
-          custom_tags: program.customTagIds
-        })
-        .select()
-        .single();
+      if (!isLocalMode) {
+        // Try to add to Supabase
+        try {
+          const { data, error } = await supabase
+            .from('programs_saved')
+            .insert({
+              program_name: program.programName,
+              university: program.university,
+              degree_type: program.degreeType,
+              country: program.country,
+              tuition: program.tuition,
+              deadline: program.deadline,
+              notes: program.notes,
+              status_tag: program.statusTagId,
+              custom_tags: program.customTagIds
+            })
+            .select()
+            .single();
+          
+          if (error) {
+            console.error("Supabase error, falling back to local storage:", error);
+            throw error;
+          }
+
+          // Add to local state
+          const newProgram: Program = {
+            id: data.id,
+            programName: data.program_name,
+            university: data.university,
+            degreeType: data.degree_type,
+            country: data.country,
+            tuition: data.tuition || '',
+            deadline: data.deadline || '',
+            notes: data.notes || '',
+            statusTagId: data.status_tag,
+            customTagIds: data.custom_tags || [],
+            tasks: []
+          };
+
+          setPrograms([newProgram, ...programs]);
+          toast.success("Program added to shortlist");
+          return;
+        } catch (error) {
+          // If Supabase fails, switch to local storage mode
+          setIsLocalMode(true);
+          console.error("Switching to local storage mode due to error:", error);
+          toast.warning("Unable to save to database, using local storage instead");
+        }
+      }
       
-      if (error) throw error;
-
-      // Add to local state
+      // Local storage fallback
       const newProgram: Program = {
-        id: data.id,
-        programName: data.program_name,
-        university: data.university,
-        degreeType: data.degree_type,
-        country: data.country,
-        tuition: data.tuition || '',
-        deadline: data.deadline || '',
-        notes: data.notes || '',
-        statusTagId: data.status_tag,
-        customTagIds: data.custom_tags || [],
-        tasks: []
+        id: uuidv4(),
+        ...program,
+        tasks: [],
+        createdAt: new Date().toISOString()
       };
-
-      setPrograms([newProgram, ...programs]);
-      toast.success("Program added to shortlist");
+      
+      const updatedPrograms = [newProgram, ...programs];
+      setPrograms(updatedPrograms);
+      saveToLocalStorage(updatedPrograms);
+      toast.success("Program added to shortlist (local mode)");
+      
     } catch (error) {
       console.error("Error adding program:", error);
       toast.error("Failed to add program");
@@ -146,33 +213,52 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
 
   const updateProgram = async (id: string, updates: Partial<Program>) => {
     try {
-      // Prepare updates for Supabase format
-      const supabaseUpdates: any = {};
-      if (updates.programName !== undefined) supabaseUpdates.program_name = updates.programName;
-      if (updates.university !== undefined) supabaseUpdates.university = updates.university;
-      if (updates.degreeType !== undefined) supabaseUpdates.degree_type = updates.degreeType;
-      if (updates.country !== undefined) supabaseUpdates.country = updates.country;
-      if (updates.tuition !== undefined) supabaseUpdates.tuition = updates.tuition;
-      if (updates.deadline !== undefined) supabaseUpdates.deadline = updates.deadline;
-      if (updates.notes !== undefined) supabaseUpdates.notes = updates.notes;
-      if (updates.statusTagId !== undefined) supabaseUpdates.status_tag = updates.statusTagId;
-      if (updates.customTagIds !== undefined) supabaseUpdates.custom_tags = updates.customTagIds;
-      supabaseUpdates.updated_at = new Date().toISOString();
+      if (!isLocalMode) {
+        // Try to update in Supabase
+        try {
+          // Prepare updates for Supabase format
+          const supabaseUpdates: any = {};
+          if (updates.programName !== undefined) supabaseUpdates.program_name = updates.programName;
+          if (updates.university !== undefined) supabaseUpdates.university = updates.university;
+          if (updates.degreeType !== undefined) supabaseUpdates.degree_type = updates.degreeType;
+          if (updates.country !== undefined) supabaseUpdates.country = updates.country;
+          if (updates.tuition !== undefined) supabaseUpdates.tuition = updates.tuition;
+          if (updates.deadline !== undefined) supabaseUpdates.deadline = updates.deadline;
+          if (updates.notes !== undefined) supabaseUpdates.notes = updates.notes;
+          if (updates.statusTagId !== undefined) supabaseUpdates.status_tag = updates.statusTagId;
+          if (updates.customTagIds !== undefined) supabaseUpdates.custom_tags = updates.customTagIds;
+          supabaseUpdates.updated_at = new Date().toISOString();
 
-      // Update in Supabase
-      const { error } = await supabase
-        .from('programs_saved')
-        .update(supabaseUpdates)
-        .eq('id', id);
+          // Update in Supabase
+          const { error } = await supabase
+            .from('programs_saved')
+            .update(supabaseUpdates)
+            .eq('id', id);
+          
+          if (error) throw error;
+
+          // Update local state
+          setPrograms(programs.map((program) => 
+            program.id === id ? { ...program, ...updates } : program
+          ));
+          
+          toast.success("Program updated");
+          return;
+        } catch (error) {
+          console.error("Supabase update error, falling back to local storage:", error);
+          setIsLocalMode(true);
+          toast.warning("Unable to update in database, using local storage instead");
+        }
+      }
       
-      if (error) throw error;
-
-      // Update local state
-      setPrograms(programs.map((program) => 
+      // Local storage fallback
+      const updatedPrograms = programs.map((program) => 
         program.id === id ? { ...program, ...updates } : program
-      ));
+      );
+      setPrograms(updatedPrograms);
+      saveToLocalStorage(updatedPrograms);
+      toast.success("Program updated (local mode)");
       
-      toast.success("Program updated");
     } catch (error) {
       console.error("Error updating program:", error);
       toast.error("Failed to update program");
@@ -181,17 +267,33 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteProgram = async (id: string) => {
     try {
-      // Delete from Supabase
-      const { error } = await supabase
-        .from('programs_saved')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
+      if (!isLocalMode) {
+        // Try to delete from Supabase
+        try {
+          const { error } = await supabase
+            .from('programs_saved')
+            .delete()
+            .eq('id', id);
+          
+          if (error) throw error;
 
-      // Delete from local state
-      setPrograms(programs.filter((program) => program.id !== id));
-      toast.success("Program deleted");
+          // Delete from local state
+          setPrograms(programs.filter((program) => program.id !== id));
+          toast.success("Program deleted");
+          return;
+        } catch (error) {
+          console.error("Supabase delete error, falling back to local storage:", error);
+          setIsLocalMode(true);
+          toast.warning("Unable to delete from database, using local storage instead");
+        }
+      }
+      
+      // Local storage fallback
+      const updatedPrograms = programs.filter((program) => program.id !== id);
+      setPrograms(updatedPrograms);
+      saveToLocalStorage(updatedPrograms);
+      toast.success("Program deleted (local mode)");
+      
     } catch (error) {
       console.error("Error deleting program:", error);
       toast.error("Failed to delete program");
@@ -199,22 +301,27 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // These methods are placeholders for task management
-  // In a real implementation, these would be stored in a separate table
   const addTask = (programId: string, task: Omit<ProgramTask, "id">) => {
     const newTask = {
       id: uuidv4(),
       ...task,
     };
     
-    setPrograms(programs.map((program) => 
+    const updatedPrograms = programs.map((program) => 
       program.id === programId
         ? { ...program, tasks: [...program.tasks, newTask] }
         : program
-    ));
+    );
+    
+    setPrograms(updatedPrograms);
+    
+    if (isLocalMode) {
+      saveToLocalStorage(updatedPrograms);
+    }
   };
 
   const toggleTask = (programId: string, taskId: string) => {
-    setPrograms(programs.map((program) => 
+    const updatedPrograms = programs.map((program) => 
       program.id === programId
         ? {
             ...program,
@@ -225,21 +332,33 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
             ),
           }
         : program
-    ));
+    );
+    
+    setPrograms(updatedPrograms);
+    
+    if (isLocalMode) {
+      saveToLocalStorage(updatedPrograms);
+    }
   };
 
   const deleteTask = (programId: string, taskId: string) => {
-    setPrograms(programs.map((program) => 
+    const updatedPrograms = programs.map((program) => 
       program.id === programId
         ? {
             ...program,
             tasks: program.tasks.filter((task) => task.id !== taskId),
           }
         : program
-    ));
+    );
+    
+    setPrograms(updatedPrograms);
+    
+    if (isLocalMode) {
+      saveToLocalStorage(updatedPrograms);
+    }
   };
 
-  // Analyze shortlist using the edge function
+  // Analyze shortlist using the edge function or mock data in local mode
   const analyzeShortlist = async (): Promise<AnalysisResult | undefined> => {
     if (programs.length < 3) {
       toast.error("Please add at least 3 programs to analyze your shortlist");
@@ -249,23 +368,28 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
     toast.info("Analyzing your shortlist...", { duration: 2000 });
 
     try {
-      // Call the shortlist-analysis edge function
-      const { data, error } = await supabase.functions.invoke('shortlist-analysis');
-      
-      if (error) throw error;
-      
-      if (data) {
-        setAnalysisResults(data as AnalysisResult);
-        toast.success("Shortlist analysis complete");
-        return data as AnalysisResult;
-      } else {
-        throw new Error("Failed to analyze shortlist");
+      if (!isLocalMode) {
+        try {
+          // Call the shortlist-analysis edge function
+          const { data, error } = await supabase.functions.invoke('shortlist-analysis');
+          
+          if (error) throw error;
+          
+          if (data) {
+            setAnalysisResults(data as AnalysisResult);
+            toast.success("Shortlist analysis complete");
+            return data as AnalysisResult;
+          } else {
+            throw new Error("Failed to analyze shortlist");
+          }
+        } catch (error) {
+          console.error("Error with Supabase function, using mock analysis:", error);
+          setIsLocalMode(true);
+          toast.warning("Unable to use analysis API, using simulated analysis instead");
+        }
       }
-    } catch (error) {
-      console.error("Error analyzing shortlist:", error);
-      toast.error("Failed to analyze shortlist");
       
-      // For development, generate mock analysis
+      // Mock analysis for local mode or when Supabase function fails
       const mockAnalysis: AnalysisResult = {
         summary: "Your shortlist shows a good mix of programs but could benefit from more geographical diversity. Consider adding programs from different regions to broaden your options.",
         suggestions: [
@@ -284,6 +408,10 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
       setAnalysisResults(mockAnalysis);
       toast.success("Simulated analysis generated for testing");
       return mockAnalysis;
+    } catch (error) {
+      console.error("Error analyzing shortlist:", error);
+      toast.error("Failed to analyze shortlist");
+      return undefined;
     }
   };
 
@@ -297,7 +425,8 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
         addTask,
         toggleTask,
         deleteTask,
-        analyzeShortlist
+        analyzeShortlist,
+        isLocalMode
       }}
     >
       {loading ? <div>Loading programs...</div> : children}

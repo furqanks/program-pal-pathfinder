@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search as SearchIcon, Plus, ExternalLink } from "lucide-react";
+import { Search as SearchIcon, Plus, ExternalLink, Info } from "lucide-react";
 import { usePerplexityContext, SearchResult } from "@/contexts/PerplexityContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import {
@@ -17,10 +17,16 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import AddProgramDialog from "@/components/program/AddProgramDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const Search = () => {
   const { searchPrograms, searchResults, isLoading } = usePerplexityContext();
-  const { addProgram } = useProgramContext();
+  const { addProgram, isLocalMode } = useProgramContext();
   const [query, setQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -46,7 +52,6 @@ const Search = () => {
       statusTagId: "status-considering",
       customTagIds: [],
     });
-    toast.success(`${result.programName} added to your shortlist`);
   };
   
   const handleGoogleSearch = (result: SearchResult) => {
@@ -87,7 +92,23 @@ const Search = () => {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Search Results</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold">Search Results</h2>
+            {isLocalMode && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="cursor-help">
+                      <Info className="h-3 w-3 mr-1" /> Local Mode
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Programs are being saved locally because there was an issue connecting to the database. Data will be stored in your browser.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
           <Button variant="outline" onClick={() => setIsAddDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Add Manually

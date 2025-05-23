@@ -22,8 +22,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import TagSelector from "../tags/TagSelector";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Badge } from "@/components/ui/badge";
+import { Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface AddProgramDialogProps {
   open: boolean;
@@ -31,9 +37,8 @@ interface AddProgramDialogProps {
 }
 
 const AddProgramDialog = ({ open, onOpenChange }: AddProgramDialogProps) => {
-  const { addProgram } = useProgramContext();
+  const { addProgram, isLocalMode } = useProgramContext();
   const { tags } = useTagContext();
-  const isMobile = useIsMobile();
   const statusTags = tags.filter((tag) => tag.type === "status");
   const customTags = tags.filter((tag) => tag.type === "custom");
 
@@ -77,148 +82,157 @@ const AddProgramDialog = ({ open, onOpenChange }: AddProgramDialogProps) => {
     });
   };
 
-  const formContent = (
-    <form onSubmit={handleSubmit}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-        <div className="space-y-2">
-          <Label htmlFor="programName">Program Name *</Label>
-          <Input
-            id="programName"
-            name="programName"
-            value={formData.programName}
-            onChange={handleChange}
-            placeholder="e.g. Computer Science"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="university">University *</Label>
-          <Input
-            id="university"
-            name="university"
-            value={formData.university}
-            onChange={handleChange}
-            placeholder="e.g. Stanford University"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="degreeType">Degree Type *</Label>
-          <Select
-            value={formData.degreeType}
-            onValueChange={(value) =>
-              setFormData((prev) => ({ ...prev, degreeType: value }))
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select degree type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Associate">Associate</SelectItem>
-              <SelectItem value="Bachelor">Bachelor</SelectItem>
-              <SelectItem value="Masters">Masters</SelectItem>
-              <SelectItem value="PhD">PhD</SelectItem>
-              <SelectItem value="Certificate">Certificate</SelectItem>
-              <SelectItem value="Diploma">Diploma</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="country">Country *</Label>
-          <Input
-            id="country"
-            name="country"
-            value={formData.country}
-            onChange={handleChange}
-            placeholder="e.g. USA"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="tuition">Tuition</Label>
-          <Input
-            id="tuition"
-            name="tuition"
-            value={formData.tuition}
-            onChange={handleChange}
-            placeholder="e.g. $30,000"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="deadline">Application Deadline</Label>
-          <Input
-            id="deadline"
-            name="deadline"
-            type="date"
-            value={formData.deadline}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="notes">Notes</Label>
-          <Textarea
-            id="notes"
-            name="notes"
-            value={formData.notes}
-            onChange={handleChange}
-            placeholder="Add any notes about this program..."
-            rows={3}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select
-            value={formData.statusTagId}
-            onValueChange={(value) =>
-              setFormData((prev) => ({ ...prev, statusTagId: value }))
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusTags.map((tag) => (
-                <SelectItem key={tag.id} value={tag.id}>
-                  {tag.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Tags</Label>
-          <TagSelector
-            availableTags={customTags}
-            selectedTagIds={formData.customTagIds}
-            onChange={(selectedIds) =>
-              setFormData((prev) => ({ ...prev, customTagIds: selectedIds }))
-            }
-          />
-        </div>
-      </div>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-          Cancel
-        </Button>
-        <Button type="submit">Save Program</Button>
-      </DialogFooter>
-    </form>
-  );
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Add Program</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Add Program</DialogTitle>
+            {isLocalMode && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="cursor-help">
+                      <Info className="h-3 w-3 mr-1" /> Local Mode
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Programs are being saved locally because there was an issue connecting to the database. Data will be stored in your browser.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
           <DialogDescription>
             Add a new academic program to your shortlist.
           </DialogDescription>
         </DialogHeader>
-        {isMobile ? (
-          <ScrollArea className="h-[60vh] pr-4">{formContent}</ScrollArea>
-        ) : (
-          formContent
-        )}
+        
+        <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[60vh] pr-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="programName">Program Name *</Label>
+              <Input
+                id="programName"
+                name="programName"
+                value={formData.programName}
+                onChange={handleChange}
+                placeholder="e.g. Computer Science"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="university">University *</Label>
+              <Input
+                id="university"
+                name="university"
+                value={formData.university}
+                onChange={handleChange}
+                placeholder="e.g. Stanford University"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="degreeType">Degree Type *</Label>
+              <Select
+                value={formData.degreeType}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, degreeType: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select degree type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Associate">Associate</SelectItem>
+                  <SelectItem value="Bachelor">Bachelor</SelectItem>
+                  <SelectItem value="Masters">Masters</SelectItem>
+                  <SelectItem value="PhD">PhD</SelectItem>
+                  <SelectItem value="Certificate">Certificate</SelectItem>
+                  <SelectItem value="Diploma">Diploma</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="country">Country *</Label>
+              <Input
+                id="country"
+                name="country"
+                value={formData.country}
+                onChange={handleChange}
+                placeholder="e.g. USA"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tuition">Tuition</Label>
+              <Input
+                id="tuition"
+                name="tuition"
+                value={formData.tuition}
+                onChange={handleChange}
+                placeholder="e.g. $30,000"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="deadline">Application Deadline</Label>
+              <Input
+                id="deadline"
+                name="deadline"
+                type="date"
+                value={formData.deadline}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                placeholder="Add any notes about this program..."
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select
+                value={formData.statusTagId}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, statusTagId: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusTags.map((tag) => (
+                    <SelectItem key={tag.id} value={tag.id}>
+                      {tag.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              <TagSelector
+                availableTags={customTags}
+                selectedTagIds={formData.customTagIds}
+                onChange={(selectedIds) =>
+                  setFormData((prev) => ({ ...prev, customTagIds: selectedIds }))
+                }
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">Save Program</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
