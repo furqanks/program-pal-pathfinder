@@ -1,8 +1,17 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Search, ListChecks, FileText, BarChart, X } from "lucide-react";
+import { Search, ListChecks, FileText, BarChart, X, LogOut, User } from "lucide-react";
 import { Button } from "./ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const navItems = [
   { path: '/', label: 'Shortlist', icon: ListChecks },
@@ -18,6 +27,21 @@ type SidebarProps = {
 
 const Sidebar = ({ open, setOpen }: SidebarProps) => {
   const location = useLocation();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success("Logged out successfully");
+    } catch (error) {
+      toast.error("Failed to log out");
+    }
+  };
+
+  const getUserInitials = () => {
+    if (!user || !user.email) return "U";
+    return user.email.charAt(0).toUpperCase();
+  };
 
   return (
     <aside
@@ -75,10 +99,35 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
       </div>
 
       <div className="border-t p-4">
-        <div className={cn("text-xs text-muted-foreground", !open && "md:hidden")}>
-          <p>UniApp Space © 2025</p>
-          <p className="mt-1">AI-powered university applications</p>
-        </div>
+        {user ? (
+          <div className={cn("flex items-center justify-between", !open && "md:justify-center")}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="p-0 h-auto hover:bg-transparent flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                  </Avatar>
+                  {open && <span className="text-sm font-medium md:hidden">{user.email}</span>}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" /> Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {open && (
+              <Button variant="ghost" size="sm" onClick={handleSignOut} className="md:hidden">
+                <LogOut className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className={cn("text-xs text-muted-foreground", !open && "md:hidden")}>
+            <p>UniApp Space © 2025</p>
+            <p className="mt-1">AI-powered university applications</p>
+          </div>
+        )}
       </div>
     </aside>
   );
