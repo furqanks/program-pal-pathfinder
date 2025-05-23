@@ -29,7 +29,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   return <>{children}</>;
@@ -60,6 +60,7 @@ const App = () => {
                       <Route path="insights" element={<Insights />} />
                       <Route path="*" element={<NotFound />} />
                     </Route>
+                    <Route path="*" element={<Navigate to="/home" replace />} />
                   </Routes>
                 </BrowserRouter>
               </PerplexityProvider>
