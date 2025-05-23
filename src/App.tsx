@@ -13,13 +13,12 @@ import Layout from "./components/Layout";
 import { TagProvider } from "./contexts/TagContext";
 import { ProgramProvider } from "./contexts/ProgramContext";
 import { PerplexityProvider } from "./contexts/PerplexityContext";
-import React from 'react';
 
 // Create the query client instance
 const queryClient = new QueryClient();
 
-const App = () => (
-  <React.StrictMode>
+const App = () => {
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <ProgramProvider>
@@ -43,7 +42,7 @@ const App = () => (
         </ProgramProvider>
       </TooltipProvider>
     </QueryClientProvider>
-  </React.StrictMode>
-);
+  );
+};
 
 export default App;
