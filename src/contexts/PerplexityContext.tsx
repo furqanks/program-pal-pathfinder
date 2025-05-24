@@ -59,40 +59,7 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Search error:", error);
       toast.error(error instanceof Error ? error.message : 'Failed to search programs. Please try again.');
-      
-      // For development, simulate results after API failure
-      const mockResults: SearchResult[] = [
-        {
-          programName: `${query} Engineering`,
-          university: "MIT",
-          degreeType: "Masters",
-          country: "USA",
-          description: `The ${query} Engineering program at MIT offers cutting-edge research opportunities in ${query} and related technologies.`,
-        },
-        {
-          programName: `${query} Science`,
-          university: "Stanford University",
-          degreeType: "PhD",
-          country: "USA",
-          description: `Stanford's ${query} Science program is renowned for its interdisciplinary approach integrating ${query} with applied research.`,
-        },
-        {
-          programName: `${query} Technology`,
-          university: "ETH Zurich",
-          degreeType: "Masters",
-          country: "Switzerland",
-          description: `ETH Zurich's ${query} Technology program provides a comprehensive curriculum with strong industry connections.`,
-        },
-        {
-          programName: `${query} Innovation`,
-          university: "University of Tokyo",
-          degreeType: "Masters",
-          country: "Japan",
-          description: `The University of Tokyo's ${query} Innovation program focuses on emerging technologies and entrepreneurship in ${query} fields.`,
-        },
-      ];
-
-      setSearchResults(mockResults);
+      setSearchResults([]);
     } finally {
       setIsLoading(false);
     }

@@ -77,7 +77,6 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLocalMode, setIsLocalMode] = useState(false);
-  const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
 
   // Fetch programs from Supabase on component mount
   useEffect(() => {
@@ -111,7 +110,6 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
             notes: program.notes || '',
             statusTagId: program.status_tag || 'status-considering',
             customTagIds: program.custom_tags || [],
-            // We'll handle tasks separately or initialize empty for now
             tasks: []
           }));
 
@@ -358,7 +356,7 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Analyze shortlist using the edge function or mock data in local mode
+  // Analyze shortlist using the edge function
   const analyzeShortlist = async (): Promise<AnalysisResult | undefined> => {
     if (programs.length < 3) {
       toast.error("Please add at least 3 programs to analyze your shortlist");
@@ -369,45 +367,20 @@ export const ProgramProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       if (!isLocalMode) {
-        try {
-          // Call the shortlist-analysis edge function
-          const { data, error } = await supabase.functions.invoke('shortlist-analysis');
-          
-          if (error) throw error;
-          
-          if (data) {
-            setAnalysisResults(data as AnalysisResult);
-            toast.success("Shortlist analysis complete");
-            return data as AnalysisResult;
-          } else {
-            throw new Error("Failed to analyze shortlist");
-          }
-        } catch (error) {
-          console.error("Error with Supabase function, using mock analysis:", error);
-          setIsLocalMode(true);
-          toast.warning("Unable to use analysis API, using simulated analysis instead");
+        // Call the shortlist-analysis edge function
+        const { data, error } = await supabase.functions.invoke('shortlist-analysis');
+        
+        if (error) throw error;
+        
+        if (data) {
+          toast.success("Shortlist analysis complete");
+          return data as AnalysisResult;
+        } else {
+          throw new Error("Failed to analyze shortlist");
         }
+      } else {
+        throw new Error("Analysis not available in local mode");
       }
-      
-      // Mock analysis for local mode or when Supabase function fails
-      const mockAnalysis: AnalysisResult = {
-        summary: "Your shortlist shows a good mix of programs but could benefit from more geographical diversity. Consider adding programs from different regions to broaden your options.",
-        suggestions: [
-          "Consider adding 1-2 programs from Asia to diversify your geographical options.",
-          "Your shortlist is heavy on Computer Science programs. Consider related fields like Data Science or AI.",
-          "Add programs with varying tuition costs to provide financial flexibility.",
-          "Consider including programs with earlier application deadlines as backups.",
-          "Balance research-focused and industry-oriented programs for broader career prospects."
-        ],
-        countryAnalysis: "Your programs are concentrated in North America and Europe. Consider adding options from Asia or Australia.",
-        degreeTypeAnalysis: "You have a good balance of Master's and PhD programs.",
-        timelineInsight: "Many of your application deadlines are clustered in December. Consider programs with earlier or later deadlines to spread out your application workload.",
-        financialInsight: "The average tuition for your selected programs is high. Consider adding some programs with lower tuition fees or better financial aid options."
-      };
-      
-      setAnalysisResults(mockAnalysis);
-      toast.success("Simulated analysis generated for testing");
-      return mockAnalysis;
     } catch (error) {
       console.error("Error analyzing shortlist:", error);
       toast.error("Failed to analyze shortlist");
