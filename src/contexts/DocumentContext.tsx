@@ -5,8 +5,7 @@ import { Document, DocumentContextType } from "@/types/document.types";
 import { 
   fetchUserDocuments, 
   addDocument as addDocumentService, 
-  generateDocumentFeedback, 
-  generateMockFeedback 
+  generateDocumentFeedback
 } from "@/services/document.service";
 
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
@@ -100,22 +99,6 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error generating feedback:", error);
       toast.error(error instanceof Error ? error.message : "Failed to generate feedback");
-      
-      // For development, simulate feedback after API failure
-      const mockFeedback = generateMockFeedback();
-      
-      // Update the document in state with mock feedback
-      setDocuments(documents.map(doc => 
-        doc.id === documentId ? {
-          ...doc,
-          contentFeedback: mockFeedback.summary,
-          improvementPoints: mockFeedback.improvementPoints,
-          quotedImprovements: mockFeedback.quotedImprovements,
-          score: mockFeedback.score
-        } : doc
-      ));
-      
-      toast.success("Simulated feedback generated for testing");
     }
   };
 
