@@ -37,7 +37,8 @@ function isProgramRelatedQuery(query: string): boolean {
     'social work', 'criminal justice', 'public administration', 'urban planning',
     'agriculture', 'forestry', 'marine science', 'geology', 'meteorology',
     'study', 'university', 'college', 'academic', 'curriculum', 'major', 'minor',
-    'specialization', 'concentration', 'field', 'discipline', 'subject'
+    'specialization', 'concentration', 'field', 'discipline', 'subject', 'affordable',
+    'budget', 'cheap', 'low cost', 'scholarship', 'financial aid', 'tuition'
   ];
   
   const queryLower = query.toLowerCase();
@@ -110,7 +111,30 @@ serve(async (req) => {
 
     console.log(`Searching for programs with query: ${query}`);
 
-    // Call Perplexity API with specific university domains only (no wildcards)
+    // Enhanced system prompt that considers affordability and diversity
+    const systemPrompt = `You are an academic program finder that searches for diverse academic programs from various universities worldwide.
+    
+    Given a search query about academic programs, provide information about 10-12 relevant programs from different universities and countries.
+    
+    IMPORTANT REQUIREMENTS:
+    - Include programs from various universities (not just elite institutions)
+    - If the query mentions "affordable", "budget", "cheap", or similar terms, prioritize universities known for reasonable tuition fees
+    - Include programs from different countries and regions for diversity
+    - Mix of public and private institutions
+    - Include both well-known and lesser-known quality institutions
+    - Only use information from official university websites and verified educational sources
+    
+    Format your response as a JSON array with objects containing these fields:
+    - programName (string): Official name of the academic program
+    - university (string): Official university or institution name  
+    - degreeType (string): Type of degree (PhD, Masters, Bachelor's, etc.)
+    - country (string): Country where the institution is located
+    - description (string): Brief description including tuition information if available (max 200 words)
+    
+    Return ONLY the JSON array, no additional text, no markdown formatting, no code blocks. Just pure JSON.
+    Ensure diversity in universities, countries, and price ranges based on the search query.`;
+
+    // Call Perplexity API without domain restrictions to get diverse results
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -118,46 +142,20 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
+        model: 'llama-3.1-sonar-large-128k-online',
         messages: [
           {
             role: 'system',
-            content: `You are an academic program finder that ONLY searches official university and educational institution websites. 
-            Given a search query about academic programs, provide information about 4 relevant programs from official university sources only.
-            
-            IMPORTANT: Only use information from official university websites (.edu domains, official university websites, and accredited educational institutions).
-            Do NOT use information from ranking sites, review sites, or unofficial sources.
-            
-            Format your response as a JSON array with objects containing these fields:
-            - programName (string): Official name of the academic program
-            - university (string): Official university or institution name
-            - degreeType (string): Type of degree (PhD, Masters, Bachelor's, etc.)
-            - country (string): Country where the institution is located
-            - description (string): Brief paragraph describing the program from official sources (max 200 words)
-            
-            Return ONLY the JSON array, no additional text, no markdown formatting, no code blocks. Just pure JSON.
-            If you cannot find 4 programs from official sources, return fewer programs but ensure all information is from official university websites.`
+            content: systemPrompt
           },
           {
             role: 'user',
-            content: `Find academic programs related to: ${query}. Only use official university websites and educational institution sources.`
+            content: `Find 10-12 diverse academic programs related to: ${query}. Include various universities from different countries and price ranges.`
           }
         ],
-        temperature: 0.2,
-        max_tokens: 2000,
+        temperature: 0.1,
+        max_tokens: 4000,
         return_images: false,
-        search_domain_filter: [
-          'harvard.edu',
-          'stanford.edu',
-          'mit.edu',
-          'cambridge.ac.uk',
-          'oxford.ac.uk',
-          'columbia.edu',
-          'yale.edu',
-          'princeton.edu',
-          'caltech.edu',
-          'ucl.ac.uk'
-        ],
         search_recency_filter: 'year'
       }),
     });
@@ -199,7 +197,7 @@ serve(async (req) => {
         );
       }
 
-      console.log(`Successfully parsed ${searchResults.length} search results`);
+      console.log(`Successfully parsed ${searchResults.length} search results from ${new Set(searchResults.map(r => r.university)).size} different universities`);
       return new Response(
         JSON.stringify({ searchResults }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -208,7 +206,7 @@ serve(async (req) => {
       console.error('Error parsing Perplexity response:', parseError);
       console.error('Failed content:', data.choices[0].message.content);
       return new Response(
-        JSON.stringify({ error: 'Failed to parse search results from official sources' }),
+        JSON.stringify({ error: 'Failed to parse search results. Please try again with a different search query.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
