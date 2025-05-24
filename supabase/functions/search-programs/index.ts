@@ -84,7 +84,7 @@ serve(async (req) => {
 
     console.log(`Searching for programs with query: ${query}`);
 
-    // Call Perplexity API with restricted domain sources (reduced to max 10)
+    // Call Perplexity API with specific university domains only (no wildcards)
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -121,16 +121,16 @@ serve(async (req) => {
         max_tokens: 2000,
         return_images: false,
         search_domain_filter: [
-          '*.edu',
-          '*.ac.uk',
-          '*.edu.au',
           'harvard.edu',
           'stanford.edu',
           'mit.edu',
-          'cambridge.org',
+          'cambridge.ac.uk',
           'oxford.ac.uk',
           'columbia.edu',
-          'yale.edu'
+          'yale.edu',
+          'princeton.edu',
+          'caltech.edu',
+          'ucl.ac.uk'
         ],
         search_recency_filter: 'year'
       }),
