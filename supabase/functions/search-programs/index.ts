@@ -44,6 +44,32 @@ function isProgramRelatedQuery(query: string): boolean {
   return programKeywords.some(keyword => queryLower.includes(keyword));
 }
 
+// Function to clean JSON from markdown formatting
+function extractJsonFromMarkdown(content: string): string {
+  console.log('Raw content received:', content);
+  
+  // Remove markdown code blocks if present
+  let cleanedContent = content.trim();
+  
+  // Remove ```json at the beginning
+  if (cleanedContent.startsWith('```json')) {
+    cleanedContent = cleanedContent.substring(7);
+  } else if (cleanedContent.startsWith('```')) {
+    cleanedContent = cleanedContent.substring(3);
+  }
+  
+  // Remove ``` at the end
+  if (cleanedContent.endsWith('```')) {
+    cleanedContent = cleanedContent.substring(0, cleanedContent.length - 3);
+  }
+  
+  // Trim whitespace
+  cleanedContent = cleanedContent.trim();
+  
+  console.log('Cleaned content:', cleanedContent);
+  return cleanedContent;
+}
+
 serve(async (req) => {
   // CORS preflight
   if (req.method === 'OPTIONS') {
@@ -102,14 +128,14 @@ serve(async (req) => {
             IMPORTANT: Only use information from official university websites (.edu domains, official university websites, and accredited educational institutions).
             Do NOT use information from ranking sites, review sites, or unofficial sources.
             
-            Format your response in valid JSON with an array of objects with these fields:
+            Format your response as a JSON array with objects containing these fields:
             - programName (string): Official name of the academic program
             - university (string): Official university or institution name
             - degreeType (string): Type of degree (PhD, Masters, Bachelor's, etc.)
             - country (string): Country where the institution is located
             - description (string): Brief paragraph describing the program from official sources (max 200 words)
             
-            Do not include any additional text outside the JSON object. The response should be parseable as JSON.
+            Return ONLY the JSON array, no additional text, no markdown formatting, no code blocks. Just pure JSON.
             If you cannot find 4 programs from official sources, return fewer programs but ensure all information is from official university websites.`
           },
           {
@@ -148,12 +174,18 @@ serve(async (req) => {
     
     // Parse the response content which should be JSON
     try {
-      // Extract the content from the message and parse it
+      // Extract the content from the message
       const content = data.choices[0].message.content;
-      // The content should be valid JSON
-      const searchResults = JSON.parse(content);
+      console.log('Original content from Perplexity:', content);
+      
+      // Clean the content from markdown formatting
+      const cleanedContent = extractJsonFromMarkdown(content);
+      
+      // Parse the cleaned JSON
+      const searchResults = JSON.parse(cleanedContent);
       
       if (!Array.isArray(searchResults)) {
+        console.error('Response is not an array:', searchResults);
         throw new Error('Response is not an array');
       }
 
@@ -167,12 +199,14 @@ serve(async (req) => {
         );
       }
 
+      console.log(`Successfully parsed ${searchResults.length} search results`);
       return new Response(
         JSON.stringify({ searchResults }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } catch (parseError) {
       console.error('Error parsing Perplexity response:', parseError);
+      console.error('Failed content:', data.choices[0].message.content);
       return new Response(
         JSON.stringify({ error: 'Failed to parse search results from official sources' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
