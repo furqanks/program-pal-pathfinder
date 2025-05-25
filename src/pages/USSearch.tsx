@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, Plus, ExternalLink, Settings } from "lucide-react";
+import { GraduationCap, Plus, ExternalLink } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -15,16 +15,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import AddProgramDialog from "@/components/program/AddProgramDialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
 
 interface USUniversityResult {
   name: string;
@@ -39,42 +30,13 @@ interface USUniversityResult {
 const USSearch = () => {
   const { addProgram } = useProgramContext();
   const [query, setQuery] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [tempApiKey, setTempApiKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<USUniversityResult[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isApiKeyDialogOpen, setIsApiKeyDialogOpen] = useState(false);
-
-  const handleSaveApiKey = () => {
-    setApiKey(tempApiKey);
-    localStorage.setItem('scoreboard_api_key', tempApiKey);
-    setIsApiKeyDialogOpen(false);
-    toast.success("API key saved successfully");
-  };
-
-  const loadApiKey = () => {
-    const savedKey = localStorage.getItem('scoreboard_api_key');
-    if (savedKey) {
-      setApiKey(savedKey);
-      setTempApiKey(savedKey);
-    }
-  };
-
-  // Load API key on component mount
-  useState(() => {
-    loadApiKey();
-  });
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!apiKey) {
-      toast.error("Please set your Scoreboard API key first");
-      setIsApiKeyDialogOpen(true);
-      return;
-    }
-
     if (!query.trim()) {
       toast.error("Please enter a search query");
       return;
@@ -83,27 +45,30 @@ const USSearch = () => {
     setIsLoading(true);
     
     try {
-      // TODO: Implement actual Scoreboard API call here
-      // For now, showing a placeholder message
-      toast.info("Scoreboard API integration will be implemented here");
+      console.log('Searching for:', query);
       
-      // Mock results for demonstration
-      const mockResults: USUniversityResult[] = [
-        {
-          name: "Stanford University",
-          location: "Stanford, CA",
-          ranking: 6,
-          tuition: "$56,169",
-          acceptanceRate: "4.3%",
-          programsOffered: ["Computer Science", "Engineering", "Business"],
-          description: "Private research university known for innovation and entrepreneurship."
-        }
-      ];
+      const { data, error } = await supabase.functions.invoke('us-university-search', {
+        body: { query: query.trim() }
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      console.log('Search results:', data);
+      setSearchResults(data.results || []);
       
-      setSearchResults(mockResults);
+      if (data.results && data.results.length > 0) {
+        toast.success(`Found ${data.results.length} universities`);
+      } else {
+        toast.info("No universities found for your search");
+      }
+      
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Failed to search universities. Please try again.");
+      setSearchResults([]);
     } finally {
       setIsLoading(false);
     }
@@ -136,43 +101,6 @@ const USSearch = () => {
             Search for universities in the United States using Scoreboard API
           </p>
         </div>
-        
-        <Dialog open={isApiKeyDialogOpen} onOpenChange={setIsApiKeyDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Settings className="mr-2 h-4 w-4" />
-              {apiKey ? "Update API Key" : "Set API Key"}
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Scoreboard API Configuration</DialogTitle>
-              <DialogDescription>
-                Enter your Scoreboard API key to search US universities. The key will be stored locally in your browser.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="api-key">API Key</Label>
-                <Input
-                  id="api-key"
-                  type="password"
-                  placeholder="Enter your Scoreboard API key"
-                  value={tempApiKey}
-                  onChange={(e) => setTempApiKey(e.target.value)}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsApiKeyDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveApiKey} disabled={!tempApiKey.trim()}>
-                Save API Key
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
       
       <Card className="overflow-hidden">
@@ -184,7 +112,7 @@ const USSearch = () => {
               onChange={(e) => setQuery(e.target.value)}
               className="flex-1"
             />
-            <Button type="submit" disabled={isLoading || !apiKey} className="whitespace-nowrap">
+            <Button type="submit" disabled={isLoading} className="whitespace-nowrap">
               {isLoading ? (
                 <>Searching...</>
               ) : (
@@ -195,11 +123,6 @@ const USSearch = () => {
               )}
             </Button>
           </form>
-          {!apiKey && (
-            <p className="text-sm text-muted-foreground mt-2">
-              Please set your Scoreboard API key to start searching.
-            </p>
-          )}
         </CardContent>
       </Card>
 

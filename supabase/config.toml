@@ -72,3 +72,6 @@ verify_jwt = false
 
 [functions.review-document]
 verify_jwt = false
+
+[functions.us-university-search]
+verify_jwt = false
