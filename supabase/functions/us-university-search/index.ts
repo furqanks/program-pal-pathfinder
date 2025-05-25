@@ -35,71 +35,43 @@ serve(async (req) => {
 
     console.log('Searching US universities with query:', query);
     
-    // TODO: Replace with actual Scoreboard API endpoint when available
-    // For now, returning mock data that matches the expected format
-    const mockResults = [
-      {
-        name: "Stanford University",
-        location: "Stanford, CA",
-        ranking: 6,
-        tuition: "$56,169",
-        acceptanceRate: "4.3%",
-        programsOffered: ["Computer Science", "Engineering", "Business"],
-        description: "Private research university known for innovation and entrepreneurship."
+    // Make actual API call to Scoreboard API
+    const apiUrl = `https://api.scoreboard.com/v1/universities/search?q=${encodeURIComponent(query)}`;
+    
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${scoreboardApiKey}`,
+        'Content-Type': 'application/json',
       },
-      {
-        name: "University of California, Berkeley",
-        location: "Berkeley, CA",
-        ranking: 22,
-        tuition: "$14,226 (in-state), $44,066 (out-of-state)",
-        acceptanceRate: "17.5%",
-        programsOffered: ["Engineering", "Computer Science", "Business", "Liberal Arts"],
-        description: "Public research university with strong programs across multiple disciplines."
-      },
-      {
-        name: "Massachusetts Institute of Technology",
-        location: "Cambridge, MA",
-        ranking: 2,
-        tuition: "$53,790",
-        acceptanceRate: "7.3%",
-        programsOffered: ["Engineering", "Computer Science", "Physics", "Mathematics"],
-        description: "Premier technical institute focusing on science and engineering."
-      },
-      {
-        name: "University of Texas at Austin",
-        location: "Austin, TX",
-        ranking: 38,
-        tuition: "$11,448 (in-state), $39,322 (out-of-state)",
-        acceptanceRate: "31.8%",
-        programsOffered: ["Engineering", "Business", "Liberal Arts", "Natural Sciences"],
-        description: "Large public research university with diverse academic programs."
-      },
-      {
-        name: "Georgia Institute of Technology",
-        location: "Atlanta, GA",
-        ranking: 44,
-        tuition: "$12,682 (in-state), $33,794 (out-of-state)",
-        acceptanceRate: "23.2%",
-        programsOffered: ["Engineering", "Computer Science", "Business"],
-        description: "Public technical university with strong engineering programs."
-      }
-    ];
-
-    // Filter results based on query keywords
-    const filteredResults = mockResults.filter(result => {
-      const searchTerms = query.toLowerCase();
-      return (
-        result.name.toLowerCase().includes(searchTerms) ||
-        result.location.toLowerCase().includes(searchTerms) ||
-        result.programsOffered.some(program => program.toLowerCase().includes(searchTerms)) ||
-        result.description.toLowerCase().includes(searchTerms)
-      );
     });
 
-    console.log(`Found ${filteredResults.length} results for query: ${query}`);
+    if (!response.ok) {
+      console.error('Scoreboard API error:', response.status, response.statusText);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch from Scoreboard API' }),
+        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const apiData = await response.json();
+    console.log('Scoreboard API response:', apiData);
+
+    // Transform the API response to match our expected format
+    const transformedResults = apiData.universities?.map((university: any) => ({
+      name: university.name || 'Unknown University',
+      location: `${university.city || ''}, ${university.state || ''}`.trim().replace(/^,|,$/, ''),
+      ranking: university.ranking,
+      tuition: university.tuition_cost,
+      acceptanceRate: university.acceptance_rate ? `${university.acceptance_rate}%` : undefined,
+      programsOffered: university.programs || [],
+      description: university.description || university.about,
+    })) || [];
+
+    console.log(`Found ${transformedResults.length} results for query: ${query}`);
 
     return new Response(
-      JSON.stringify({ results: filteredResults.length > 0 ? filteredResults : mockResults }),
+      JSON.stringify({ results: transformedResults }),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
