@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Search, ListChecks, FileText, BarChart, X, LogOut, User } from "lucide-react";
+import { Search, ListChecks, FileText, BarChart, X, LogOut, User, GraduationCap } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const navItems = [
   { path: '/', label: 'Shortlist', icon: ListChecks },
   { path: '/search', label: 'Program Search', icon: Search },
+  { path: '/us-search', label: 'US Universities', icon: GraduationCap },
   { path: '/documents', label: 'Documents', icon: FileText },
   { path: '/insights', label: 'Insights', icon: BarChart },
 ];

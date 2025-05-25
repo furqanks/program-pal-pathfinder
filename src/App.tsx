@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Search from "./pages/Search";
+import USSearch from "./pages/USSearch";
 import Documents from "./pages/Documents";
 import Insights from "./pages/Insights";
 import NotFound from "./pages/NotFound";
@@ -56,6 +57,7 @@ const App = () => {
                     }>
                       <Route index element={<Dashboard />} />
                       <Route path="search" element={<Search />} />
+                      <Route path="us-search" element={<USSearch />} />
                       <Route path="documents" element={<Documents />} />
                       <Route path="insights" element={<Insights />} />
                       <Route path="*" element={<NotFound />} />
