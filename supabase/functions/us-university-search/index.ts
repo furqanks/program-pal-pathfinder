@@ -23,11 +23,21 @@ serve(async (req) => {
       );
     }
 
+    const collegeScoreCardApiKey = Deno.env.get('COLLEGE_SCORECARD_API_KEY');
+    
+    if (!collegeScoreCardApiKey) {
+      console.error('College Scorecard API key not found');
+      return new Response(
+        JSON.stringify({ error: 'API configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Searching US universities with query:', query);
     
-    // Use the College Scorecard API (no API key required for basic searches)
-    // Search by school name, city, or state
-    const apiUrl = `https://api.data.gov/ed/collegescorecard/v1/schools.json?school.name=${encodeURIComponent(query)}&_fields=id,school.name,school.city,school.state,school.school_url,latest.admissions.admission_rate.overall,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.academics.program_available,school.degrees_awarded.predominant,latest.student.size&_per_page=20`;
+    // Use the College Scorecard API with proper authentication
+    // Search by school name with enhanced fields for better data
+    const apiUrl = `https://api.data.gov/ed/collegescorecard/v1/schools.json?api_key=${collegeScoreCardApiKey}&school.name=${encodeURIComponent(query)}&_fields=id,school.name,school.city,school.state,school.school_url,latest.admissions.admission_rate.overall,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.academics.program_available,school.degrees_awarded.predominant,latest.student.size,school.carnegie_basic,latest.academics.program_percentage.engineering,latest.academics.program_percentage.business_marketing,latest.academics.program_percentage.health&_per_page=20`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -75,13 +85,25 @@ serve(async (req) => {
       const predominantDegree = school.school?.degrees_awarded?.predominant;
       const degreeType = predominantDegree ? degreeTypeMap[predominantDegree] || 'Various programs' : 'Various programs';
 
+      // Add more program information if available
+      const programs = [degreeType];
+      if (school.latest?.academics?.program_percentage?.engineering > 0.1) {
+        programs.push('Engineering');
+      }
+      if (school.latest?.academics?.program_percentage?.business_marketing > 0.1) {
+        programs.push('Business');
+      }
+      if (school.latest?.academics?.program_percentage?.health > 0.1) {
+        programs.push('Health Sciences');
+      }
+
       return {
         name: school.school?.name || 'Unknown University',
         location: `${school.school?.city || ''}, ${school.school?.state || ''}`.trim().replace(/^,|,$/, ''),
         ranking: undefined, // College Scorecard doesn't provide rankings
         tuition: tuitionText || 'Not available',
         acceptanceRate: acceptanceRateText,
-        programsOffered: [degreeType],
+        programsOffered: programs,
         description: `Student enrollment: ${school.latest?.student?.size ? school.latest.student.size.toLocaleString() : 'N/A'} students. ${school.school?.school_url ? `Website: ${school.school.school_url}` : ''}`,
       };
     }) || [];
