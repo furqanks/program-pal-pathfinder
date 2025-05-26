@@ -25,6 +25,41 @@ interface USUniversityResult {
   acceptanceRate?: string;
   programsOffered?: string[];
   description?: string;
+  extendedData?: {
+    ownership: string;
+    isMainCampus: boolean;
+    religiousAffiliation: string | null;
+    menOnly: boolean;
+    womenOnly: boolean;
+    costs: {
+      avgNetPrice: string | null;
+      totalAttendanceCost: string | null;
+    };
+    admissions: {
+      satScore: number | null;
+      actScore: number | null;
+    };
+    demographics: {
+      menPercentage: string | null;
+      womenPercentage: string | null;
+      diversity: {
+        white: string | null;
+        black: string | null;
+        hispanic: string | null;
+        asian: string | null;
+      };
+    };
+    degreeTypes: string[];
+    programPercentages: Array<{
+      program: string;
+      percentage: string;
+    }>;
+    outcomes: {
+      medianEarnings: string | null;
+      defaultRate: string | null;
+      completionRate: string | null;
+    };
+  };
 }
 
 const USSearch = () => {
@@ -175,6 +210,25 @@ const USSearch = () => {
                         <p className="text-sm text-muted-foreground">
                           {result.location}
                         </p>
+                        {result.extendedData && (
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {result.extendedData.ownership}
+                            </Badge>
+                            {result.extendedData.isMainCampus && (
+                              <Badge variant="outline" className="text-xs">Main Campus</Badge>
+                            )}
+                            {result.extendedData.menOnly && (
+                              <Badge variant="outline" className="text-xs">Men Only</Badge>
+                            )}
+                            {result.extendedData.womenOnly && (
+                              <Badge variant="outline" className="text-xs">Women Only</Badge>
+                            )}
+                            {result.extendedData.religiousAffiliation && (
+                              <Badge variant="outline" className="text-xs">Religious</Badge>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {result.ranking && <Badge>#{result.ranking}</Badge>}
@@ -185,27 +239,128 @@ const USSearch = () => {
                       </div>
                     </div>
                   </CardHeader>
+                  
                   <CardContent className="pb-2 md:pb-3">
-                    <div className="space-y-2">
-                      {result.tuition && (
-                        <p className="text-sm">
-                          <span className="font-medium">Tuition:</span> {result.tuition}
-                        </p>
-                      )}
-                      {result.programsOffered && result.programsOffered.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {result.programsOffered.map((program, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              {program}
-                            </Badge>
-                          ))}
+                    <div className="space-y-3">
+                      {/* Costs Section */}
+                      <div>
+                        <h4 className="font-medium text-sm mb-1">Costs</h4>
+                        <div className="text-sm space-y-1">
+                          {result.tuition && (
+                            <p><span className="font-medium">Tuition:</span> {result.tuition}</p>
+                          )}
+                          {result.extendedData?.costs.avgNetPrice && (
+                            <p><span className="font-medium">Average Net Price:</span> {result.extendedData.costs.avgNetPrice}</p>
+                          )}
+                          {result.extendedData?.costs.totalAttendanceCost && (
+                            <p><span className="font-medium">Total Cost of Attendance:</span> {result.extendedData.costs.totalAttendanceCost}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Admissions Section */}
+                      {result.extendedData?.admissions && (
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">Admissions</h4>
+                          <div className="text-sm space-y-1">
+                            {result.acceptanceRate && (
+                              <p><span className="font-medium">Acceptance Rate:</span> {result.acceptanceRate}</p>
+                            )}
+                            {result.extendedData.admissions.satScore && (
+                              <p><span className="font-medium">Average SAT:</span> {result.extendedData.admissions.satScore}</p>
+                            )}
+                            {result.extendedData.admissions.actScore && (
+                              <p><span className="font-medium">Average ACT:</span> {result.extendedData.admissions.actScore}</p>
+                            )}
+                          </div>
                         </div>
                       )}
-                      {result.description && (
-                        <p className="text-sm text-muted-foreground">{result.description}</p>
+
+                      {/* Student Body Section */}
+                      {result.extendedData?.demographics && (
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">Student Body</h4>
+                          <div className="text-sm space-y-1">
+                            <p><span className="font-medium">Enrollment:</span> {result.description?.split('.')[0] || 'N/A'}</p>
+                            {result.extendedData.demographics.menPercentage && result.extendedData.demographics.womenPercentage && (
+                              <p><span className="font-medium">Gender:</span> {result.extendedData.demographics.menPercentage} men, {result.extendedData.demographics.womenPercentage} women</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Programs Section */}
+                      {result.extendedData?.degreeTypes && result.extendedData.degreeTypes.length > 0 && (
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">Degree Types Available</h4>
+                          <div className="flex flex-wrap gap-1">
+                            {result.extendedData.degreeTypes.map((degree, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {degree}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {result.programsOffered && result.programsOffered.length > 0 && (
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">Popular Programs</h4>
+                          <div className="flex flex-wrap gap-1">
+                            {result.programsOffered.map((program, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {program}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Program Percentages */}
+                      {result.extendedData?.programPercentages && result.extendedData.programPercentages.length > 0 && (
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">Program Distribution</h4>
+                          <div className="grid grid-cols-2 gap-1 text-xs">
+                            {result.extendedData.programPercentages.slice(0, 6).map((prog, idx) => (
+                              <div key={idx} className="flex justify-between">
+                                <span>{prog.program}:</span>
+                                <span>{prog.percentage}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Outcomes Section */}
+                      {result.extendedData?.outcomes && (
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">Outcomes</h4>
+                          <div className="text-sm space-y-1">
+                            {result.extendedData.outcomes.medianEarnings && (
+                              <p><span className="font-medium">Median Earnings (10 years):</span> {result.extendedData.outcomes.medianEarnings}</p>
+                            )}
+                            {result.extendedData.outcomes.completionRate && (
+                              <p><span className="font-medium">4-Year Completion Rate:</span> {result.extendedData.outcomes.completionRate}</p>
+                            )}
+                            {result.extendedData.outcomes.defaultRate && (
+                              <p><span className="font-medium">3-Year Default Rate:</span> {result.extendedData.outcomes.defaultRate}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Website */}
+                      {result.description?.includes('Website:') && (
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">Website</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {result.description.split('Website: ')[1]}
+                          </p>
+                        </div>
                       )}
                     </div>
                   </CardContent>
+                  
                   <CardFooter className="flex flex-col sm:flex-row gap-2">
                     <Button 
                       variant="outline"
