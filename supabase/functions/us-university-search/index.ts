@@ -59,8 +59,9 @@ serve(async (req) => {
 
     // Transform the API response to match our expected format
     const transformedResults = apiData.results?.map((school: any) => {
-      const inStateTuition = school.latest?.cost?.tuition?.in_state;
-      const outOfStateTuition = school.latest?.cost?.tuition?.out_of_state;
+      // Access fields using the dot notation keys as they appear in the API response
+      const inStateTuition = school['latest.cost.tuition.in_state'];
+      const outOfStateTuition = school['latest.cost.tuition.out_of_state'];
       
       let tuitionText = '';
       if (inStateTuition && outOfStateTuition) {
@@ -71,7 +72,7 @@ serve(async (req) => {
         tuitionText = `$${inStateTuition.toLocaleString()}`;
       }
 
-      const admissionRate = school.latest?.admissions?.admission_rate?.overall;
+      const admissionRate = school['latest.admissions.admission_rate.overall'];
       const acceptanceRateText = admissionRate ? `${(admissionRate * 100).toFixed(1)}%` : undefined;
 
       // Map degree type codes to readable names
@@ -82,29 +83,39 @@ serve(async (req) => {
         4: 'Graduate degrees'
       };
 
-      const predominantDegree = school.school?.degrees_awarded?.predominant;
+      const predominantDegree = school['school.degrees_awarded.predominant'];
       const degreeType = predominantDegree ? degreeTypeMap[predominantDegree] || 'Various programs' : 'Various programs';
 
       // Add more program information if available
       const programs = [degreeType];
-      if (school.latest?.academics?.program_percentage?.engineering > 0.1) {
+      const engineeringPercentage = school['latest.academics.program_percentage.engineering'];
+      const businessPercentage = school['latest.academics.program_percentage.business_marketing'];
+      const healthPercentage = school['latest.academics.program_percentage.health'];
+      
+      if (engineeringPercentage && engineeringPercentage > 0.1) {
         programs.push('Engineering');
       }
-      if (school.latest?.academics?.program_percentage?.business_marketing > 0.1) {
+      if (businessPercentage && businessPercentage > 0.1) {
         programs.push('Business');
       }
-      if (school.latest?.academics?.program_percentage?.health > 0.1) {
+      if (healthPercentage && healthPercentage > 0.1) {
         programs.push('Health Sciences');
       }
 
+      const studentSize = school['latest.student.size'];
+      const schoolUrl = school['school.school_url'];
+      const schoolName = school['school.name'];
+      const schoolCity = school['school.city'];
+      const schoolState = school['school.state'];
+
       return {
-        name: school.school?.name || 'Unknown University',
-        location: `${school.school?.city || ''}, ${school.school?.state || ''}`.trim().replace(/^,|,$/, ''),
+        name: schoolName || 'Unknown University',
+        location: `${schoolCity || ''}, ${schoolState || ''}`.trim().replace(/^,|,$/, ''),
         ranking: undefined, // College Scorecard doesn't provide rankings
         tuition: tuitionText || 'Not available',
         acceptanceRate: acceptanceRateText,
         programsOffered: programs,
-        description: `Student enrollment: ${school.latest?.student?.size ? school.latest.student.size.toLocaleString() : 'N/A'} students. ${school.school?.school_url ? `Website: ${school.school.school_url}` : ''}`,
+        description: `Student enrollment: ${studentSize ? studentSize.toLocaleString() : 'N/A'} students. ${schoolUrl ? `Website: ${schoolUrl}` : ''}`,
       };
     }) || [];
 
