@@ -23,50 +23,68 @@ serve(async (req) => {
       );
     }
 
-    const scoreboardApiKey = Deno.env.get('SCOREBOARD_API_KEY');
-    
-    if (!scoreboardApiKey) {
-      console.error('Scoreboard API key not found');
-      return new Response(
-        JSON.stringify({ error: 'API configuration error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     console.log('Searching US universities with query:', query);
     
-    // Make actual API call to Scoreboard API
-    const apiUrl = `https://api.scoreboard.com/v1/universities/search?q=${encodeURIComponent(query)}`;
+    // Use the College Scorecard API (no API key required for basic searches)
+    // Search by school name, city, or state
+    const apiUrl = `https://api.data.gov/ed/collegescorecard/v1/schools.json?school.name=${encodeURIComponent(query)}&_fields=id,school.name,school.city,school.state,school.school_url,latest.admissions.admission_rate.overall,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.academics.program_available,school.degrees_awarded.predominant,latest.student.size&_per_page=20`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${scoreboardApiKey}`,
         'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
-      console.error('Scoreboard API error:', response.status, response.statusText);
+      console.error('College Scorecard API error:', response.status, response.statusText);
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch from Scoreboard API' }),
+        JSON.stringify({ error: 'Failed to fetch from College Scorecard API' }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const apiData = await response.json();
-    console.log('Scoreboard API response:', apiData);
+    console.log('College Scorecard API response:', apiData);
 
     // Transform the API response to match our expected format
-    const transformedResults = apiData.universities?.map((university: any) => ({
-      name: university.name || 'Unknown University',
-      location: `${university.city || ''}, ${university.state || ''}`.trim().replace(/^,|,$/, ''),
-      ranking: university.ranking,
-      tuition: university.tuition_cost,
-      acceptanceRate: university.acceptance_rate ? `${university.acceptance_rate}%` : undefined,
-      programsOffered: university.programs || [],
-      description: university.description || university.about,
-    })) || [];
+    const transformedResults = apiData.results?.map((school: any) => {
+      const inStateTuition = school.latest?.cost?.tuition?.in_state;
+      const outOfStateTuition = school.latest?.cost?.tuition?.out_of_state;
+      
+      let tuitionText = '';
+      if (inStateTuition && outOfStateTuition) {
+        tuitionText = `$${inStateTuition.toLocaleString()} (in-state), $${outOfStateTuition.toLocaleString()} (out-of-state)`;
+      } else if (outOfStateTuition) {
+        tuitionText = `$${outOfStateTuition.toLocaleString()}`;
+      } else if (inStateTuition) {
+        tuitionText = `$${inStateTuition.toLocaleString()}`;
+      }
+
+      const admissionRate = school.latest?.admissions?.admission_rate?.overall;
+      const acceptanceRateText = admissionRate ? `${(admissionRate * 100).toFixed(1)}%` : undefined;
+
+      // Map degree type codes to readable names
+      const degreeTypeMap: { [key: number]: string } = {
+        1: 'Certificate programs',
+        2: 'Associate degrees',
+        3: 'Bachelor\'s degrees',
+        4: 'Graduate degrees'
+      };
+
+      const predominantDegree = school.school?.degrees_awarded?.predominant;
+      const degreeType = predominantDegree ? degreeTypeMap[predominantDegree] || 'Various programs' : 'Various programs';
+
+      return {
+        name: school.school?.name || 'Unknown University',
+        location: `${school.school?.city || ''}, ${school.school?.state || ''}`.trim().replace(/^,|,$/, ''),
+        ranking: undefined, // College Scorecard doesn't provide rankings
+        tuition: tuitionText || 'Not available',
+        acceptanceRate: acceptanceRateText,
+        programsOffered: [degreeType],
+        description: `Student enrollment: ${school.latest?.student?.size ? school.latest.student.size.toLocaleString() : 'N/A'} students. ${school.school?.school_url ? `Website: ${school.school.school_url}` : ''}`,
+      };
+    }) || [];
 
     console.log(`Found ${transformedResults.length} results for query: ${query}`);
 
