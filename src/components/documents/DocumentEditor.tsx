@@ -7,6 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import DocumentContentEditor from "./editor/DocumentContentEditor";
 import FeedbackPreview from "./editor/FeedbackPreview";
 import EditorActions from "./editor/EditorActions";
+import ToneStyleSelector from "./editor/ToneStyleSelector";
 import { generateTestFeedback } from "@/services/document.service";
 import { QuotedImprovement } from "@/types/document.types";
 
@@ -37,6 +38,10 @@ const DocumentEditor = ({
     quotedImprovements?: QuotedImprovement[];
     score?: number;
   } | null>(null);
+  
+  // Tone and style preferences
+  const [selectedTone, setSelectedTone] = useState("formal");
+  const [selectedStyle, setSelectedStyle] = useState("detailed");
   
   // State for file upload related functionality removed
   const [isUploading, setIsUploading] = useState(false);
@@ -93,12 +98,15 @@ const DocumentEditor = ({
     try {
       toast.info("Generating AI feedback...");
       console.log("Generating feedback for content (length):", documentContent.length);
+      console.log("Selected tone:", selectedTone, "Selected style:", selectedStyle);
       
       // Use the real API to generate feedback without saving to the database
       const feedback = await generateTestFeedback(
         documentContent, 
         activeDocumentType,
-        selectedProgramId
+        selectedProgramId,
+        selectedTone,
+        selectedStyle
       );
       
       setTempFeedback({
@@ -164,6 +172,13 @@ const DocumentEditor = ({
         onFileContent={handleFileContent}
         isUploading={isUploading}
         setIsUploading={setIsUploading}
+      />
+      
+      <ToneStyleSelector
+        selectedTone={selectedTone}
+        selectedStyle={selectedStyle}
+        onToneChange={setSelectedTone}
+        onStyleChange={setSelectedStyle}
       />
       
       <FeedbackPreview 

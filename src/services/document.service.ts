@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Document } from "@/types/document.types";
@@ -153,98 +152,90 @@ export const generateDocumentFeedback = async (documentId: string): Promise<{
 // Generate an improved draft based on feedback
 export const generateImprovedDraft = async (
   originalContent: string,
-  feedback: {
-    summary: string;
-    improvementPoints: string[];
-    quotedImprovements: Array<{
-      originalText: string;
-      improvedText: string;
-      explanation: string;
-    }>;
-    score: number;
-  },
-  documentType: string
+  feedback: any,
+  documentType: string,
+  tone: string = "formal"
 ): Promise<string> => {
+  console.log("generateImprovedDraft called with:", { 
+    originalContentLength: originalContent.length, 
+    documentType,
+    tone
+  });
+  
   try {
-    console.log("Requesting improved draft for document...");
-    
     const { data, error } = await supabase.functions.invoke('review-document', {
       body: {
         action: 'generate-improved-draft',
-        documentType,
         originalContent,
-        feedback
+        feedback,
+        documentType,
+        tone
       }
     });
 
     if (error) {
-      console.error("Error from generate-improved-draft function:", error);
-      throw error;
+      console.error('Supabase function error:', error);
+      throw new Error(error.message || 'Failed to generate improved draft');
     }
-    
-    if (data && data.improvedDraft) {
-      console.log("Received improved draft from AI");
-      return data.improvedDraft;
-    } else {
-      throw new Error(data?.error || "Failed to generate improved draft");
+
+    if (!data || !data.improvedDraft) {
+      throw new Error('No improved draft received from service');
     }
+
+    console.log("generateImprovedDraft response received, length:", data.improvedDraft.length);
+    return data.improvedDraft;
   } catch (error) {
-    console.error("Error generating improved draft:", error);
-    toast.error("Error generating improved draft. Please try again.");
+    console.error('Error in generateImprovedDraft:', error);
     throw error;
   }
 };
 
 // Generate real test feedback without saving to database
 export const generateTestFeedback = async (
-  content: string,
-  documentType: string,
-  programId: string | null,
-  fileName?: string
+  content: string, 
+  documentType: string, 
+  programId: string | null = null,
+  tone: string = "formal",
+  style: string = "detailed"
 ): Promise<{
   summary: string;
-  improvementPoints: string[];
-  quotedImprovements: Array<{
-    originalText: string;
-    improvedText: string;
-    explanation: string;
-  }>;
   score: number;
+  improvementPoints: string[];
+  quotedImprovements: QuotedImprovement[];
 }> => {
+  console.log("generateTestFeedback called with:", { 
+    contentLength: content.length, 
+    documentType, 
+    programId,
+    tone,
+    style
+  });
+  
   try {
-    console.log(`Sending content for review. Content length: ${content.length}, File: ${fileName || 'No file'}`);
-    console.log("First 100 chars of content:", content.substring(0, 100) + "...");
-    
-    // Make sure we use the exact content provided without any modification
     const { data, error } = await supabase.functions.invoke('review-document', {
       body: {
-        content, // Send the exact content without any modification
+        content,
         documentType,
         programId,
         testMode: true,
-        fileName
+        tone,
+        style
       }
     });
 
     if (error) {
-      console.error("Error from review-document function:", error);
-      throw error;
+      console.error('Supabase function error:', error);
+      throw new Error(error.message || 'Failed to generate feedback');
     }
-    
-    if (data && data.summary) {
-      console.log("Received feedback from AI:", data);
-      return {
-        summary: data.summary,
-        improvementPoints: data.improvementPoints,
-        quotedImprovements: data.quotedImprovements || [],
-        score: data.score
-      };
-    } else {
-      throw new Error(data?.error || "Failed to generate test feedback");
+
+    if (!data) {
+      throw new Error('No data received from feedback service');
     }
+
+    console.log("generateTestFeedback response:", data);
+    return data;
   } catch (error) {
-    console.error("Error generating test feedback:", error);
-    toast.error("Error generating feedback. Please try again.");
+    console.error('Error in generateTestFeedback:', error);
     throw error;
   }
 };

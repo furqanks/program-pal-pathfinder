@@ -50,8 +50,8 @@ function generateMockFeedback() {
   };
 }
 
-// Function to get the system prompt based on document type
-function getSystemPrompt(documentType: string, fileName?: string) {
+// Function to get the system prompt based on document type and preferences
+function getSystemPrompt(documentType: string, fileName?: string, tone?: string, style?: string) {
   let systemPrompt = '';
   
   // Base prompt by document type
@@ -90,6 +90,45 @@ Your task is to provide detailed feedback on this scholarship essay to help the 
       systemPrompt = `You are an expert academic application reviewer with extensive experience in evaluating ${documentType}s for university applications and academic programs.
 
 Your task is to provide comprehensive, actionable feedback on this ${documentType}.`;
+  }
+  
+  // Add tone preference guidance
+  if (tone) {
+    switch(tone) {
+      case 'formal':
+        systemPrompt += `\n\nTONE PREFERENCE: Focus feedback on achieving a formal, professional, and academic tone. Emphasize sophisticated vocabulary, proper academic structure, and professional language conventions.`;
+        break;
+      case 'conversational':
+        systemPrompt += `\n\nTONE PREFERENCE: Focus feedback on achieving a natural, engaging, and conversational tone while maintaining professionalism. Balance authenticity with academic appropriateness.`;
+        break;
+      case 'confident':
+        systemPrompt += `\n\nTONE PREFERENCE: Focus feedback on achieving a confident, assertive, and self-assured tone. Help strengthen statements and eliminate tentative language.`;
+        break;
+      case 'humble':
+        systemPrompt += `\n\nTONE PREFERENCE: Focus feedback on achieving a modest, respectful, and humble tone while still showcasing achievements effectively.`;
+        break;
+      case 'persuasive':
+        systemPrompt += `\n\nTONE PREFERENCE: Focus feedback on achieving a compelling, convincing, and persuasive tone that effectively argues the applicant's case.`;
+        break;
+    }
+  }
+  
+  // Add style preference guidance
+  if (style) {
+    switch(style) {
+      case 'detailed':
+        systemPrompt += `\n\nSTYLE PREFERENCE: Provide comprehensive, detailed analysis with extensive examples and specific guidance for improvement.`;
+        break;
+      case 'concise':
+        systemPrompt += `\n\nSTYLE PREFERENCE: Provide brief, focused feedback with the most essential improvement points. Be direct and to-the-point.`;
+        break;
+      case 'developmental':
+        systemPrompt += `\n\nSTYLE PREFERENCE: Focus on growth-oriented suggestions that help the writer develop their skills and understanding progressively.`;
+        break;
+      case 'competitive':
+        systemPrompt += `\n\nSTYLE PREFERENCE: Focus on strategies that will help the document stand out in competitive application pools. Emphasize differentiation and memorable elements.`;
+        break;
+    }
   }
   
   // Add information about file if it's an uploaded document
@@ -199,7 +238,7 @@ CRITICAL REQUIREMENTS:
 }
 
 // Function to get the system prompt for generating an improved draft
-function getImprovedDraftPrompt(documentType: string) {
+function getImprovedDraftPrompt(documentType: string, tone?: string) {
   let systemPrompt = '';
   
   // Base prompt by document type
@@ -226,6 +265,28 @@ function getImprovedDraftPrompt(documentType: string) {
       systemPrompt = `You are an expert academic application writer specializing in ${documentType}s for university applications and academic programs.`;
   }
   
+  // Add tone-specific guidance for draft generation
+  if (tone) {
+    switch(tone) {
+      case 'formal':
+        systemPrompt += `\n\nTONE GUIDANCE: Ensure the improved draft maintains a formal, professional, and academic tone throughout. Use sophisticated vocabulary and proper academic structure.`;
+        break;
+      case 'conversational':
+        systemPrompt += `\n\nTONE GUIDANCE: Create an improved draft with a natural, engaging, and conversational tone while maintaining professionalism and appropriateness.`;
+        break;
+      case 'confident':
+        systemPrompt += `\n\nTONE GUIDANCE: Strengthen the draft with confident, assertive language that showcases achievements without hesitation or tentative phrasing.`;
+        break;
+      case 'humble':
+        systemPrompt += `\n\nTONE GUIDANCE: Maintain a modest, respectful tone while still effectively highlighting accomplishments and potential.`;
+        break;
+      case 'persuasive':
+        systemPrompt += `\n\nTONE GUIDANCE: Enhance the draft with compelling, convincing language that persuasively argues the applicant's case for admission or selection.`;
+        break;
+    }
+  }
+  
+  // Add instructions for applying feedback
   systemPrompt += `
 
 IMPROVEMENT STRATEGY:
@@ -307,8 +368,8 @@ async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: s
 }
 
 // Function to generate an improved draft based on original content and feedback
-async function generateImprovedDraft(originalContent: string, feedbackData: any, documentType: string, openaiApiKey: string) {
-  console.log(`Generating improved draft for ${documentType} (length: ${originalContent.length})`);
+async function generateImprovedDraft(originalContent: string, feedbackData: any, documentType: string, openaiApiKey: string, tone?: string) {
+  console.log(`Generating improved draft for ${documentType} (length: ${originalContent.length}) with tone: ${tone || 'default'}`);
   
   // Prepare the feedback in a readable format for the AI
   const feedbackForAI = `
@@ -339,7 +400,7 @@ async function generateImprovedDraft(originalContent: string, feedbackData: any,
   `;
   
   try {
-    const systemPrompt = getImprovedDraftPrompt(documentType);
+    const systemPrompt = getImprovedDraftPrompt(documentType, tone);
     const improvedContent = await callOpenAI(promptContent, systemPrompt, openaiApiKey);
     return improvedContent;
   } catch (error) {
@@ -395,7 +456,7 @@ serve(async (req) => {
   try {
     // Get request data
     const requestData = await req.json();
-    const { content, documentType, programId, testMode, fileName, action, originalContent, feedback } = requestData;
+    const { content, documentType, programId, testMode, fileName, action, originalContent, feedback, tone, style } = requestData;
     
     // Validate request data
     if (!content && !originalContent) {
@@ -416,8 +477,8 @@ serve(async (req) => {
       }
       
       try {
-        console.log(`Generating improved draft for ${documentType}`);
-        const improvedDraft = await generateImprovedDraft(originalContent, feedback, documentType, openaiApiKey);
+        console.log(`Generating improved draft for ${documentType} with tone: ${tone || 'default'}`);
+        const improvedDraft = await generateImprovedDraft(originalContent, feedback, documentType, openaiApiKey, tone);
         
         return new Response(
           JSON.stringify({ improvedDraft }),
@@ -444,13 +505,13 @@ serve(async (req) => {
       }
       
       // Log request information
-      console.log(`Processing comprehensive ${documentType} review ${testMode ? 'in test mode' : 'for saving to DB'}${fileName ? ` (file: ${fileName})` : ''}`);
+      console.log(`Processing comprehensive ${documentType} review ${testMode ? 'in test mode' : 'for saving to DB'}${fileName ? ` (file: ${fileName})` : ''} with tone: ${tone || 'default'}, style: ${style || 'default'}`);
       console.log(`Content length: ${content.length} characters`);
       console.log(`Content sample: ${content.substring(0, 100)}...`);
 
       try {
-        // Get enhanced system prompt
-        const systemPrompt = getSystemPrompt(documentType, fileName);
+        // Get enhanced system prompt with tone and style preferences
+        const systemPrompt = getSystemPrompt(documentType, fileName, tone, style);
         
         // Call OpenAI API
         const aiResponse = await callOpenAI(content, systemPrompt, openaiApiKey);
