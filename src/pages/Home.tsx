@@ -81,14 +81,14 @@ export default function Home() {
         <div className="container px-4 md:px-6 relative z-10">
           <div className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto">
             <div className="inline-block p-2 px-4 bg-slate-100 text-slate-700 rounded-full text-sm font-medium mb-4">
-              ✨ Elegant University Applications
+              ✨ AI-Powered University Applications
             </div>
             <h1 className="text-5xl md:text-7xl font-light tracking-tight text-slate-900 leading-tight">
-              Your Mac deserves
-              <span className="block font-normal text-slate-600">elegance, even at rest.</span>
+              Your dream university
+              <span className="block font-normal text-slate-600">is just a search away.</span>
             </h1>
             <p className="text-xl md:text-2xl text-slate-500 max-w-2xl mx-auto font-light leading-relaxed">
-              UniApp Space brings the same attention to detail and craftsmanship to your university application process.
+              Discover and apply to the perfect academic programs with AI-powered matching, intelligent document preparation, and personalized insights.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-8">
               {user ? (
@@ -145,11 +145,11 @@ export default function Home() {
         <div className="container px-4 md:px-6">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-light mb-6 text-slate-900">
-              Beautiful design,
-              <span className="block text-slate-600">inside and out.</span>
+              Everything you need
+              <span className="block text-slate-600">to succeed in your applications.</span>
             </h2>
             <p className="text-xl text-slate-500 max-w-2xl mx-auto font-light">
-              Every detail has been carefully crafted to provide an elegant application experience.
+              From finding the right programs to preparing perfect documents, we've got you covered.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -184,8 +184,8 @@ export default function Home() {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-light mb-6 text-slate-900">
-                Intentionally crafted,
-                <span className="block text-slate-600">carefully refined.</span>
+                Why students choose
+                <span className="block text-slate-600">UniApp Space</span>
               </h2>
             </div>
             <div className="space-y-12">
@@ -216,17 +216,17 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {[
               {
-                quote: "UniApp Space helped me find and apply to programs I never would have discovered on my own. The interface is beautifully designed.",
+                quote: "UniApp Space helped me find and apply to programs I never would have discovered on my own. The AI matching is incredibly accurate.",
                 name: "Alex Chen",
                 role: "MSc Computer Science student"
               },
               {
-                quote: "The attention to detail in both design and functionality is remarkable. It made my application process so much smoother.",
+                quote: "The document preparation tools saved me weeks of work. My personal statement was polished and compelling thanks to the AI feedback.",
                 name: "Maria Rodriguez",
                 role: "MBA student"
               },
               {
-                quote: "Finally, a university application tool that's as elegant as it is powerful. The insights feature is game-changing.",
+                quote: "I got into my dream PhD program! The insights feature helped me understand exactly what each university was looking for.",
                 name: "David Kim",
                 role: "PhD Biology student"
               }
@@ -260,11 +260,11 @@ export default function Home() {
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
             <h2 className="text-4xl md:text-5xl font-light mb-8 leading-tight">
-              Ready to experience
-              <span className="block text-slate-300">elegance in every application?</span>
+              Ready to find your
+              <span className="block text-slate-300">perfect university match?</span>
             </h2>
             <p className="text-xl text-slate-300 mb-10 font-light leading-relaxed">
-              Join thousands of students who have discovered a more refined way to apply to universities.
+              Join thousands of students who have already discovered their ideal academic programs with UniApp Space.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               {user ? (
@@ -307,7 +307,7 @@ export default function Home() {
               <h2 className="text-2xl font-light text-slate-900 mb-2">
                 UniApp Space
               </h2>
-              <p className="text-slate-500">Elegant university applications</p>
+              <p className="text-slate-500">AI-powered university applications</p>
             </div>
             <div className="flex flex-col md:flex-row gap-8 md:items-center text-center md:text-left">
               <div className="space-y-4">
