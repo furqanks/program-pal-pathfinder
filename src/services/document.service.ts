@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Document } from "@/types/document.types";
+import { Document, QuotedImprovement } from "@/types/document.types";
 
 // Convert Supabase document format to our Document interface
 export const formatDocumentFromDb = (doc: any): Document => ({
