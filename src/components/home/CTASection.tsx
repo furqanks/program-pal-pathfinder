@@ -9,13 +9,13 @@ export default function CTASection() {
   const navigate = useNavigate();
 
   return (
-    <section className="py-20 bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
+    <section className="py-20 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white relative overflow-hidden">
       <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-purple-500/10 to-pink-500/10"></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-blue-500/10 to-indigo-500/10"></div>
       </div>
       <div className="container px-4 md:px-6 relative z-10">
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
+          <h2 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
             Ready to simplify your university application journey?
           </h2>
           <p className="text-xl text-slate-300 mb-10 max-w-2xl">
@@ -25,7 +25,7 @@ export default function CTASection() {
             {user ? (
               <Button 
                 size="lg" 
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-lg px-10 py-6 transform hover:scale-105 transition-all duration-200"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-lg px-10 py-6 transform hover:scale-105 transition-all duration-200"
                 onClick={() => navigate("/search")}
               >
                 Explore Programs <ArrowRight className="ml-2 h-6 w-6" />
@@ -34,7 +34,7 @@ export default function CTASection() {
               <>
                 <Button 
                   size="lg" 
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-lg px-10 py-6 transform hover:scale-105 transition-all duration-200"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-lg px-10 py-6 transform hover:scale-105 transition-all duration-200"
                   onClick={() => navigate("/auth")}
                 >
                   Create Free Account <ArrowRight className="ml-2 h-6 w-6" />

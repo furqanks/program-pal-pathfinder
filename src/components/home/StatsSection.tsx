@@ -15,7 +15,7 @@ export default function StatsSection() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((stat, i) => (
             <div key={i} className="text-center group">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200">
                 <stat.icon className="h-8 w-8 text-white" />
               </div>
               <div className="text-3xl font-bold text-slate-900 mb-2">{stat.value}</div>

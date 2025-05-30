@@ -20,16 +20,16 @@ export default function BenefitsSection() {
       title: "Personalized Matching",
       description: "Our AI analyzes thousands of programs to find your perfect academic match",
       icon: Sparkles,
-      color: "text-purple-600"
+      color: "text-blue-600"
     }
   ];
 
   return (
-    <section className="py-24 bg-gradient-to-br from-purple-50 via-white to-pink-50">
+    <section className="py-24 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col lg:flex-row gap-16 items-center">
           <div className="lg:w-1/2 space-y-8">
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               Why Students Choose UniApp Space
             </h2>
             <p className="text-xl text-slate-600">
@@ -38,7 +38,7 @@ export default function BenefitsSection() {
             <div className="space-y-8 pt-4">
               {benefits.map((benefit, i) => (
                 <div key={i} className="flex items-start gap-6 group">
-                  <div className={`rounded-2xl bg-gradient-to-r from-purple-100 to-pink-100 p-4 group-hover:scale-110 transition-transform duration-200`}>
+                  <div className={`rounded-2xl bg-gradient-to-r from-blue-100 to-indigo-100 p-4 group-hover:scale-110 transition-transform duration-200`}>
                     <benefit.icon className={`h-6 w-6 ${benefit.color}`} />
                   </div>
                   <div>
@@ -51,11 +51,11 @@ export default function BenefitsSection() {
           </div>
           <div className="lg:w-1/2 flex justify-center">
             <div className="relative group">
-              <div className="absolute -inset-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
+              <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
               <Card className="relative bg-white rounded-2xl shadow-2xl">
                 <CardContent className="p-8">
-                  <div className="aspect-video w-full max-w-lg bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl flex items-center justify-center">
-                    <Laptop className="h-32 w-32 text-purple-400" />
+                  <div className="aspect-video w-full max-w-lg bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center">
+                    <Laptop className="h-32 w-32 text-blue-400" />
                   </div>
                 </CardContent>
               </Card>
