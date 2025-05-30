@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
@@ -30,19 +29,21 @@ function isContentTooShort(content: string): boolean {
 // Generate mock feedback for development or when content is too short
 function generateMockFeedback() {
   return {
-    summary: "The document is too short for a proper evaluation. Please expand your content to include a complete statement of purpose with your background, goals, and why you're a good fit for the program.",
+    summary: "The document is too short for a comprehensive evaluation. A strong academic document should include detailed background information, clear objectives, specific examples, and compelling reasoning. Please expand your content to include: your academic/professional background, specific goals, why you're interested in this particular program, relevant experiences with concrete examples, and how this opportunity aligns with your career trajectory.",
     improvementPoints: [
-      "Add more details about your academic background",
-      "Include your specific career goals",
-      "Explain why you're interested in this particular program",
-      "Provide examples of relevant experiences",
-      "Expand on how this program will help you achieve your goals"
+      "Expand your opening with a compelling hook that immediately captures the reader's attention",
+      "Add specific examples and quantifiable achievements from your background",
+      "Include detailed reasoning for why you're interested in this particular program/opportunity",
+      "Demonstrate knowledge of the institution and how it aligns with your goals",
+      "Strengthen your conclusion with concrete next steps and long-term vision",
+      "Improve sentence variety and transition between paragraphs",
+      "Add more sophisticated vocabulary while maintaining clarity"
     ],
     quotedImprovements: [
       {
         originalText: "Want to do this mba",
-        improvedText: "I am passionate about pursuing an MBA at your esteemed institution because it aligns perfectly with my career goals in business leadership",
-        explanation: "This provides a clear motivation and shows enthusiasm for the specific program"
+        improvedText: "I am passionate about pursuing an MBA at [Institution Name] because it perfectly aligns with my career goals in strategic business leadership and my commitment to driving innovation in the technology sector",
+        explanation: "This revision provides specific motivation, shows research about the program, and demonstrates clear career direction with professional language"
       }
     ],
     score: 3
@@ -56,67 +57,143 @@ function getSystemPrompt(documentType: string, fileName?: string) {
   // Base prompt by document type
   switch(documentType) {
     case 'SOP':
-      systemPrompt = `You are an expert academic application reviewer, specialized in reviewing Statements of Purpose for university applications.
-      Your task is to review the given Statement of Purpose and provide constructive feedback on how to improve it.`;
+      systemPrompt = `You are an expert academic application reviewer with 15+ years of experience reviewing Statements of Purpose for top-tier universities worldwide. You understand what admissions committees look for and can identify both strengths and areas for improvement in academic writing.
+
+Your task is to provide comprehensive, actionable feedback on this Statement of Purpose that will help the applicant create a compelling narrative that stands out to admissions committees.`;
       break;
     case 'CV':
-      systemPrompt = `You are an expert academic application reviewer, specialized in reviewing CVs and resumes for university applications.
-      Your task is to review the given CV/resume and provide constructive feedback on how to improve it.`;
+      systemPrompt = `You are an expert academic application reviewer specializing in CVs and resumes for university applications, graduate programs, and academic positions. You understand how to present academic achievements, research experience, and professional accomplishments effectively.
+
+Your task is to provide detailed feedback on this CV/resume to help the applicant present their qualifications in the most compelling way possible.`;
       break;
     case 'Essay':
-      systemPrompt = `You are an expert academic application reviewer, specialized in reviewing essays for university applications.
-      Your task is to review the given essay and provide constructive feedback on how to improve it.`;
+      systemPrompt = `You are an expert academic writing coach with extensive experience in reviewing application essays for universities, scholarships, and competitive programs. You understand how to craft compelling narratives that showcase personality, achievements, and potential.
+
+Your task is to provide comprehensive feedback on this essay to help the writer create a memorable and impactful piece.`;
       break;
     case 'LOR':
-      systemPrompt = `You are an expert academic application reviewer, specialized in reviewing Letters of Recommendation for university applications.
-      Your task is to review the given Letter of Recommendation and provide constructive feedback on how to improve it.`;
+      systemPrompt = `You are an expert academic application reviewer specializing in Letters of Recommendation for university applications and academic programs. You understand what makes recommendation letters effective and persuasive to admissions committees.
+
+Your task is to provide detailed feedback on this Letter of Recommendation to help strengthen its impact and credibility.`;
       break;
     case 'PersonalEssay':
-      systemPrompt = `You are an expert academic application reviewer, specialized in reviewing Personal Essays for university applications.
-      Your task is to review the given Personal Essay and provide constructive feedback on how to improve it.`;
+      systemPrompt = `You are an expert writing coach specializing in personal essays for academic applications. You understand how to help applicants tell their personal stories in compelling ways that reveal character, growth, and potential.
+
+Your task is to provide comprehensive feedback on this personal essay to help the writer craft a memorable and authentic narrative.`;
       break;
     case 'ScholarshipEssay':
-      systemPrompt = `You are an expert academic application reviewer, specialized in reviewing Scholarship Essays for university applications.
-      Your task is to review the given Scholarship Essay and provide constructive feedback on how to improve it.`;
+      systemPrompt = `You are an expert scholarship application reviewer with experience in evaluating essays for competitive scholarship programs. You understand what scholarship committees look for in terms of merit, need, and potential impact.
+
+Your task is to provide detailed feedback on this scholarship essay to help the applicant make a compelling case for funding.`;
       break;
     default:
-      systemPrompt = `You are an expert academic application reviewer, specialized in reviewing ${documentType}s for university applications.
-      Your task is to review the given ${documentType} and provide constructive feedback.`;
+      systemPrompt = `You are an expert academic application reviewer with extensive experience in evaluating ${documentType}s for university applications and academic programs.
+
+Your task is to provide comprehensive, actionable feedback on this ${documentType}.`;
   }
   
   // Add information about file if it's an uploaded document
   if (fileName) {
-    systemPrompt += `\nNote: This content was extracted from the uploaded file "${fileName}". Focus your feedback on the actual content from this file.`;
+    systemPrompt += `\n\nNote: This content was extracted from the uploaded file "${fileName}". Focus your feedback on the actual content from this file.`;
   }
   
-  // Add instructions for response format
+  // Add comprehensive instructions for detailed feedback
   systemPrompt += `
-    IMPORTANT: Analyze ONLY the provided document content. Do NOT create your own examples or content.
-    Review EXACTLY what was provided, without modifications or additions.
-    
-    You MUST identify 3-5 specific sections/sentences from the ACTUAL document that could be improved.
-    For each identified section:
-    1. Quote the original text EXACTLY as it appears in the document (do not make up text)
-    2. Provide a specific, improved version of that text
-    3. Explain why your version is better
-    
-    Format your response as a JSON object with the following structure (DO NOT include markdown formatting or code blocks in your response):
+
+COMPREHENSIVE ANALYSIS FRAMEWORK:
+
+1. CONTENT ANALYSIS:
+   - Evaluate the clarity and coherence of the main message
+   - Assess the logical flow and structure of arguments
+   - Analyze the depth and specificity of examples provided
+   - Review the balance between personal narrative and professional achievements
+
+2. TONE AND STYLE ANALYSIS:
+   - Assess whether the tone is appropriate for the target audience
+   - Evaluate the level of formality and professionalism
+   - Analyze sentence variety and writing sophistication
+   - Consider the authenticity and personality conveyed
+
+3. PURPOSE-SPECIFIC EVALUATION:
+   - For academic applications: focus on intellectual curiosity, research potential, and academic fit
+   - For scholarship applications: emphasize merit, need, and potential impact
+   - For professional programs: highlight leadership potential, career trajectory, and practical experience
+   - For personal essays: evaluate authenticity, growth narrative, and character revelation
+
+4. COMPETITIVE POSITIONING:
+   - Consider how this document would stand out among thousands of similar applications
+   - Identify unique selling points and areas where the applicant differentiates themselves
+   - Assess memorability and lasting impression
+
+FEEDBACK REQUIREMENTS:
+
+You MUST provide detailed feedback that includes:
+
+1. A comprehensive summary (2-3 paragraphs) that covers:
+   - Overall impression and main strengths
+   - Key areas for improvement
+   - Tone and style assessment
+   - Competitive positioning analysis
+
+2. 5-7 specific improvement points that include:
+   - Structural improvements (organization, flow, transitions)
+   - Content enhancements (specificity, examples, depth)
+   - Tone and style refinements
+   - Purpose-specific optimizations
+   - Competitive differentiation strategies
+
+3. 3-5 quoted improvements that demonstrate:
+   - How to transform weak passages into strong ones
+   - Different tone options (formal vs. conversational, confident vs. humble)
+   - Examples of adding specificity and impact
+   - Ways to better align with the document's purpose
+
+IMPORTANT ANALYSIS GUIDELINES:
+
+- Analyze ONLY the provided document content - do not create examples or content
+- Quote text EXACTLY as it appears in the document
+- Provide alternative phrasings that demonstrate different approaches:
+  * More formal vs. more personal tone
+  * More confident vs. more humble approach  
+  * More specific vs. more general language
+  * Better alignment with target audience expectations
+
+- For each quoted improvement, explain:
+  * Why the original is weak or could be stronger
+  * How the improvement addresses specific concerns
+  * What tone or style change is being demonstrated
+  * How it better serves the document's purpose
+
+RESPONSE FORMAT (JSON only, no markdown):
+
+{
+  "summary": "Comprehensive 2-3 paragraph analysis covering overall impression, main strengths, key improvement areas, tone assessment, and competitive positioning. Include specific observations about writing style, content depth, and alignment with purpose.",
+  "score": [Number 1-10 with detailed reasoning],
+  "improvementPoints": [
+    "Structural improvement with specific guidance",
+    "Content enhancement with examples of what to add",
+    "Tone/style refinement with specific techniques",
+    "Purpose-specific optimization advice", 
+    "Competitive differentiation strategy",
+    "Technical writing improvement",
+    "Audience alignment enhancement"
+  ],
+  "quotedImprovements": [
     {
-      "summary": "One paragraph summarizing the quality of the document and overall assessment",
-      "score": A number between 1 and 10 representing the quality of the document,
-      "improvementPoints": ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5"],
-      "quotedImprovements": [
-        {
-          "originalText": "Exact quote from the document",
-          "improvedText": "Your improved version of the text",
-          "explanation": "Brief explanation of why this improvement helps"
-        }
-      ]
+      "originalText": "Exact quote from document",
+      "improvedText": "Improved version demonstrating specific technique or tone",
+      "explanation": "Detailed explanation of the improvement strategy, tone change, and why it's more effective for the target audience and purpose"
     }
-    
-    CRITICAL: The originalText MUST be exact quotes that exist verbatim in the provided document.
-    DO NOT INVENT OR MAKE UP quotes that don't exist in the document!
-    Return ONLY the JSON object with no additional text or markdown.`;
+  ]
+}
+
+CRITICAL REQUIREMENTS:
+- The originalText MUST be exact quotes from the provided document
+- DO NOT invent quotes that don't exist in the document
+- Provide multiple improvement approaches when possible (different tones, styles, purposes)
+- Focus on actionable, specific guidance rather than general advice
+- Consider the competitive landscape and what makes applications memorable
+- Return ONLY the JSON object with no additional text or formatting`;
 
   return systemPrompt;
 }
@@ -128,40 +205,62 @@ function getImprovedDraftPrompt(documentType: string) {
   // Base prompt by document type
   switch(documentType) {
     case 'SOP':
-      systemPrompt = `You are an expert academic application writer, specialized in improving Statements of Purpose for university applications.`;
+      systemPrompt = `You are an expert academic application writer with extensive experience crafting compelling Statements of Purpose for top-tier universities. You understand how to transform good content into exceptional narratives that capture admissions committees' attention.`;
       break;
     case 'CV':
-      systemPrompt = `You are an expert academic application writer, specialized in improving CVs and resumes for university applications.`;
+      systemPrompt = `You are an expert academic application writer specializing in creating impactful CVs and resumes for university applications. You know how to present qualifications in the most compelling and professional manner.`;
       break;
     case 'Essay':
-      systemPrompt = `You are an expert academic application writer, specialized in improving essays for university applications.`;
+      systemPrompt = `You are an expert academic application writer with a talent for crafting memorable and impactful essays. You understand how to enhance narrative structure, improve flow, and strengthen the overall impact.`;
       break;
     case 'LOR':
-      systemPrompt = `You are an expert academic application writer, specialized in improving Letters of Recommendation for university applications.`;
+      systemPrompt = `You are an expert academic application writer specializing in Letters of Recommendation. You know how to enhance credibility, strengthen endorsements, and improve the overall persuasiveness of recommendations.`;
       break;
     case 'PersonalEssay':
-      systemPrompt = `You are an expert academic application writer, specialized in improving Personal Essays for university applications.`;
+      systemPrompt = `You are an expert writing coach specializing in personal narratives for academic applications. You excel at helping applicants tell their stories in authentic yet compelling ways.`;
       break;
     case 'ScholarshipEssay':
-      systemPrompt = `You are an expert academic application writer, specialized in improving Scholarship Essays for university applications.`;
+      systemPrompt = `You are an expert scholarship application writer with experience creating compelling cases for funding. You understand how to effectively communicate merit, need, and potential impact.`;
       break;
     default:
-      systemPrompt = `You are an expert academic application writer, specialized in improving ${documentType}s for university applications.`;
+      systemPrompt = `You are an expert academic application writer specializing in ${documentType}s for university applications and academic programs.`;
   }
   
   systemPrompt += `
-    Your task is to improve the provided document based on the feedback given.
-    
-    IMPORTANT:
-    1. Maintain the SAME OVERALL STRUCTURE and FORMAT as the original document
-    2. Keep the same topics, themes, and personal experiences
-    3. Preserve the author's voice and personal style
-    4. Apply the specific improvements suggested in the feedback
-    5. Make additional improvements to the document's clarity, flow, and impact
-    6. Do not add fictional details or experiences that weren't in the original
-    
-    Return ONLY the improved document text, with no additional comments or explanations.
-    The improved version should be ready to use as-is.`;
+
+IMPROVEMENT STRATEGY:
+
+1. MAINTAIN AUTHENTICITY:
+   - Preserve the author's unique voice and personal experiences
+   - Keep all factual information and achievements unchanged
+   - Maintain the same overall structure and key message points
+
+2. ENHANCE IMPACT:
+   - Strengthen opening and closing statements for maximum impact
+   - Improve transitions between paragraphs and ideas
+   - Add sophistication to language while maintaining clarity
+   - Increase specificity and concrete examples where appropriate
+
+3. OPTIMIZE FOR PURPOSE:
+   - Ensure alignment with the target audience and institution
+   - Strengthen the connection between experiences and goals
+   - Improve the logical flow of arguments and narratives
+   - Enhance competitive positioning
+
+4. APPLY FEEDBACK:
+   - Address all specific improvement points mentioned in the feedback
+   - Implement the suggested text improvements
+   - Incorporate tone and style enhancements
+   - Strengthen areas identified as weak
+
+INSTRUCTIONS:
+- Apply ALL the feedback provided while maintaining the author's authentic voice
+- Make the document more compelling, specific, and impactful
+- Ensure the improved version flows naturally and reads seamlessly
+- Maintain the same general length and structure
+- Do not add fictional details or experiences not mentioned in the original
+
+Return ONLY the improved document text, ready for immediate use.`;
 
   return systemPrompt;
 }
@@ -213,7 +312,7 @@ async function generateImprovedDraft(originalContent: string, feedbackData: any,
   
   // Prepare the feedback in a readable format for the AI
   const feedbackForAI = `
-  The original document received the following feedback:
+  The original document received the following comprehensive feedback:
   
   Overall assessment: ${feedbackData.summary}
   
@@ -233,10 +332,10 @@ async function generateImprovedDraft(originalContent: string, feedbackData: any,
   ORIGINAL DOCUMENT:
   ${originalContent}
   
-  FEEDBACK:
+  COMPREHENSIVE FEEDBACK:
   ${feedbackForAI}
   
-  Please generate an improved version of this document that addresses all the feedback points while maintaining the author's voice and the document's purpose.
+  Please generate an improved version of this document that addresses all the feedback points while maintaining the author's authentic voice and the document's core purpose.
   `;
   
   try {
@@ -333,9 +432,9 @@ serve(async (req) => {
       
       // Check if content is too short for proper analysis and we're in test mode
       if (testMode && isContentTooShort(content)) {
-        console.log('Content is too short, returning mock feedback');
+        console.log('Content is too short, returning enhanced mock feedback');
         
-        // Return mock feedback for content that is too short to analyze properly
+        // Return enhanced mock feedback for content that is too short to analyze properly
         const mockFeedback = generateMockFeedback();
         
         return new Response(
@@ -345,12 +444,12 @@ serve(async (req) => {
       }
       
       // Log request information
-      console.log(`Processing ${documentType} review ${testMode ? 'in test mode' : 'for saving to DB'}${fileName ? ` (file: ${fileName})` : ''}`);
+      console.log(`Processing comprehensive ${documentType} review ${testMode ? 'in test mode' : 'for saving to DB'}${fileName ? ` (file: ${fileName})` : ''}`);
       console.log(`Content length: ${content.length} characters`);
       console.log(`Content sample: ${content.substring(0, 100)}...`);
 
       try {
-        // Get system prompt
+        // Get enhanced system prompt
         const systemPrompt = getSystemPrompt(documentType, fileName);
         
         // Call OpenAI API
@@ -366,7 +465,7 @@ serve(async (req) => {
           
           // If in test mode, return mock data when parsing fails
           if (testMode) {
-            console.log('Parsing failed in test mode, returning mock feedback');
+            console.log('Parsing failed in test mode, returning enhanced mock feedback');
             return new Response(
               JSON.stringify(generateMockFeedback()),
               { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -376,7 +475,7 @@ serve(async (req) => {
           return createErrorResponse('Failed to parse AI response', 500);
         }
 
-        // Return response
+        // Return comprehensive response
         return new Response(
           JSON.stringify({
             summary: feedbackData.summary,
@@ -391,7 +490,7 @@ serve(async (req) => {
         
         // If in test mode, return mock data when API call fails
         if (testMode) {
-          console.log('API call failed in test mode, returning mock feedback');
+          console.log('API call failed in test mode, returning enhanced mock feedback');
           return new Response(
             JSON.stringify(generateMockFeedback()),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
