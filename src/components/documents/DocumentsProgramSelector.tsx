@@ -7,6 +7,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useProgramContext } from "@/contexts/ProgramContext";
+import { cn } from "@/lib/utils";
 
 interface DocumentsProgramSelectorProps {
   selectedProgramId: string | null;
@@ -26,7 +27,9 @@ const DocumentsProgramSelector = ({
       value={selectedProgramId || "no-program"} 
       onValueChange={(value) => setSelectedProgramId(value === "no-program" ? null : value)}
     >
-      <SelectTrigger className={isMobile ? "w-full" : "w-[200px]"}>
+      <SelectTrigger className={cn(
+        isMobile ? "w-full h-12" : "w-[200px]"
+      )}>
         <SelectValue placeholder="Link to program" />
       </SelectTrigger>
       <SelectContent>

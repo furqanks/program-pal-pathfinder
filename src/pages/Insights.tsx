@@ -5,11 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AlertCircle, BarChart3, TrendingUp } from 'lucide-react';
 import { useProgramContext } from '@/contexts/ProgramContext';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 const Insights = () => {
   const { programs, analyzeShortlist } = useProgramContext();
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleAnalyzeShortlist = async () => {
     if (programs.length < 3) {
@@ -32,26 +35,42 @@ const Insights = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">Application Insights</h1>
-        <Button onClick={handleAnalyzeShortlist} disabled={loading || programs.length < 3}>
+    <div className={cn("container mx-auto", isMobile ? "p-2" : "p-4")}>
+      <div className={cn(
+        "flex justify-between items-center mb-6",
+        isMobile ? "flex-col gap-4 items-start" : ""
+      )}>
+        <h1 className={cn(
+          "font-semibold",
+          isMobile ? "text-xl" : "text-2xl"
+        )}>Application Insights</h1>
+        <Button 
+          onClick={handleAnalyzeShortlist} 
+          disabled={loading || programs.length < 3}
+          className={isMobile ? "w-full" : ""}
+        >
           {loading ? "Analyzing..." : "Analyze My Shortlist"}
         </Button>
       </div>
 
       {analysisData ? (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className={cn(
+          "grid gap-4",
+          isMobile ? "grid-cols-1" : "md:grid-cols-2"
+        )}>
           {/* Summary Card */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className={isMobile ? "pb-3" : ""}>
+              <CardTitle className={cn(
+                "flex items-center gap-2",
+                isMobile ? "text-lg" : ""
+              )}>
                 <TrendingUp className="h-5 w-5" />
                 Shortlist Analysis
               </CardTitle>
               <CardDescription>AI-powered analysis of your program selections</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className={isMobile ? "space-y-3" : ""}>
               <p className="mb-4">{analysisData.summary}</p>
               <h3 className="font-medium mb-2">Suggestions:</h3>
               <ul className="list-disc list-inside space-y-1">
@@ -64,8 +83,11 @@ const Insights = () => {
 
           {/* Statistics Card */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className={isMobile ? "pb-3" : ""}>
+              <CardTitle className={cn(
+                "flex items-center gap-2",
+                isMobile ? "text-lg" : ""
+              )}>
                 <BarChart3 className="h-5 w-5" />
                 Program Statistics
               </CardTitle>
@@ -92,10 +114,22 @@ const Insights = () => {
           </Card>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-12 text-center">
-          <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-          <h2 className="text-xl font-medium mb-2">No Analysis Available</h2>
-          <p className="text-muted-foreground max-w-md">
+        <div className={cn(
+          "flex flex-col items-center justify-center text-center",
+          isMobile ? "p-8" : "p-12"
+        )}>
+          <AlertCircle className={cn(
+            "text-muted-foreground mb-4",
+            isMobile ? "h-10 w-10" : "h-12 w-12"
+          )} />
+          <h2 className={cn(
+            "font-medium mb-2",
+            isMobile ? "text-lg" : "text-xl"
+          )}>No Analysis Available</h2>
+          <p className={cn(
+            "text-muted-foreground max-w-md",
+            isMobile ? "text-sm" : ""
+          )}>
             Click "Analyze My Shortlist" to generate AI-powered insights about your program selections.
             You need at least 3 programs in your shortlist.
           </p>

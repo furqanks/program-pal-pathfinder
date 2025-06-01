@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 interface DocumentTypeSelectorProps {
   activeTab: string;
@@ -33,7 +34,7 @@ const DocumentTypeSelector = ({
         value={selectedProgramId || "all-documents"} 
         onValueChange={(value) => setSelectedProgramId(value === "all-documents" ? null : value)}
       >
-        <SelectTrigger>
+        <SelectTrigger className={isMobile ? "h-12" : ""}>
           <SelectValue placeholder="All documents" />
         </SelectTrigger>
         <SelectContent>
@@ -48,15 +49,21 @@ const DocumentTypeSelector = ({
       
       <div className="space-y-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="sop">SOPs</TabsTrigger>
-            <TabsTrigger value="cv">CVs</TabsTrigger>
-            <TabsTrigger value="essay">Essays</TabsTrigger>
+          <TabsList className={cn(
+            "grid grid-cols-3 mb-4",
+            isMobile ? "h-12" : ""
+          )}>
+            <TabsTrigger value="sop" className={isMobile ? "text-xs" : ""}>SOPs</TabsTrigger>
+            <TabsTrigger value="cv" className={isMobile ? "text-xs" : ""}>CVs</TabsTrigger>
+            <TabsTrigger value="essay" className={isMobile ? "text-xs" : ""}>Essays</TabsTrigger>
           </TabsList>
-          <TabsList className="grid grid-cols-3">
-            <TabsTrigger value="lor">LORs</TabsTrigger>
-            <TabsTrigger value="personalEssay">Personal</TabsTrigger>
-            <TabsTrigger value="scholarshipEssay">Scholarship</TabsTrigger>
+          <TabsList className={cn(
+            "grid grid-cols-3",
+            isMobile ? "h-12" : ""
+          )}>
+            <TabsTrigger value="lor" className={isMobile ? "text-xs" : ""}>LORs</TabsTrigger>
+            <TabsTrigger value="personalEssay" className={isMobile ? "text-xs" : ""}>Personal</TabsTrigger>
+            <TabsTrigger value="scholarshipEssay" className={isMobile ? "text-xs" : ""}>Scholarship</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
