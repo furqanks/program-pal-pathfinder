@@ -16,20 +16,26 @@ const Layout = () => {
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       
       <main className={cn(
-        "flex-1 overflow-auto transition-all duration-300 ease-in-out p-3 md:p-6", 
+        "flex-1 overflow-auto transition-all duration-300 ease-in-out", 
+        isMobile ? "p-2" : "p-6",
         sidebarOpen ? "md:ml-64" : "ml-0"
       )}>
-        <div className="md:hidden mb-4">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="h-10 w-10"
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="container mx-auto max-w-6xl pb-8">
+        {isMobile && (
+          <div className="mb-3">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="h-12 w-12"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
+        )}
+        <div className={cn(
+          "container mx-auto max-w-6xl pb-8",
+          isMobile ? "px-0" : "px-4"
+        )}>
           <Outlet />
         </div>
       </main>

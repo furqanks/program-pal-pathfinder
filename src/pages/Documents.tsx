@@ -8,6 +8,7 @@ import DocumentsList from "@/components/documents/DocumentsList";
 import DocumentEditor from "@/components/documents/DocumentEditor";
 import DocumentViewer from "@/components/documents/DocumentViewer";
 import DocumentsProgramSelector from "@/components/documents/DocumentsProgramSelector";
+import { cn } from "@/lib/utils";
 
 const DocumentsPage = () => {
   return (
@@ -77,18 +78,27 @@ const Documents = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Document Assistant</h1>
-        <p className="text-muted-foreground mt-1">
+    <div className={cn("space-y-4", isMobile ? "space-y-3" : "space-y-6")}>
+      <div className={isMobile ? "px-2" : ""}>
+        <h1 className={cn(
+          "font-bold tracking-tight",
+          isMobile ? "text-2xl" : "text-3xl"
+        )}>Document Assistant</h1>
+        <p className={cn(
+          "text-muted-foreground mt-1",
+          isMobile ? "text-sm" : ""
+        )}>
           Get AI feedback on your applications, essays, and uploaded documents
         </p>
       </div>
       
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className={cn(
+        "flex gap-4",
+        isMobile ? "flex-col px-2" : "flex-col md:flex-row"
+      )}>
         {/* Sidebar for document types and versions */}
-        <div className={`${isMobile ? "w-full" : "w-64"}`}>
-          <div className="space-y-4">
+        <div className={cn(isMobile ? "w-full" : "w-64")}>
+          <div className={cn("space-y-4", isMobile ? "space-y-3" : "")}>
             <DocumentTypeSelector
               activeTab={activeTab}
               setActiveTab={setActiveTab}
@@ -108,10 +118,17 @@ const Documents = () => {
         
         {/* Main document content area */}
         <div className="flex-1 space-y-4">
-          <Card className={isMobile ? "h-auto min-h-[60vh]" : "h-[calc(100vh-18rem)]"}>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-center flex-wrap gap-2">
-                <CardTitle className="text-lg">
+          <Card className={cn(
+            isMobile ? "min-h-[70vh]" : "h-[calc(100vh-18rem)]"
+          )}>
+            <CardHeader className={cn("pb-3", isMobile ? "px-4" : "")}>
+              <div className={cn(
+                "flex justify-between items-center gap-2",
+                isMobile ? "flex-col items-start space-y-2" : "flex-wrap"
+              )}>
+                <CardTitle className={cn(
+                  isMobile ? "text-base" : "text-lg"
+                )}>
                   {selectedDocument 
                     ? `${documentTypeLabels[selectedDocument.documentType]} - Version ${selectedDocument.versionNumber}` 
                     : `New ${documentTypeLabels[activeDocumentType]}`}
@@ -127,7 +144,10 @@ const Documents = () => {
               </div>
             </CardHeader>
             
-            <CardContent className="pb-2 h-[calc(100vh-7rem)] overflow-auto">
+            <CardContent className={cn(
+              "pb-2 overflow-auto",
+              isMobile ? "px-4 h-[calc(70vh-8rem)]" : "h-[calc(100vh-7rem)]"
+            )}>
               {selectedDocument ? (
                 <DocumentViewer
                   selectedDocument={selectedDocument}

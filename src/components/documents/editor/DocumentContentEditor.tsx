@@ -1,6 +1,8 @@
 
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface DocumentContentEditorProps {
   documentContent: string;
@@ -26,7 +28,9 @@ const DocumentContentEditor = ({
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center">
-          <Badge variant="outline">{documentTypeLabel}</Badge>
+          <Badge variant="outline" className={isMobile ? "text-xs" : ""}>
+            {documentTypeLabel}
+          </Badge>
         </div>
         {/* File upload button removed temporarily */}
       </div>
@@ -34,7 +38,10 @@ const DocumentContentEditor = ({
         value={documentContent}
         onChange={(e) => setDocumentContent(e.target.value)}
         placeholder={`Type or paste your ${documentTypeLabel.toLowerCase()} here...`}
-        className="min-h-80 text-sm"
+        className={cn(
+          "text-sm resize-none",
+          isMobile ? "min-h-48 text-base p-4" : "min-h-80"
+        )}
         disabled={isUploading}
       />
       {isUploading && (

@@ -12,9 +12,11 @@ import {
   Globe
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const QuickActions = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const actions = [
     {
@@ -63,24 +65,38 @@ const QuickActions = () => {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Quick Actions</CardTitle>
+      <CardHeader className={isMobile ? "pb-3 px-4" : ""}>
+        <CardTitle className={isMobile ? "text-lg" : "text-lg"}>Quick Actions</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <CardContent className={isMobile ? "px-4" : ""}>
+        <div className={cn(
+          "grid gap-3",
+          isMobile ? "grid-cols-2" : "grid-cols-2 md:grid-cols-3"
+        )}>
           {actions.map((action, index) => (
             <Button
               key={index}
               variant="ghost"
-              className={`h-auto p-3 flex flex-col items-center gap-2 ${action.color}`}
+              className={cn(
+                "flex flex-col items-center gap-2 text-center",
+                action.color,
+                isMobile ? "h-20 p-3" : "h-auto p-3"
+              )}
               onClick={action.onClick}
             >
-              <action.icon className="h-5 w-5" />
+              <action.icon className={isMobile ? "h-6 w-6" : "h-5 w-5"} />
               <div className="text-center">
-                <div className="font-medium text-xs">{action.title}</div>
-                <div className="text-xs opacity-75 hidden md:block">
-                  {action.description}
+                <div className={cn(
+                  "font-medium",
+                  isMobile ? "text-sm" : "text-xs"
+                )}>
+                  {action.title}
                 </div>
+                {!isMobile && (
+                  <div className="text-xs opacity-75 hidden md:block">
+                    {action.description}
+                  </div>
+                )}
               </div>
             </Button>
           ))}

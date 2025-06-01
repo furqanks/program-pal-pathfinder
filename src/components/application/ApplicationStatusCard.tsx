@@ -7,6 +7,8 @@ import { Calendar, Clock, FileText, CheckCircle2, AlertCircle } from "lucide-rea
 import { Program } from "@/contexts/ProgramContext";
 import { useTagContext } from "@/contexts/TagContext";
 import { format, differenceInDays, parseISO, isValid } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface ApplicationStatusCardProps {
   program: Program;
@@ -15,6 +17,7 @@ interface ApplicationStatusCardProps {
 
 const ApplicationStatusCard = ({ program, onViewDetails }: ApplicationStatusCardProps) => {
   const { getStatusTag } = useTagContext();
+  const isMobile = useIsMobile();
   const statusTag = getStatusTag(program.statusTagId);
   
   // Calculate progress based on completed tasks
@@ -49,17 +52,23 @@ const ApplicationStatusCard = ({ program, onViewDetails }: ApplicationStatusCard
 
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
+      <CardHeader className={cn("pb-3", isMobile ? "px-4" : "")}>
         <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-lg font-semibold leading-tight">
+          <div className="space-y-1 flex-1 min-w-0">
+            <CardTitle className={cn(
+              "font-semibold leading-tight",
+              isMobile ? "text-base" : "text-lg"
+            )}>
               {program.programName}
             </CardTitle>
-            <p className="text-sm text-muted-foreground">
+            <p className={cn(
+              "text-muted-foreground",
+              isMobile ? "text-xs" : "text-sm"
+            )}>
               {program.university} • {program.country}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {getStatusIcon()}
             {statusTag && (
               <Badge 
@@ -67,7 +76,7 @@ const ApplicationStatusCard = ({ program, onViewDetails }: ApplicationStatusCard
                   backgroundColor: statusTag.color,
                   color: '#fff'
                 }}
-                className="text-xs"
+                className={isMobile ? "text-xs px-2 py-1" : "text-xs"}
               >
                 {statusTag.label}
               </Badge>
@@ -76,14 +85,21 @@ const ApplicationStatusCard = ({ program, onViewDetails }: ApplicationStatusCard
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className={cn("space-y-4", isMobile ? "px-4" : "")}>
         {/* Deadline Info */}
         {program.deadline && (
-          <div className="flex items-center gap-2 text-sm">
-            <Calendar className="h-4 w-4" />
+          <div className={cn(
+            "flex items-center gap-2",
+            isMobile ? "text-xs" : "text-sm"
+          )}>
+            <Calendar className="h-4 w-4 flex-shrink-0" />
             <span>Due: {format(parseISO(program.deadline), "MMM dd, yyyy")}</span>
             {daysUntilDeadline !== null && (
-              <span className={`font-medium ${getUrgencyColor()}`}>
+              <span className={cn(
+                "font-medium",
+                getUrgencyColor(),
+                isMobile ? "text-xs" : ""
+              )}>
                 ({daysUntilDeadline > 0 ? `${daysUntilDeadline} days left` : "Overdue"})
               </span>
             )}
@@ -92,30 +108,39 @@ const ApplicationStatusCard = ({ program, onViewDetails }: ApplicationStatusCard
         
         {/* Progress */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
+          <div className={cn(
+            "flex items-center justify-between",
+            isMobile ? "text-xs" : "text-sm"
+          )}>
             <span>Application Progress</span>
             <span className="font-medium">{Math.round(progress)}%</span>
           </div>
           <Progress value={progress} className="h-2" />
-          <p className="text-xs text-muted-foreground">
+          <p className={cn(
+            "text-muted-foreground",
+            isMobile ? "text-xs" : "text-xs"
+          )}>
             {completedTasks} of {totalTasks} tasks completed
           </p>
         </div>
         
         {/* Actions */}
-        <div className="flex gap-2 pt-2">
+        <div className={cn(
+          "flex gap-2 pt-2",
+          isMobile ? "flex-col" : ""
+        )}>
           <Button 
             variant="outline" 
-            size="sm" 
+            size={isMobile ? "default" : "sm"}
             onClick={onViewDetails}
-            className="flex-1"
+            className={isMobile ? "w-full h-12" : "flex-1"}
           >
             View Details
           </Button>
           <Button 
             variant={progress === 100 ? "default" : "secondary"}
-            size="sm"
-            className="flex-1"
+            size={isMobile ? "default" : "sm"}
+            className={isMobile ? "w-full h-12" : "flex-1"}
           >
             {progress === 100 ? "Submit Application" : "Continue Working"}
           </Button>
