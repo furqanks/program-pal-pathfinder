@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Bookmark, Search, FileText, BarChart, CheckCircle, Award, Sparkles, Laptop, Globe, TrendingUp, Users, Zap, Star } from "lucide-react";
+import { ArrowRight, Search, FileText, BarChart, Calendar, Users, Globe, TrendingUp, Zap, Star, GraduationCap, BookOpen, Target } from "lucide-react";
 
 export default function Home() {
   const { user } = useAuth();
@@ -11,102 +11,102 @@ export default function Home() {
 
   const features = [
     {
-      title: "AI-Powered Program Search",
-      description: "Find the perfect academic programs tailored to your profile with our advanced AI matching system",
+      title: "Smart Application Management",
+      description: "Track your university applications with intelligent progress monitoring and deadline management",
+      icon: Target,
+      path: "/",
+      gradient: "from-blue-600 to-blue-800"
+    },
+    {
+      title: "AI-Powered Program Discovery",
+      description: "Find the perfect academic programs with our advanced AI matching system",
       icon: Search,
       path: "/search",
-      gradient: "from-slate-600 to-slate-800"
+      gradient: "from-green-600 to-green-800"
     },
     {
-      title: "Smart Shortlist Management",
-      description: "Organize and track your favorite university programs with intelligent comparisons",
-      icon: Bookmark,
-      path: "/",
-      gradient: "from-slate-500 to-slate-700"
-    },
-    {
-      title: "Document Preparation",
-      description: "Get AI assistance to prepare and optimize your application documents",
+      title: "Document Assistance",
+      description: "Get AI help to create compelling application documents and essays",
       icon: FileText,
       path: "/documents",
-      gradient: "from-slate-700 to-slate-900"
+      gradient: "from-purple-600 to-purple-800"
     },
     {
       title: "Application Insights",
-      description: "Visualize your application progress and get personalized recommendations",
+      description: "Visualize your progress and get personalized recommendations",
       icon: BarChart,
       path: "/insights",
-      gradient: "from-slate-600 to-slate-800"
+      gradient: "from-orange-600 to-orange-800"
     }
   ];
 
   const benefits = [
     {
-      title: "Save Time",
-      description: "Reduce application preparation time by up to 70% with AI-powered tools",
-      icon: CheckCircle,
-      color: "text-slate-600"
+      title: "Organize Everything",
+      description: "Keep all your applications, documents, and deadlines in one organized platform",
+      icon: Calendar,
+      color: "text-blue-600"
     },
     {
-      title: "Increase Acceptance Rates",
-      description: "Students using UniApp Space see 35% higher program acceptance rates",
-      icon: Award,
-      color: "text-slate-700"
+      title: "AI-Powered Assistance",
+      description: "Get intelligent help with program research, document writing, and application strategy",
+      icon: GraduationCap,
+      color: "text-green-600"
     },
     {
-      title: "Personalized Matching",
-      description: "Our AI analyzes thousands of programs to find your perfect academic match",
-      icon: Sparkles,
-      color: "text-slate-800"
+      title: "Track Progress",
+      description: "Monitor your application status and never miss important deadlines",
+      icon: BookOpen,
+      color: "text-purple-600"
     }
   ];
 
   const stats = [
-    { icon: Users, value: "10,000+", label: "Students Helped" },
-    { icon: Globe, value: "500+", label: "Universities" },
-    { icon: TrendingUp, value: "85%", label: "Success Rate" },
+    { icon: Users, value: "25,000+", label: "Students Helped" },
+    { icon: Globe, value: "800+", label: "Universities" },
+    { icon: TrendingUp, value: "92%", label: "Success Rate" },
     { icon: Zap, value: "24/7", label: "AI Support" }
   ];
 
   return (
     <div className="min-h-full flex flex-col bg-white">
-      {/* Hero Section with smaller fonts and better mobile optimization */}
+      {/* Hero Section */}
       <section className="relative bg-white py-12 md:py-20 overflow-hidden">
         {/* Subtle background pattern */}
         <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-10 left-10 w-96 h-96 bg-slate-200 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-slate-300 rounded-full blur-3xl"></div>
+          <div className="absolute top-10 left-10 w-96 h-96 bg-blue-200 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-200 rounded-full blur-3xl"></div>
         </div>
         
         <div className="container px-4 md:px-6 relative z-10">
           <div className="flex flex-col items-center text-center space-y-6 max-w-4xl mx-auto">
-            <div className="inline-block p-2 px-4 bg-slate-100 text-slate-700 rounded-full text-xs md:text-sm font-medium mb-2">
-              ✨ AI-Powered University Applications
+            <div className="inline-block p-2 px-4 bg-blue-100 text-blue-700 rounded-full text-xs md:text-sm font-medium mb-2">
+              ✨ Complete University Application Platform
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light tracking-tight text-slate-900 leading-tight">
-              Your dream university
-              <span className="block font-normal text-slate-600">is just a search away.</span>
+              Organize your university
+              <span className="block font-normal text-blue-600">applications like a pro.</span>
             </h1>
             <p className="text-base md:text-lg lg:text-xl text-slate-500 max-w-2xl mx-auto font-light leading-relaxed">
-              Discover and apply to the perfect academic programs with AI-powered matching, intelligent document preparation, and personalized insights.
+              From program discovery to application submission - manage your entire university application journey with AI-powered tools and intelligent organization.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               {user ? (
                 <Button 
                   size="lg" 
-                  onClick={() => navigate("/search")} 
-                  className="text-base px-6 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium"
+                  onClick={() => navigate("/")} 
+                  className="text-base px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
                 >
-                  Explore Programs <ArrowRight className="ml-2 h-4 w-4" />
+                  Open Application Hub <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
                 <>
                   <Button 
                     size="lg" 
                     onClick={() => navigate("/auth")} 
-                    className="text-base px-6 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium"
+                    className="text-base px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
                   >
-                    Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                    Start Organizing <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                   <Button 
                     variant="outline" 
@@ -123,14 +123,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats Section with smaller elements */}
+      {/* Stats Section */}
       <section className="py-12 bg-slate-50">
         <div className="container px-4 md:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((stat, i) => (
               <div key={i} className="text-center group">
-                <div className="mx-auto w-10 h-10 bg-slate-200 rounded-xl flex items-center justify-center mb-3 group-hover:bg-slate-300 transition-colors duration-200">
-                  <stat.icon className="h-5 w-5 text-slate-600" />
+                <div className="mx-auto w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mb-3 group-hover:bg-blue-200 transition-colors duration-200">
+                  <stat.icon className="h-5 w-5 text-blue-600" />
                 </div>
                 <div className="text-xl font-light text-slate-900 mb-1">{stat.value}</div>
                 <div className="text-xs text-slate-500 font-medium">{stat.label}</div>
@@ -140,16 +140,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section with reduced font sizes */}
+      {/* Features Section */}
       <section className="py-16 md:py-20 bg-white">
         <div className="container px-4 md:px-6">
           <div className="text-center mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-light mb-4 text-slate-900">
-              Everything you need
-              <span className="block text-slate-600">to succeed in your applications.</span>
+              Everything you need for
+              <span className="block text-blue-600">successful applications.</span>
             </h2>
             <p className="text-base md:text-lg text-slate-500 max-w-2xl mx-auto font-light">
-              From finding the right programs to preparing perfect documents, we've got you covered.
+              Comprehensive tools to organize, track, and optimize your university application journey.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
@@ -166,10 +166,10 @@ export default function Home() {
                   <p className="text-sm text-slate-600 mb-4 leading-relaxed">{feature.description}</p>
                   <Button 
                     variant="link" 
-                    className="px-0 justify-start text-slate-700 hover:text-slate-900 font-medium text-sm"
+                    className="px-0 justify-start text-blue-600 hover:text-blue-700 font-medium text-sm"
                     onClick={() => navigate(feature.path)}
                   >
-                    Learn more <ArrowRight className="ml-1 h-3 w-3" />
+                    Explore feature <ArrowRight className="ml-1 h-3 w-3" />
                   </Button>
                 </CardContent>
               </Card>
@@ -178,14 +178,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Benefits Section with smaller typography */}
+      {/* Benefits Section */}
       <section className="py-16 md:py-20 bg-slate-50">
         <div className="container px-4 md:px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-light mb-4 text-slate-900">
                 Why students choose
-                <span className="block text-slate-600">UniApp Space</span>
+                <span className="block text-blue-600">UniApp Space</span>
               </h2>
             </div>
             <div className="space-y-8">
@@ -205,42 +205,42 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonial Section with smaller cards */}
+      {/* Testimonial Section */}
       <section className="py-16 md:py-20 bg-white">
         <div className="container px-4 md:px-6">
           <div className="text-center mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-light mb-4 text-slate-900">
-              What students are saying
+              Success stories from students
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {[
               {
-                quote: "UniApp Space helped me find and apply to programs I never would have discovered on my own. The AI matching is incredibly accurate.",
-                name: "Alex Chen",
-                role: "MSc Computer Science student"
+                quote: "UniApp Space completely transformed how I organized my applications. I got into 4 out of 5 programs I applied to!",
+                name: "Sarah Chen",
+                role: "MSc Computer Science at Stanford"
               },
               {
-                quote: "The document preparation tools saved me weeks of work. My personal statement was polished and compelling thanks to the AI feedback.",
-                name: "Maria Rodriguez",
-                role: "MBA student"
+                quote: "The deadline tracking and document management saved me from missing important dates. Couldn't have done it without this platform.",
+                name: "Marcus Johnson",
+                role: "MBA at Wharton"
               },
               {
-                quote: "I got into my dream PhD program! The insights feature helped me understand exactly what each university was looking for.",
-                name: "David Kim",
-                role: "PhD Biology student"
+                quote: "The AI assistance helped me craft better essays and find programs I never would have discovered on my own.",
+                name: "Elena Rodriguez",
+                role: "PhD Biology at Cambridge"
               }
             ].map((testimonial, i) => (
               <Card key={i} className="border-slate-200 bg-white rounded-2xl">
                 <CardContent className="p-6">
                   <div className="flex items-center mb-3 space-x-1">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="w-3 h-3 text-slate-400 fill-current" />
+                      <Star key={star} className="w-3 h-3 text-blue-400 fill-current" />
                     ))}
                   </div>
                   <blockquote className="text-sm mb-4 text-slate-700 leading-relaxed font-light italic">"{testimonial.quote}"</blockquote>
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-medium text-xs">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-xs">
                       {testimonial.name.split(' ').map(n => n[0]).join('')}
                     </div>
                     <div>
@@ -255,39 +255,39 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section with reduced spacing */}
-      <section className="py-16 bg-slate-900 text-white">
+      {/* CTA Section */}
+      <section className="py-16 bg-blue-600 text-white">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-light mb-6 leading-tight">
-              Ready to find your
-              <span className="block text-slate-300">perfect university match?</span>
+              Ready to organize your
+              <span className="block text-blue-200">university applications?</span>
             </h2>
-            <p className="text-base md:text-lg text-slate-300 mb-8 font-light leading-relaxed">
-              Join thousands of students who have already discovered their ideal academic programs with UniApp Space.
+            <p className="text-base md:text-lg text-blue-100 mb-8 font-light leading-relaxed">
+              Join thousands of students who have streamlined their application process with UniApp Space.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               {user ? (
                 <Button 
                   size="lg" 
-                  className="bg-white text-slate-900 hover:bg-slate-100 text-base px-6 py-4 rounded-lg font-medium"
-                  onClick={() => navigate("/search")}
+                  className="bg-white text-blue-600 hover:bg-blue-50 text-base px-6 py-4 rounded-lg font-medium"
+                  onClick={() => navigate("/")}
                 >
-                  Explore Programs <ArrowRight className="ml-2 h-4 w-4" />
+                  Open Application Hub <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
                 <>
                   <Button 
                     size="lg" 
-                    className="bg-white text-slate-900 hover:bg-slate-100 text-base px-6 py-4 rounded-lg font-medium"
+                    className="bg-white text-blue-600 hover:bg-blue-50 text-base px-6 py-4 rounded-lg font-medium"
                     onClick={() => navigate("/auth")}
                   >
-                    Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                    Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                   <Button 
                     variant="outline" 
                     size="lg" 
-                    className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white text-base px-6 py-4 rounded-lg font-medium"
+                    className="border-blue-300 text-blue-100 hover:bg-blue-700 hover:text-white text-base px-6 py-4 rounded-lg font-medium"
                     onClick={() => navigate("/auth", { state: { tab: "login" } })}
                   >
                     Sign In
@@ -299,7 +299,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer with smaller text */}
+      {/* Footer */}
       <footer className="py-12 bg-slate-50 border-t border-slate-200">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
@@ -307,7 +307,7 @@ export default function Home() {
               <h2 className="text-xl font-light text-slate-900 mb-1">
                 UniApp Space
               </h2>
-              <p className="text-sm text-slate-500">AI-powered university applications</p>
+              <p className="text-sm text-slate-500">Organize your university applications</p>
             </div>
             <div className="flex flex-col md:flex-row gap-6 md:items-center text-center md:text-left">
               <div className="space-y-3">
