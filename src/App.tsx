@@ -36,6 +36,29 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// App routes component that has access to all contexts
+const AppRoutes = () => {
+  return (
+    <Routes>
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/home" element={<Home />} />
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Layout />
+        </ProtectedRoute>
+      }>
+        <Route index element={<Dashboard />} />
+        <Route path="search" element={<Search />} />
+        <Route path="us-search" element={<USSearch />} />
+        <Route path="documents" element={<Documents />} />
+        <Route path="insights" element={<Insights />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/home" replace />} />
+    </Routes>
+  );
+};
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -47,23 +70,7 @@ const App = () => {
                 <BrowserRouter>
                   <Toaster />
                   <Sonner />
-                  <Routes>
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/home" element={<Home />} />
-                    <Route path="/" element={
-                      <ProtectedRoute>
-                        <Layout />
-                      </ProtectedRoute>
-                    }>
-                      <Route index element={<Dashboard />} />
-                      <Route path="search" element={<Search />} />
-                      <Route path="us-search" element={<USSearch />} />
-                      <Route path="documents" element={<Documents />} />
-                      <Route path="insights" element={<Insights />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Route>
-                    <Route path="*" element={<Navigate to="/home" replace />} />
-                  </Routes>
+                  <AppRoutes />
                 </BrowserRouter>
               </PerplexityProvider>
             </TagProvider>
