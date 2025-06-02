@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search as SearchIcon, Plus, ExternalLink, Info } from "lucide-react";
+import { Search as SearchIcon, Plus, ExternalLink, Info, Clock, DollarSign, Calendar, Globe, GraduationCap, FileText } from "lucide-react";
 import { usePerplexityContext, SearchResult } from "@/contexts/PerplexityContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import {
@@ -23,6 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
 
 const Search = () => {
   const { searchPrograms, searchResults, isLoading } = usePerplexityContext();
@@ -41,21 +42,37 @@ const Search = () => {
   };
   
   const handleAddToShortlist = (result: SearchResult) => {
+    // Extract structured data for intelligent program addition
+    const tuitionInfo = result.tuition || result.fees?.international || result.fees?.domestic || "";
+    const deadlineInfo = result.deadline || result.applicationDeadline || "";
+    
     addProgram({
       programName: result.programName,
       university: result.university,
       degreeType: result.degreeType,
       country: result.country,
-      tuition: "",
-      deadline: "",
+      tuition: tuitionInfo,
+      deadline: deadlineInfo,
       notes: result.description,
       statusTagId: "status-considering",
       customTagIds: [],
     });
+    
+    toast.success("Program added with detailed information!");
   };
   
   const handleGoogleSearch = (result: SearchResult) => {
     window.open(`https://www.google.com/search?q=${encodeURIComponent(`${result.programName} ${result.university}`)}`, "_blank");
+  };
+
+  const formatFeeInfo = (result: SearchResult) => {
+    if (result.fees) {
+      return Object.entries(result.fees)
+        .filter(([_, value]) => value)
+        .map(([type, value]) => `${type}: ${value}`)
+        .join(" | ");
+    }
+    return result.tuition || "";
   };
 
   return (
@@ -63,7 +80,7 @@ const Search = () => {
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Program Search</h1>
         <p className="text-muted-foreground mt-1">
-          Search for academic programs powered by Perplexity AI
+          Search for academic programs with detailed information powered by Perplexity AI
         </p>
       </div>
       
@@ -71,7 +88,7 @@ const Search = () => {
         <CardContent className="pt-6 pb-4">
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
             <Input
-              placeholder="Search for programs (e.g. Computer Science, Data Science...)"
+              placeholder="Search for programs (e.g. Computer Science, Data Science, affordable MBA...)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="flex-1"
@@ -148,12 +165,13 @@ const Search = () => {
             ) : (
               searchResults.map((result, index) => (
                 <Card key={index} className="overflow-hidden">
-                  <CardHeader className="pb-2 md:pb-3">
+                  <CardHeader className="pb-3">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
-                      <div>
-                        <CardTitle className="text-lg">{result.programName}</CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                          {result.university}
+                      <div className="flex-1">
+                        <CardTitle className="text-lg mb-1">{result.programName}</CardTitle>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Globe className="h-3 w-3" />
+                          {result.university} • {result.country}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -162,9 +180,118 @@ const Search = () => {
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="pb-2 md:pb-3">
-                    <p className="text-sm">{result.description}</p>
+                  
+                  <CardContent className="space-y-4">
+                    {/* Program Details Section */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Cost Information */}
+                      {(result.tuition || result.fees) && (
+                        <div className="space-y-1">
+                          <h4 className="font-medium text-sm flex items-center gap-1">
+                            <DollarSign className="h-3 w-3" />
+                            Tuition
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            {formatFeeInfo(result)}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Duration & Deadlines */}
+                      <div className="space-y-2">
+                        {result.duration && (
+                          <div className="space-y-1">
+                            <h4 className="font-medium text-sm flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              Duration
+                            </h4>
+                            <p className="text-sm text-muted-foreground">{result.duration}</p>
+                          </div>
+                        )}
+                        
+                        {(result.deadline || result.applicationDeadline) && (
+                          <div className="space-y-1">
+                            <h4 className="font-medium text-sm flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Deadline
+                            </h4>
+                            <p className="text-sm text-muted-foreground">
+                              {result.deadline || result.applicationDeadline}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Program Format */}
+                      {result.programDetails && (
+                        <div className="space-y-1">
+                          <h4 className="font-medium text-sm flex items-center gap-1">
+                            <GraduationCap className="h-3 w-3" />
+                            Format
+                          </h4>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            {result.programDetails.format && (
+                              <p>{result.programDetails.format}</p>
+                            )}
+                            {result.programDetails.credits && (
+                              <p>{result.programDetails.credits}</p>
+                            )}
+                            {result.programDetails.startDate && (
+                              <p>Starts: {result.programDetails.startDate}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <Separator />
+                    
+                    {/* Description */}
+                    <div>
+                      <p className="text-sm">{result.description}</p>
+                    </div>
+                    
+                    {/* Requirements */}
+                    {(result.requirements || result.admissionRequirements) && (
+                      <>
+                        <Separator />
+                        <div>
+                          <h4 className="font-medium text-sm mb-2 flex items-center gap-1">
+                            <FileText className="h-3 w-3" />
+                            Requirements
+                          </h4>
+                          {result.admissionRequirements ? (
+                            <ul className="text-sm text-muted-foreground space-y-1">
+                              {result.admissionRequirements.map((req, idx) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                  <span className="text-xs">•</span>
+                                  <span>{req}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">{result.requirements}</p>
+                          )}
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* Website */}
+                    {result.website && (
+                      <div>
+                        <h4 className="font-medium text-sm mb-1">Website</h4>
+                        <a 
+                          href={result.website} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:text-blue-800 underline"
+                        >
+                          {result.website}
+                        </a>
+                      </div>
+                    )}
                   </CardContent>
+                  
                   <CardFooter className="flex flex-col sm:flex-row gap-2">
                     <Button 
                       variant="outline"

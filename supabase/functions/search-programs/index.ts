@@ -17,6 +17,23 @@ interface SearchResult {
   degreeType: string;
   country: string;
   description: string;
+  tuition?: string;
+  deadline?: string;
+  applicationDeadline?: string;
+  duration?: string;
+  requirements?: string;
+  fees?: {
+    domestic?: string;
+    international?: string;
+    eu?: string;
+  };
+  website?: string;
+  admissionRequirements?: string[];
+  programDetails?: {
+    credits?: string;
+    format?: string;
+    startDate?: string;
+  };
 }
 
 // Function to validate if query is program-related
@@ -111,10 +128,10 @@ serve(async (req) => {
 
     console.log(`Searching for programs with query: ${query}`);
 
-    // Enhanced system prompt that considers affordability and diversity
-    const systemPrompt = `You are an academic program finder that searches for diverse academic programs from various universities worldwide.
+    // Enhanced system prompt with detailed structure requirements
+    const systemPrompt = `You are an academic program finder that searches for detailed academic program information from various universities worldwide.
     
-    Given a search query about academic programs, provide information about 10-12 relevant programs from different universities and countries.
+    Given a search query about academic programs, provide comprehensive information about 8-10 relevant programs from different universities and countries.
     
     IMPORTANT REQUIREMENTS:
     - Include programs from various universities (not just elite institutions)
@@ -123,18 +140,29 @@ serve(async (req) => {
     - Mix of public and private institutions
     - Include both well-known and lesser-known quality institutions
     - Only use information from official university websites and verified educational sources
+    - Extract specific details like tuition fees, deadlines, duration, and requirements
     
     Format your response as a JSON array with objects containing these fields:
     - programName (string): Official name of the academic program
     - university (string): Official university or institution name  
     - degreeType (string): Type of degree (PhD, Masters, Bachelor's, etc.)
     - country (string): Country where the institution is located
-    - description (string): Brief description including tuition information if available (max 200 words)
+    - description (string): Brief description (max 150 words)
+    - tuition (string, optional): Tuition fee information if available
+    - deadline (string, optional): Application deadline if available
+    - applicationDeadline (string, optional): Specific application deadline date if available
+    - duration (string, optional): Program duration if available
+    - requirements (string, optional): Brief admission requirements if available
+    - fees (object, optional): Breakdown of fees with domestic, international, eu fields if available
+    - website (string, optional): Official program website URL if available
+    - admissionRequirements (array, optional): List of specific admission requirements if available
+    - programDetails (object, optional): Additional details with credits, format, startDate if available
     
     Return ONLY the JSON array, no additional text, no markdown formatting, no code blocks. Just pure JSON.
-    Ensure diversity in universities, countries, and price ranges based on the search query.`;
+    Ensure diversity in universities, countries, and price ranges based on the search query.
+    Include as much structured data as possible in the appropriate fields rather than in the description.`;
 
-    // Call Perplexity API without domain restrictions to get diverse results
+    // Call Perplexity API
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -150,11 +178,11 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: `Find 10-12 diverse academic programs related to: ${query}. Include various universities from different countries and price ranges.`
+            content: `Find 8-10 diverse academic programs related to: ${query}. Include detailed information about tuition, deadlines, duration, requirements, and other structured data. Include various universities from different countries and price ranges.`
           }
         ],
         temperature: 0.1,
-        max_tokens: 4000,
+        max_tokens: 6000,
         return_images: false,
         search_recency_filter: 'year'
       }),

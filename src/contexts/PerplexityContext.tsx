@@ -9,6 +9,24 @@ export type SearchResult = {
   degreeType: string;
   country: string;
   description: string;
+  // Enhanced fields
+  tuition?: string;
+  deadline?: string;
+  applicationDeadline?: string;
+  duration?: string;
+  requirements?: string;
+  fees?: {
+    domestic?: string;
+    international?: string;
+    eu?: string;
+  };
+  website?: string;
+  admissionRequirements?: string[];
+  programDetails?: {
+    credits?: string;
+    format?: string; // "Full-time", "Part-time", "Online", etc.
+    startDate?: string;
+  };
 };
 
 type PerplexityContextType = {
