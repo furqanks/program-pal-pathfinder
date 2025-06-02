@@ -9,13 +9,19 @@ import {
   PlusCircle, 
   BarChart3,
   GraduationCap,
-  TrendingUp
+  TrendingUp,
+  StickyNote
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
-const QuickActions = () => {
+interface QuickActionsProps {
+  onAddProgram?: () => void;
+  onViewNotes?: () => void;
+}
+
+const QuickActions = ({ onAddProgram, onViewNotes }: QuickActionsProps) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -32,7 +38,7 @@ const QuickActions = () => {
       icon: PlusCircle,
       title: "Add to Shortlist",
       description: "Add a program to track",
-      onClick: () => {}, // This will be handled by parent component
+      onClick: onAddProgram || (() => {}),
       color: "bg-purple-50 text-purple-600 hover:bg-purple-100",
       priority: "high"
     },
@@ -42,6 +48,14 @@ const QuickActions = () => {
       description: "Create application documents",
       onClick: () => navigate("/documents"),
       color: "bg-green-50 text-green-600 hover:bg-green-100",
+      priority: "high"
+    },
+    {
+      icon: StickyNote,
+      title: "My Notes",
+      description: "View and manage notes",
+      onClick: onViewNotes || (() => {}),
+      color: "bg-yellow-50 text-yellow-600 hover:bg-yellow-100",
       priority: "high"
     },
     {
@@ -86,7 +100,7 @@ const QuickActions = () => {
       <CardContent className={isMobile ? "px-4" : ""}>
         <div className={cn(
           "grid gap-3",
-          isMobile ? "grid-cols-1" : "grid-cols-2 md:grid-cols-3"
+          isMobile ? "grid-cols-2" : "grid-cols-2 md:grid-cols-3"
         )}>
           {displayActions.map((action, index) => (
             <Button
@@ -95,15 +109,15 @@ const QuickActions = () => {
               className={cn(
                 "flex flex-col items-center gap-2 text-center justify-start",
                 action.color,
-                isMobile ? "h-auto p-4" : "h-auto p-3"
+                isMobile ? "h-auto p-3" : "h-auto p-3"
               )}
               onClick={action.onClick}
             >
-              <action.icon className={isMobile ? "h-6 w-6" : "h-5 w-5"} />
+              <action.icon className={isMobile ? "h-5 w-5" : "h-5 w-5"} />
               <div className="text-center">
                 <div className={cn(
                   "font-medium",
-                  isMobile ? "text-sm" : "text-xs"
+                  isMobile ? "text-xs" : "text-xs"
                 )}>
                   {action.title}
                 </div>
