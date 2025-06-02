@@ -1,168 +1,80 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-interface SearchProgramsBody {
-  query: string;
-}
-
-interface SearchResult {
-  programName: string;
-  university: string;
-  degreeType: string;
-  country: string;
-  description: string;
-  tuition?: string;
-  deadline?: string;
-  applicationDeadline?: string;
-  duration?: string;
-  requirements?: string;
-  fees?: {
-    domestic?: string;
-    international?: string;
-    eu?: string;
-  };
-  website?: string;
-  admissionRequirements?: string[];
-  programDetails?: {
-    credits?: string;
-    format?: string;
-    startDate?: string;
-  };
-}
-
-// Function to validate if query is program-related
-function isProgramRelatedQuery(query: string): boolean {
-  const programKeywords = [
-    'program', 'course', 'degree', 'masters', 'phd', 'bachelor', 'doctorate', 'mba', 'md', 'jd',
-    'computer science', 'engineering', 'business', 'medicine', 'law', 'psychology', 'biology',
-    'chemistry', 'physics', 'mathematics', 'economics', 'finance', 'marketing', 'accounting',
-    'data science', 'artificial intelligence', 'machine learning', 'nursing', 'education',
-    'architecture', 'art', 'design', 'music', 'literature', 'history', 'philosophy',
-    'political science', 'sociology', 'anthropology', 'linguistics', 'geography',
-    'environmental science', 'biotechnology', 'cybersecurity', 'software engineering',
-    'mechanical engineering', 'electrical engineering', 'civil engineering', 'aerospace',
-    'biomedical engineering', 'chemical engineering', 'industrial engineering',
-    'information technology', 'information systems', 'digital media', 'journalism',
-    'communications', 'public relations', 'international relations', 'public health',
-    'veterinary', 'pharmacy', 'dentistry', 'physical therapy', 'occupational therapy',
-    'social work', 'criminal justice', 'public administration', 'urban planning',
-    'agriculture', 'forestry', 'marine science', 'geology', 'meteorology',
-    'study', 'university', 'college', 'academic', 'curriculum', 'major', 'minor',
-    'specialization', 'concentration', 'field', 'discipline', 'subject', 'affordable',
-    'budget', 'cheap', 'low cost', 'scholarship', 'financial aid', 'tuition'
-  ];
-  
-  const queryLower = query.toLowerCase();
-  return programKeywords.some(keyword => queryLower.includes(keyword));
-}
-
-// Function to clean JSON from markdown formatting
-function extractJsonFromMarkdown(content: string): string {
-  console.log('Raw content received:', content);
-  
-  // Remove markdown code blocks if present
-  let cleanedContent = content.trim();
-  
-  // Remove ```json at the beginning
-  if (cleanedContent.startsWith('```json')) {
-    cleanedContent = cleanedContent.substring(7);
-  } else if (cleanedContent.startsWith('```')) {
-    cleanedContent = cleanedContent.substring(3);
-  }
-  
-  // Remove ``` at the end
-  if (cleanedContent.endsWith('```')) {
-    cleanedContent = cleanedContent.substring(0, cleanedContent.length - 3);
-  }
-  
-  // Trim whitespace
-  cleanedContent = cleanedContent.trim();
-  
-  console.log('Cleaned content:', cleanedContent);
-  return cleanedContent;
 }
 
 serve(async (req) => {
-  // CORS preflight
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
-  
-  try {
-    // Get Perplexity API key from env variable
-    const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
-    
-    if (!perplexityApiKey) {
-      console.error('Missing Perplexity API key');
-      return new Response(
-        JSON.stringify({ error: 'Server configuration error: Missing API key' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
-    // Get search query from request body
-    const { query } = await req.json() as SearchProgramsBody;
-    
+  try {
+    const { query } = await req.json()
+
     if (!query) {
       return new Response(
-        JSON.stringify({ error: 'Missing search query' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+        JSON.stringify({ error: 'Query parameter is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
-    // Validate if query is program-related
-    if (!isProgramRelatedQuery(query)) {
+    const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
+    if (!perplexityApiKey) {
       return new Response(
-        JSON.stringify({ 
-          error: 'Please search only for academic programs, degrees, or study fields. For example: "Computer Science Masters", "PhD in Biology", or "Business Administration".' 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+        JSON.stringify({ error: 'Perplexity API key not configured' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
-    console.log(`Searching for programs with query: ${query}`);
+    // Enhanced prompt for better structured data extraction
+    const enhancedPrompt = `
+Search for university/college programs related to: "${query}"
 
-    // Enhanced system prompt with detailed structure requirements
-    const systemPrompt = `You are an academic program finder that searches for detailed academic program information from various universities worldwide.
-    
-    Given a search query about academic programs, provide comprehensive information about 8-10 relevant programs from different universities and countries.
-    
-    IMPORTANT REQUIREMENTS:
-    - Include programs from various universities (not just elite institutions)
-    - If the query mentions "affordable", "budget", "cheap", or similar terms, prioritize universities known for reasonable tuition fees
-    - Include programs from different countries and regions for diversity
-    - Mix of public and private institutions
-    - Include both well-known and lesser-known quality institutions
-    - Only use information from official university websites and verified educational sources
-    - Extract specific details like tuition fees, deadlines, duration, and requirements
-    
-    Format your response as a JSON array with objects containing these fields:
-    - programName (string): Official name of the academic program
-    - university (string): Official university or institution name  
-    - degreeType (string): Type of degree (PhD, Masters, Bachelor's, etc.)
-    - country (string): Country where the institution is located
-    - description (string): Brief description (max 150 words)
-    - tuition (string, optional): Tuition fee information if available
-    - deadline (string, optional): Application deadline if available
-    - applicationDeadline (string, optional): Specific application deadline date if available
-    - duration (string, optional): Program duration if available
-    - requirements (string, optional): Brief admission requirements if available
-    - fees (object, optional): Breakdown of fees with domestic, international, eu fields if available
-    - website (string, optional): Official program website URL if available
-    - admissionRequirements (array, optional): List of specific admission requirements if available
-    - programDetails (object, optional): Additional details with credits, format, startDate if available
-    
-    Return ONLY the JSON array, no additional text, no markdown formatting, no code blocks. Just pure JSON.
-    Ensure diversity in universities, countries, and price ranges based on the search query.
-    Include as much structured data as possible in the appropriate fields rather than in the description.`;
+For each program found, provide detailed information in this EXACT JSON format:
+{
+  "searchResults": [
+    {
+      "programName": "exact program name",
+      "university": "university name",
+      "degreeType": "Bachelor's/Master's/PhD/Certificate/Diploma",
+      "country": "country name",
+      "description": "comprehensive description including all details",
+      "tuition": "specific tuition amount with currency",
+      "deadline": "application deadline date",
+      "duration": "program duration (e.g., '2 years', '18 months')",
+      "website": "official program website URL",
+      "requirements": "admission requirements summary",
+      "fees": {
+        "international": "international student fees",
+        "domestic": "domestic student fees"
+      },
+      "programDetails": {
+        "format": "Full-time/Part-time/Online/Hybrid",
+        "startDate": "program start date",
+        "language": "language of instruction",
+        "credits": "total credits required"
+      },
+      "admissionRequirements": ["requirement 1", "requirement 2"],
+      "ranking": "university or program ranking if available",
+      "scholarships": "available scholarships information",
+      "careerOutcomes": "typical career outcomes"
+    }
+  ]
+}
 
-    // Call Perplexity API
+Please find 5-8 relevant programs and include as much specific detail as possible, especially tuition costs, deadlines, and admission requirements. If specific information is not available, use "Not specified" rather than leaving fields empty.
+`;
+
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -174,75 +86,155 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: systemPrompt
+            content: 'You are a university program search specialist. Always respond with valid JSON in the exact format requested. Include as much specific detail as possible about tuition, deadlines, requirements, and program details.'
           },
           {
             role: 'user',
-            content: `Find 8-10 diverse academic programs related to: ${query}. Include detailed information about tuition, deadlines, duration, requirements, and other structured data. Include various universities from different countries and price ranges.`
+            content: enhancedPrompt
           }
         ],
-        temperature: 0.1,
-        max_tokens: 6000,
-        return_images: false,
-        search_recency_filter: 'year'
+        max_tokens: 4000,
+        temperature: 0.2,
+        top_p: 0.9,
+        return_citations: true,
+        search_domain_filter: ["edu", "ac.uk", "edu.au", "ca"],
+        search_recency_filter: "month"
       }),
-    });
+    })
 
     if (!response.ok) {
-      console.error('API response error:', response.status, await response.text());
+      const errorData = await response.text()
+      console.error('Perplexity API error:', errorData)
       return new Response(
-        JSON.stringify({ error: 'Error fetching search results from Perplexity API' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+        JSON.stringify({ error: `Perplexity API error: ${response.status}` }),
+        { 
+          status: response.status, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
-    const data = await response.json();
-    
-    // Parse the response content which should be JSON
+    const data = await response.json()
+    console.log('Perplexity response:', JSON.stringify(data, null, 2))
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid response from Perplexity API' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    const content = data.choices[0].message.content
+    console.log('Raw content from Perplexity:', content)
+
     try {
-      // Extract the content from the message
-      const content = data.choices[0].message.content;
-      console.log('Original content from Perplexity:', content);
+      // Try to parse the JSON response
+      let parsedResults;
       
-      // Clean the content from markdown formatting
-      const cleanedContent = extractJsonFromMarkdown(content);
-      
-      // Parse the cleaned JSON
-      const searchResults = JSON.parse(cleanedContent);
-      
-      if (!Array.isArray(searchResults)) {
-        console.error('Response is not an array:', searchResults);
-        throw new Error('Response is not an array');
+      // First, try to extract JSON from the response
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedResults = JSON.parse(jsonMatch[0]);
+      } else {
+        // If no JSON found, try parsing the entire content
+        parsedResults = JSON.parse(content);
       }
 
-      // Additional validation to ensure we got program-related results
-      if (searchResults.length === 0) {
+      // Validate and enhance the results
+      if (parsedResults.searchResults && Array.isArray(parsedResults.searchResults)) {
+        // Clean and validate each result
+        const validatedResults = parsedResults.searchResults.map((result: any) => ({
+          programName: result.programName || 'Program name not specified',
+          university: result.university || 'University not specified',
+          degreeType: result.degreeType || 'Degree type not specified',
+          country: result.country || 'Country not specified',
+          description: result.description || 'Description not available',
+          tuition: result.tuition || result.fees?.international || result.fees?.domestic || undefined,
+          deadline: result.deadline || result.applicationDeadline || undefined,
+          duration: result.duration || undefined,
+          website: result.website || undefined,
+          requirements: result.requirements || (result.admissionRequirements ? result.admissionRequirements.join(', ') : undefined),
+          fees: result.fees || undefined,
+          programDetails: result.programDetails || undefined,
+          admissionRequirements: result.admissionRequirements || undefined,
+          ranking: result.ranking || undefined,
+          scholarships: result.scholarships || undefined,
+          careerOutcomes: result.careerOutcomes || undefined
+        }));
+
         return new Response(
           JSON.stringify({ 
-            error: 'No academic programs found for your search. Please try searching for specific degree programs or fields of study.' 
+            searchResults: validatedResults,
+            citations: data.citations || []
           }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      } else {
+        throw new Error('Invalid results structure');
+      }
+    } catch (parseError) {
+      console.error('JSON parsing error:', parseError)
+      console.error('Content that failed to parse:', content)
+      
+      // Fallback: try to extract program information using regex
+      const fallbackResults = [];
+      const lines = content.split('\n').filter(line => line.trim());
+      
+      let currentProgram: any = {};
+      for (const line of lines) {
+        if (line.toLowerCase().includes('program') && line.toLowerCase().includes(':')) {
+          if (currentProgram.programName) {
+            fallbackResults.push(currentProgram);
+          }
+          currentProgram = {
+            programName: line.split(':')[1]?.trim() || 'Program name not specified',
+            university: 'University not specified',
+            degreeType: 'Degree type not specified',
+            country: 'Country not specified',
+            description: content.substring(0, 200) + '...'
+          };
+        }
+      }
+      
+      if (currentProgram.programName) {
+        fallbackResults.push(currentProgram);
       }
 
-      console.log(`Successfully parsed ${searchResults.length} search results from ${new Set(searchResults.map(r => r.university)).size} different universities`);
       return new Response(
-        JSON.stringify({ searchResults }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } catch (parseError) {
-      console.error('Error parsing Perplexity response:', parseError);
-      console.error('Failed content:', data.choices[0].message.content);
-      return new Response(
-        JSON.stringify({ error: 'Failed to parse search results. Please try again with a different search query.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+        JSON.stringify({ 
+          searchResults: fallbackResults.length > 0 ? fallbackResults : [
+            {
+              programName: `Programs related to: ${query}`,
+              university: 'Multiple Universities',
+              degreeType: 'Various',
+              country: 'Various',
+              description: content.substring(0, 500) + (content.length > 500 ? '...' : ''),
+              tuition: 'Contact university for details',
+              deadline: 'Varies by program'
+            }
+          ],
+          parseError: 'Failed to parse structured data, showing fallback results'
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
   } catch (error) {
-    console.error('Error in search-programs function:', error);
+    console.error('Search programs error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      JSON.stringify({ error: error.message || 'An unexpected error occurred' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
   }
-});
+})

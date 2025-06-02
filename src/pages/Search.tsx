@@ -1,322 +1,269 @@
 
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search as SearchIcon, Plus, ExternalLink, Info, Clock, DollarSign, Calendar, Globe, GraduationCap, FileText } from "lucide-react";
-import { usePerplexityContext, SearchResult } from "@/contexts/PerplexityContext";
-import { useProgramContext } from "@/contexts/ProgramContext";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
+import { Loader2, Search as SearchIcon, Filter, X } from "lucide-react";
+import { usePerplexityContext } from "@/contexts/PerplexityContext";
+import EnhancedSearchResultCard from "@/components/search/EnhancedSearchResultCard";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import AddProgramDialog from "@/components/program/AddProgramDialog";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
 
 const Search = () => {
-  const { searchPrograms, searchResults, isLoading } = usePerplexityContext();
-  const { addProgram, isLocalMode } = useProgramContext();
+  const { searchPrograms, searchResults, isLoading, clearResults } = usePerplexityContext();
   const [query, setQuery] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const isMobile = useIsMobile();
-  
+  const [countryFilter, setCountryFilter] = useState<string>("");
+  const [degreeFilter, setDegreeFilter] = useState<string>("");
+  const [formatFilter, setFormatFilter] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("relevance");
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) {
-      toast.error("Please enter a search query");
-      return;
+    if (query.trim()) {
+      await searchPrograms(query.trim());
     }
-    searchPrograms(query);
-  };
-  
-  const handleAddToShortlist = (result: SearchResult) => {
-    // Extract structured data for intelligent program addition
-    const tuitionInfo = result.tuition || result.fees?.international || result.fees?.domestic || "";
-    const deadlineInfo = result.deadline || result.applicationDeadline || "";
-    
-    addProgram({
-      programName: result.programName,
-      university: result.university,
-      degreeType: result.degreeType,
-      country: result.country,
-      tuition: tuitionInfo,
-      deadline: deadlineInfo,
-      notes: result.description,
-      statusTagId: "status-considering",
-      customTagIds: [],
-    });
-    
-    toast.success("Program added with detailed information!");
-  };
-  
-  const handleGoogleSearch = (result: SearchResult) => {
-    window.open(`https://www.google.com/search?q=${encodeURIComponent(`${result.programName} ${result.university}`)}`, "_blank");
   };
 
-  const formatFeeInfo = (result: SearchResult) => {
-    if (result.fees) {
-      return Object.entries(result.fees)
-        .filter(([_, value]) => value)
-        .map(([type, value]) => `${type}: ${value}`)
-        .join(" | ");
-    }
-    return result.tuition || "";
+  const handleClearSearch = () => {
+    setQuery("");
+    clearResults();
+    setCountryFilter("");
+    setDegreeFilter("");
+    setFormatFilter("");
+    setSortBy("relevance");
   };
+
+  // Get unique values for filters
+  const uniqueCountries = Array.from(new Set(searchResults.map(r => r.country))).sort();
+  const uniqueDegreeTypes = Array.from(new Set(searchResults.map(r => r.degreeType))).sort();
+  const uniqueFormats = Array.from(new Set(
+    searchResults
+      .map(r => r.programDetails?.format)
+      .filter(Boolean)
+  )).sort();
+
+  // Filter and sort results
+  const filteredResults = searchResults
+    .filter(result => {
+      if (countryFilter && result.country !== countryFilter) return false;
+      if (degreeFilter && result.degreeType !== degreeFilter) return false;
+      if (formatFilter && result.programDetails?.format !== formatFilter) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "university":
+          return a.university.localeCompare(b.university);
+        case "program":
+          return a.programName.localeCompare(b.programName);
+        case "country":
+          return a.country.localeCompare(b.country);
+        case "deadline":
+          // Sort by deadline if available, otherwise put at end
+          if (!a.deadline && !b.deadline) return 0;
+          if (!a.deadline) return 1;
+          if (!b.deadline) return -1;
+          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+        default:
+          return 0; // relevance (original order)
+      }
+    });
+
+  const activeFiltersCount = [countryFilter, degreeFilter, formatFilter].filter(Boolean).length;
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Program Search</h1>
-        <p className="text-muted-foreground mt-1">
-          Search for academic programs with detailed information powered by Perplexity AI
+        <h1 className="text-3xl font-bold tracking-tight mb-2">AI Program Search</h1>
+        <p className="text-muted-foreground">
+          Search for university programs worldwide with detailed information
         </p>
       </div>
-      
-      <Card className="overflow-hidden">
-        <CardContent className="pt-6 pb-4">
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
-            <Input
-              placeholder="Search for programs (e.g. Computer Science, Data Science, affordable MBA...)"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit" disabled={isLoading} className="whitespace-nowrap">
-              {isLoading ? (
-                <>Searching...</>
-              ) : (
-                <>
-                  <SearchIcon className="mr-2 h-4 w-4" />
-                  Search Programs
-                </>
+
+      {/* Search Form */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SearchIcon className="h-5 w-5" />
+            Search Programs
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSearch} className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="e.g., Computer Science Masters in UK, MBA programs with scholarships..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="flex-1"
+              />
+              <Button type="submit" disabled={isLoading || !query.trim()}>
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <SearchIcon className="h-4 w-4 mr-2" />
+                )}
+                Search
+              </Button>
+              {(searchResults.length > 0 || query) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClearSearch}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Clear
+                </Button>
               )}
-            </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold">Search Results</h2>
-            {isLocalMode && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="outline" className="cursor-help">
-                      <Info className="h-3 w-3 mr-1" /> Local Mode
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">Programs are being saved locally because there was an issue connecting to the database. Data will be stored in your browser.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
-          <Button variant="outline" onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Manually
-          </Button>
-        </div>
-        
-        {isLoading ? (
-          <div className="grid grid-cols-1 gap-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i}>
-                <CardHeader className="pb-2">
-                  <Skeleton className="h-5 w-2/3" />
-                  <Skeleton className="h-4 w-1/3 mt-2" />
-                </CardHeader>
-                <CardContent className="pb-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-5/6 mt-2" />
-                  <Skeleton className="h-4 w-2/3 mt-2" />
-                </CardContent>
-                <CardFooter>
-                  <Skeleton className="h-9 w-full" />
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {searchResults.length === 0 ? (
-              <Card className="border-dashed">
-                <CardContent className="flex flex-col items-center justify-center h-40 p-6">
-                  <SearchIcon className="h-10 w-10 text-muted-foreground mb-2 opacity-50" />
-                  <p className="text-lg text-muted-foreground text-center">
-                    {query ? "No results found. Try another search." : "Search for programs to see results"}
+      {/* Filters and Results */}
+      {searchResults.length > 0 && (
+        <>
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filters & Sorting
+                {activeFiltersCount > 0 && (
+                  <Badge variant="secondary">{activeFiltersCount} active</Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Select value={countryFilter} onValueChange={setCountryFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by Country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Countries</SelectItem>
+                    {uniqueCountries.map(country => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={degreeFilter} onValueChange={setDegreeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by Degree" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Degrees</SelectItem>
+                    {uniqueDegreeTypes.map(degree => (
+                      <SelectItem key={degree} value={degree}>{degree}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {uniqueFormats.length > 0 && (
+                  <Select value={formatFilter} onValueChange={setFormatFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter by Format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Formats</SelectItem>
+                      {uniqueFormats.map(format => (
+                        <SelectItem key={format} value={format}>{format}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="relevance">Relevance</SelectItem>
+                    <SelectItem value="university">University Name</SelectItem>
+                    <SelectItem value="program">Program Name</SelectItem>
+                    <SelectItem value="country">Country</SelectItem>
+                    <SelectItem value="deadline">Deadline</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Clear filters */}
+              {activeFiltersCount > 0 && (
+                <div className="flex justify-end pt-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setCountryFilter("");
+                      setDegreeFilter("");
+                      setFormatFilter("");
+                    }}
+                  >
+                    Clear all filters
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Results */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">
+                Search Results ({filteredResults.length} programs)
+              </h2>
+            </div>
+
+            {filteredResults.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <p className="text-muted-foreground">
+                    No programs match your current filters. Try adjusting your search criteria.
                   </p>
                 </CardContent>
               </Card>
             ) : (
-              searchResults.map((result, index) => (
-                <Card key={index} className="overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg mb-1">{result.programName}</CardTitle>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Globe className="h-3 w-3" />
-                          {result.university} • {result.country}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge>{result.degreeType}</Badge>
-                        <Badge variant="outline">{result.country}</Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-4">
-                    {/* Program Details Section */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Cost Information */}
-                      {(result.tuition || result.fees) && (
-                        <div className="space-y-1">
-                          <h4 className="font-medium text-sm flex items-center gap-1">
-                            <DollarSign className="h-3 w-3" />
-                            Tuition
-                          </h4>
-                          <p className="text-sm text-muted-foreground">
-                            {formatFeeInfo(result)}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {/* Duration & Deadlines */}
-                      <div className="space-y-2">
-                        {result.duration && (
-                          <div className="space-y-1">
-                            <h4 className="font-medium text-sm flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              Duration
-                            </h4>
-                            <p className="text-sm text-muted-foreground">{result.duration}</p>
-                          </div>
-                        )}
-                        
-                        {(result.deadline || result.applicationDeadline) && (
-                          <div className="space-y-1">
-                            <h4 className="font-medium text-sm flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              Deadline
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                              {result.deadline || result.applicationDeadline}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Program Format */}
-                      {result.programDetails && (
-                        <div className="space-y-1">
-                          <h4 className="font-medium text-sm flex items-center gap-1">
-                            <GraduationCap className="h-3 w-3" />
-                            Format
-                          </h4>
-                          <div className="text-sm text-muted-foreground space-y-1">
-                            {result.programDetails.format && (
-                              <p>{result.programDetails.format}</p>
-                            )}
-                            {result.programDetails.credits && (
-                              <p>{result.programDetails.credits}</p>
-                            )}
-                            {result.programDetails.startDate && (
-                              <p>Starts: {result.programDetails.startDate}</p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <Separator />
-                    
-                    {/* Description */}
-                    <div>
-                      <p className="text-sm">{result.description}</p>
-                    </div>
-                    
-                    {/* Requirements */}
-                    {(result.requirements || result.admissionRequirements) && (
-                      <>
-                        <Separator />
-                        <div>
-                          <h4 className="font-medium text-sm mb-2 flex items-center gap-1">
-                            <FileText className="h-3 w-3" />
-                            Requirements
-                          </h4>
-                          {result.admissionRequirements ? (
-                            <ul className="text-sm text-muted-foreground space-y-1">
-                              {result.admissionRequirements.map((req, idx) => (
-                                <li key={idx} className="flex items-start gap-2">
-                                  <span className="text-xs">•</span>
-                                  <span>{req}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">{result.requirements}</p>
-                          )}
-                        </div>
-                      </>
-                    )}
-                    
-                    {/* Website */}
-                    {result.website && (
-                      <div>
-                        <h4 className="font-medium text-sm mb-1">Website</h4>
-                        <a 
-                          href={result.website} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:text-blue-800 underline"
-                        >
-                          {result.website}
-                        </a>
-                      </div>
-                    )}
-                  </CardContent>
-                  
-                  <CardFooter className="flex flex-col sm:flex-row gap-2">
-                    <Button 
-                      variant="outline"
-                      onClick={() => handleGoogleSearch(result)}
-                      className="w-full sm:w-auto"
-                    >
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Search on Google
-                    </Button>
-                    <Button 
-                      onClick={() => handleAddToShortlist(result)}
-                      className="w-full sm:w-auto"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Save to Shortlist
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredResults.map((result, index) => (
+                  <EnhancedSearchResultCard key={index} result={result} />
+                ))}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
-      <AddProgramDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
+      {/* Loading State */}
+      {isLoading && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">
+              Searching for programs with detailed information...
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && searchResults.length === 0 && !query && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <SearchIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-medium mb-2">Search for University Programs</h3>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              Enter keywords to search for university programs worldwide. Include details like degree level, field of study, country, or specific requirements.
+            </p>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p><strong>Example searches:</strong></p>
+              <p>"Computer Science Masters in Canada"</p>
+              <p>"MBA programs with GMAT 650+ in Europe"</p>
+              <p>"PhD Psychology programs with funding"</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
