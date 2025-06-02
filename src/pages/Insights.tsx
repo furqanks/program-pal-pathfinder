@@ -2,19 +2,27 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, BarChart3, TrendingUp } from 'lucide-react';
+import { AlertCircle, BarChart3, TrendingUp, LogIn } from 'lucide-react';
 import { useProgramContext } from '@/contexts/ProgramContext';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 const Insights = () => {
-  const { programs, analyzeShortlist } = useProgramContext();
+  const { programs, analyzeShortlist, isAuthenticated } = useProgramContext();
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const handleAnalyzeShortlist = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to analyze your shortlist");
+      navigate('/auth');
+      return;
+    }
+
     if (programs.length < 3) {
       toast.error("Please add at least 3 programs to analyze your shortlist");
       return;
@@ -33,6 +41,46 @@ const Insights = () => {
       setLoading(false);
     }
   };
+
+  // Show sign in prompt if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className={cn("container mx-auto", isMobile ? "p-2" : "p-4")}>
+        <div className={cn(
+          "flex justify-between items-center mb-6",
+          isMobile ? "flex-col gap-4 items-start" : ""
+        )}>
+          <h1 className={cn(
+            "font-semibold",
+            isMobile ? "text-xl" : "text-2xl"
+          )}>Application Insights</h1>
+        </div>
+
+        <div className={cn(
+          "flex flex-col items-center justify-center text-center",
+          isMobile ? "p-8" : "p-12"
+        )}>
+          <LogIn className={cn(
+            "text-muted-foreground mb-4",
+            isMobile ? "h-10 w-10" : "h-12 w-12"
+          )} />
+          <h2 className={cn(
+            "font-medium mb-2",
+            isMobile ? "text-lg" : "text-xl"
+          )}>Sign In Required</h2>
+          <p className={cn(
+            "text-muted-foreground max-w-md mb-4",
+            isMobile ? "text-sm" : ""
+          )}>
+            Please sign in to access AI-powered insights about your program selections.
+          </p>
+          <Button onClick={() => navigate('/auth')}>
+            Sign In
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("container mx-auto", isMobile ? "p-2" : "p-4")}>
@@ -133,6 +181,14 @@ const Insights = () => {
             Click "Analyze My Shortlist" to generate AI-powered insights about your program selections.
             You need at least 3 programs in your shortlist.
           </p>
+          {programs.length < 3 && (
+            <p className={cn(
+              "text-sm text-orange-600 mt-2",
+              isMobile ? "text-xs" : ""
+            )}>
+              Currently {programs.length} programs in your shortlist. Add {3 - programs.length} more to enable analysis.
+            </p>
+          )}
         </div>
       )}
     </div>
