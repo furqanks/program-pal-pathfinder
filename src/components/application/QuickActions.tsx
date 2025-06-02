@@ -1,14 +1,15 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   FileText, 
   Calendar, 
   Search, 
-  BookOpen, 
+  Target, 
   PlusCircle, 
   BarChart3,
-  Users,
-  Globe
+  GraduationCap,
+  TrendingUp
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -21,66 +22,80 @@ const QuickActions = () => {
   const actions = [
     {
       icon: Search,
-      title: "Find Programs",
-      description: "Discover new university programs",
+      title: "Discover Programs",
+      description: "Find programs that match your profile",
       onClick: () => navigate("/search"),
-      color: "bg-blue-50 text-blue-600 hover:bg-blue-100"
-    },
-    {
-      icon: FileText,
-      title: "Write Documents",
-      description: "Create application essays & statements",
-      onClick: () => navigate("/documents"),
-      color: "bg-green-50 text-green-600 hover:bg-green-100"
+      color: "bg-blue-50 text-blue-600 hover:bg-blue-100",
+      priority: "high"
     },
     {
       icon: PlusCircle,
-      title: "Add Program",
-      description: "Add a program to your shortlist",
+      title: "Add to Shortlist",
+      description: "Add a program to track",
       onClick: () => {}, // This will be handled by parent component
-      color: "bg-purple-50 text-purple-600 hover:bg-purple-100"
+      color: "bg-purple-50 text-purple-600 hover:bg-purple-100",
+      priority: "high"
     },
     {
-      icon: BarChart3,
-      title: "View Insights",
-      description: "Analyze your application progress",
-      onClick: () => navigate("/insights"),
-      color: "bg-orange-50 text-orange-600 hover:bg-orange-100"
+      icon: FileText,
+      title: "Write Essays",
+      description: "Create application documents",
+      onClick: () => navigate("/documents"),
+      color: "bg-green-50 text-green-600 hover:bg-green-100",
+      priority: "high"
+    },
+    {
+      icon: GraduationCap,
+      title: "US Universities",
+      description: "Search US college database",
+      onClick: () => navigate("/us-search"),
+      color: "bg-indigo-50 text-indigo-600 hover:bg-indigo-100",
+      priority: "medium"
     },
     {
       icon: Calendar,
-      title: "Deadlines",
-      description: "Check upcoming deadlines",
+      title: "Check Deadlines",
+      description: "View upcoming deadlines",
       onClick: () => {}, // Will scroll to deadlines section
-      color: "bg-red-50 text-red-600 hover:bg-red-100"
+      color: "bg-red-50 text-red-600 hover:bg-red-100",
+      priority: "medium"
     },
     {
-      icon: BookOpen,
-      title: "Research Tips",
-      description: "Get research and application tips",
-      onClick: () => {},
-      color: "bg-teal-50 text-teal-600 hover:bg-teal-100"
+      icon: BarChart3,
+      title: "Track Progress",
+      description: "View application analytics",
+      onClick: () => navigate("/insights"),
+      color: "bg-orange-50 text-orange-600 hover:bg-orange-100",
+      priority: "medium"
     }
   ];
+
+  // Show priority actions on mobile, all on desktop
+  const displayActions = isMobile 
+    ? actions.filter(action => action.priority === "high")
+    : actions;
 
   return (
     <Card>
       <CardHeader className={isMobile ? "pb-3 px-4" : ""}>
-        <CardTitle className={isMobile ? "text-lg" : "text-lg"}>Quick Actions</CardTitle>
+        <CardTitle className={isMobile ? "text-lg" : "text-lg flex items-center gap-2"}>
+          <Target className="h-5 w-5" />
+          Quick Actions
+        </CardTitle>
       </CardHeader>
       <CardContent className={isMobile ? "px-4" : ""}>
         <div className={cn(
           "grid gap-3",
-          isMobile ? "grid-cols-2" : "grid-cols-2 md:grid-cols-3"
+          isMobile ? "grid-cols-1" : "grid-cols-2 md:grid-cols-3"
         )}>
-          {actions.map((action, index) => (
+          {displayActions.map((action, index) => (
             <Button
               key={index}
               variant="ghost"
               className={cn(
-                "flex flex-col items-center gap-2 text-center",
+                "flex flex-col items-center gap-2 text-center justify-start",
                 action.color,
-                isMobile ? "h-20 p-3" : "h-auto p-3"
+                isMobile ? "h-auto p-4" : "h-auto p-3"
               )}
               onClick={action.onClick}
             >
@@ -92,15 +107,29 @@ const QuickActions = () => {
                 )}>
                   {action.title}
                 </div>
-                {!isMobile && (
-                  <div className="text-xs opacity-75 hidden md:block">
-                    {action.description}
-                  </div>
-                )}
+                <div className={cn(
+                  "opacity-75",
+                  isMobile ? "text-xs mt-1" : "text-xs hidden md:block"
+                )}>
+                  {action.description}
+                </div>
               </div>
             </Button>
           ))}
         </div>
+        {isMobile && (
+          <div className="mt-4 text-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/insights")}
+              className="text-xs"
+            >
+              <TrendingUp className="h-3 w-3 mr-1" />
+              View All Features
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

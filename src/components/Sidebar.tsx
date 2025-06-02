@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Search, ListChecks, FileText, BarChart, X, LogOut, User, GraduationCap } from "lucide-react";
+import { Search, GraduationCap, FileText, BarChart, X, LogOut, User, BookOpen, Target } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -14,11 +14,11 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const navItems = [
-  { path: '/', label: 'Shortlist', icon: ListChecks },
-  { path: '/search', label: 'Program Search', icon: Search },
+  { path: '/', label: 'My Applications', icon: Target },
+  { path: '/search', label: 'Discover Programs', icon: Search },
   { path: '/us-search', label: 'US Universities', icon: GraduationCap },
-  { path: '/documents', label: 'Documents', icon: FileText },
-  { path: '/insights', label: 'Insights', icon: BarChart },
+  { path: '/documents', label: 'Application Documents', icon: FileText },
+  { path: '/insights', label: 'Progress & Analytics', icon: BarChart },
 ];
 
 type SidebarProps = {
@@ -72,7 +72,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
           {open ? (
             <X className="h-4 w-4" />
           ) : (
-            <ListChecks className="h-4 w-4" />
+            <Target className="h-4 w-4" />
           )}
         </Button>
       </div>

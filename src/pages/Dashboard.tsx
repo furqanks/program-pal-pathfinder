@@ -9,7 +9,7 @@ import ApplicationTimeline from "@/components/application/ApplicationTimeline";
 import QuickActions from "@/components/application/QuickActions";
 import UpcomingDeadlines from "@/components/application/UpcomingDeadlines";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Download, LayoutGrid, List, Calendar, BarChart3 } from "lucide-react";
+import { PlusCircle, Download, LayoutGrid, List, Target, BarChart3, Search, TrendingUp } from "lucide-react";
 import AddProgramDialog from "@/components/program/AddProgramDialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,10 +17,12 @@ import { Badge } from "@/components/ui/badge";
 import { exportProgramsToCsv } from "@/utils/exportToCsv";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const { programs } = useProgramContext();
   const { tags } = useTagContext();
+  const navigate = useNavigate();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [view, setView] = useState<"overview" | "card" | "table">("overview");
   const [searchTerm, setSearchTerm] = useState("");
@@ -103,50 +105,53 @@ const Dashboard = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Application Hub</h1>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <Target className="h-8 w-8 text-primary" />
+            My Applications
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Manage your university applications and track progress
+            Track and manage your university application journey
           </p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={() => navigate("/search")} variant="outline" className="shrink-0">
+            <Search className="mr-2 h-4 w-4" />
+            Discover Programs
+          </Button>
           <Button onClick={() => setIsAddDialogOpen(true)} className="shrink-0">
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Program
-          </Button>
-          <Button variant="outline" onClick={handleExportCsv} className="shrink-0">
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
           </Button>
         </div>
       </div>
 
       {/* Application Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
+        <Card className="border-l-4 border-l-primary">
           <CardContent className="p-4">
             <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">Total Programs</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-l-4 border-l-blue-500">
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-blue-600">{stats.considering}</div>
-            <p className="text-xs text-muted-foreground">Considering</p>
+            <p className="text-xs text-muted-foreground">Researching</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-l-4 border-l-orange-500">
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-orange-600">{stats.applied}</div>
             <p className="text-xs text-muted-foreground">Applied</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-l-4 border-l-green-500">
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-green-600">{stats.accepted}</div>
             <p className="text-xs text-muted-foreground">Accepted</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-l-4 border-l-red-500">
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
             <p className="text-xs text-muted-foreground">Rejected</p>
@@ -162,7 +167,7 @@ const Dashboard = () => {
           </TabsTrigger>
           <TabsTrigger value="card" className="flex items-center gap-2">
             <LayoutGrid className="h-4 w-4" />
-            Card View
+            Program Cards
           </TabsTrigger>
           <TabsTrigger value="table" className="flex items-center gap-2">
             <List className="h-4 w-4" />
@@ -177,8 +182,20 @@ const Dashboard = () => {
               
               {/* Recent Applications */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Recent Applications</CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Recent Activity
+                  </CardTitle>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleExportCsv}
+                    disabled={programs.length === 0}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -191,18 +208,28 @@ const Dashboard = () => {
                     ))}
                   </div>
                   {programs.length === 0 && (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">
-                        No programs added yet. Start by adding programs to your shortlist.
+                    <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
+                      <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Start Your Application Journey</h3>
+                      <p className="text-gray-500 mb-6">
+                        Begin by discovering programs that match your goals and interests.
                       </p>
-                      <Button
-                        onClick={() => setIsAddDialogOpen(true)}
-                        variant="outline"
-                        className="mt-4"
-                      >
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add Your First Program
-                      </Button>
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <Button
+                          onClick={() => navigate("/search")}
+                          className="inline-flex items-center"
+                        >
+                          <Search className="mr-2 h-4 w-4" />
+                          Discover Programs
+                        </Button>
+                        <Button
+                          onClick={() => setIsAddDialogOpen(true)}
+                          variant="outline"
+                        >
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Add Known Program
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -338,7 +365,7 @@ const Dashboard = () => {
               <h3 className="text-xl font-medium">No programs found</h3>
               <p className="text-muted-foreground mt-1">
                 {programs.length === 0
-                  ? "Start by adding programs to your shortlist"
+                  ? "Start by discovering programs that match your interests"
                   : "Try adjusting your filters"}
               </p>
               <Button
@@ -469,13 +496,13 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Programs grid */}
+          {/* Programs table */}
           {filteredPrograms.length === 0 ? (
             <div className="text-center py-8 border rounded-lg bg-accent/20">
               <h3 className="text-xl font-medium">No programs found</h3>
               <p className="text-muted-foreground mt-1">
                 {programs.length === 0
-                  ? "Start by adding programs to your shortlist"
+                  ? "Start by discovering programs that match your interests"
                   : "Try adjusting your filters"}
               </p>
               <Button
@@ -488,11 +515,7 @@ const Dashboard = () => {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filteredPrograms.map((program) => (
-                <ProgramCard key={program.id} program={program} />
-              ))}
-            </div>
+            <ProgramTableView programs={filteredPrograms} />
           )}
         </TabsContent>
       </Tabs>
