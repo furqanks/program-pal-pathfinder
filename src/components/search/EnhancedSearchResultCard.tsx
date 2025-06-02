@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,6 +39,9 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
         // Use the enhanced data instead of hardcoded empty values
         tuition: result.tuition || result.fees?.international || result.fees?.domestic || '',
         deadline: result.deadline || '',
+        // Add the missing required properties
+        statusTagId: 'status-considering',
+        customTagIds: [],
         notes: `Added from search results.\n\nProgram Details:\n${result.description}\n\n${
           result.requirements ? `Requirements: ${result.requirements}\n` : ''
         }${
