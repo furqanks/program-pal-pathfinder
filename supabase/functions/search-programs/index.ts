@@ -116,16 +116,17 @@ QUALITY REQUIREMENTS:
 IMPORTANT: Return ONLY the JSON object. Do not include explanatory text before or after the JSON.
 `;
 
-    // Multiple API attempts with different configurations
+    // Updated API configurations with valid models and domain filters
     const apiConfigurations = [
       {
         model: 'llama-3.1-sonar-large-128k-online',
         max_tokens: 6000,
         temperature: 0.1,
-        search_recency_filter: "month"
+        search_recency_filter: "month",
+        search_domain_filter: ['edu', 'ac.uk', 'university.edu', 'college.edu']
       },
       {
-        model: 'llama-3.1-sonar-huge-128k-online', 
+        model: 'llama-3.1-sonar-small-128k-online', 
         max_tokens: 5000,
         temperature: 0.2,
         search_recency_filter: "week"
@@ -145,31 +146,37 @@ IMPORTANT: Return ONLY the JSON object. Do not include explanatory text before o
       try {
         console.log(`Attempting API call with model: ${config.model}`)
         
+        const requestBody = {
+          model: config.model,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a specialized university program search engine. Always respond with valid JSON containing comprehensive, accurate program information. Focus on real programs with complete details including specific tuition costs, deadlines, and requirements.'
+            },
+            {
+              role: 'user',
+              content: enhancedPrompt
+            }
+          ],
+          max_tokens: config.max_tokens,
+          temperature: config.temperature,
+          top_p: 0.9,
+          return_citations: true,
+          search_recency_filter: config.search_recency_filter
+        }
+
+        // Only add search_domain_filter if it exists in config
+        if (config.search_domain_filter) {
+          requestBody.search_domain_filter = config.search_domain_filter
+        }
+        
         response = await fetch('https://api.perplexity.ai/chat/completions', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${perplexityApiKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            model: config.model,
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a specialized university program search engine. Always respond with valid JSON containing comprehensive, accurate program information. Focus on real programs with complete details including specific tuition costs, deadlines, and requirements.'
-              },
-              {
-                role: 'user',
-                content: enhancedPrompt
-              }
-            ],
-            max_tokens: config.max_tokens,
-            temperature: config.temperature,
-            top_p: 0.9,
-            return_citations: true,
-            search_recency_filter: config.search_recency_filter,
-            search_domain_filter: ['edu', 'ac.uk', 'university', 'college']
-          }),
+          body: JSON.stringify(requestBody),
         })
 
         if (response.ok) {
