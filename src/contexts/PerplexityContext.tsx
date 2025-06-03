@@ -28,6 +28,7 @@ export type SearchResult = {
     startDate?: string;
     language?: string;
     coursework?: string[];
+    accreditation?: string;
   };
   // Additional structured fields
   ranking?: string;
@@ -41,12 +42,21 @@ export type SearchResult = {
   prerequisites?: string[];
   careerOutcomes?: string;
   researchOpportunities?: string;
+  applicationProcess?: string;
+};
+
+type SearchMetadata = {
+  query: string;
+  resultCount: number;
+  model?: string;
+  fallback?: boolean;
 };
 
 type PerplexityContextType = {
   isLoading: boolean;
   searchResults: SearchResult[];
-  searchPrograms: (query: string) => Promise<void>;
+  searchMetadata?: SearchMetadata;
+  searchPrograms: (query: string, resultCount?: number) => Promise<void>;
   clearResults: () => void;
 };
 
@@ -60,24 +70,24 @@ export const usePerplexityContext = () => {
   return context;
 };
 
-// Helper function to parse structured data from description
-const parseStructuredData = (description: string): Partial<SearchResult> => {
+// Enhanced helper function to parse structured data from description
+const parseStructuredData = (description: string): Partial<SearchResult>=> {
   const parsed: Partial<SearchResult> = {};
   
   // Extract tuition/fees information
-  const tuitionMatch = description.match(/(?:tuition|fees?)[:\s]*([£$€]?[\d,]+(?:\.\d{2})?[\/\s]*(?:per\s+)?(?:year|semester|term)?)/i);
+  const tuitionMatch = description.match(/(?:tuition|fees?|cost)[:\s]*([£$€]?[\d,]+(?:\.\d{2})?[\/\s]*(?:per\s+)?(?:year|semester|term|annum)?)/i);
   if (tuitionMatch) {
     parsed.tuition = tuitionMatch[1].trim();
   }
   
   // Extract deadline information
-  const deadlineMatch = description.match(/(?:deadline|apply\s+by|application\s+due)[:\s]*([a-zA-Z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{1,2}\s+[a-zA-Z]+\s+\d{4})/i);
+  const deadlineMatch = description.match(/(?:deadline|apply\s+by|application\s+due|applications\s+close)[:\s]*([a-zA-Z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{1,2}\s+[a-zA-Z]+\s+\d{4})/i);
   if (deadlineMatch) {
     parsed.deadline = deadlineMatch[1].trim();
   }
   
   // Extract duration
-  const durationMatch = description.match(/(?:duration|length)[:\s]*(\d+\s+(?:years?|months?|semesters?))/i);
+  const durationMatch = description.match(/(?:duration|length|program\s+length|course\s+duration)[:\s]*(\d+(?:\.\d+)?\s+(?:years?|months?|semesters?|terms?))/i);
   if (durationMatch) {
     parsed.duration = durationMatch[1].trim();
   }
@@ -94,7 +104,10 @@ const parseStructuredData = (description: string): Partial<SearchResult> => {
     /(?:IELTS)[:\s]*(\d+\.?\d*)/i,
     /(?:TOEFL)[:\s]*(\d+)/i,
     /(?:GMAT)[:\s]*(\d+)/i,
-    /(?:GRE)[:\s]*(\d+)/i
+    /(?:GRE)[:\s]*(\d+)/i,
+    /(?:bachelor'?s\s+degree|undergraduate\s+degree)/i,
+    /(?:master'?s\s+degree)/i,
+    /(?:work\s+experience)/i
   ];
   
   const requirements: string[] = [];
@@ -110,11 +123,21 @@ const parseStructuredData = (description: string): Partial<SearchResult> => {
   }
   
   // Extract format (full-time, part-time, online)
-  const formatMatch = description.match(/\b(full-time|part-time|online|hybrid|distance\s+learning)\b/i);
+  const formatMatch = description.match(/\b(full-time|part-time|online|hybrid|distance\s+learning|evening|weekend|remote)\b/i);
   if (formatMatch) {
-    parsed.programDetails = {
-      format: formatMatch[1].trim()
-    };
+    if (!parsed.programDetails) {
+      parsed.programDetails = {};
+    }
+    parsed.programDetails.format = formatMatch[1].trim();
+  }
+
+  // Extract language
+  const languageMatch = description.match(/\b(taught in|instruction in|language of instruction|program language)[:\s]*(english|french|german|spanish|mandarin|portuguese|italian)\b/i);
+  if (languageMatch && languageMatch[2]) {
+    if (!parsed.programDetails) {
+      parsed.programDetails = {};
+    }
+    parsed.programDetails.language = languageMatch[2].trim();
   }
   
   return parsed;
@@ -123,12 +146,14 @@ const parseStructuredData = (description: string): Partial<SearchResult> => {
 export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchMetadata, setSearchMetadata] = useState<SearchMetadata | undefined>();
 
   const clearResults = () => {
     setSearchResults([]);
+    setSearchMetadata(undefined);
   };
 
-  const searchPrograms = async (query: string): Promise<void> => {
+  const searchPrograms = async (query: string, resultCount: number = 8): Promise<void> => {
     if (!query.trim()) {
       toast.error("Please enter a search query");
       return;
@@ -136,9 +161,9 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
 
     setIsLoading(true);
     try {
-      // Call the search-programs edge function
+      // Call the search-programs edge function with the query and result count
       const { data, error } = await supabase.functions.invoke('search-programs', {
-        body: { query },
+        body: { query, resultCount },
       });
 
       if (error) {
@@ -159,14 +184,32 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
             website: result.website || parsedData.website,
             requirements: result.requirements || parsedData.requirements,
             programDetails: {
-              ...result.programDetails,
-              ...parsedData.programDetails
+              ...parsedData.programDetails,
+              ...result.programDetails
             }
           };
         });
         
         setSearchResults(enhancedResults);
-        toast.success(`Found ${enhancedResults.length} programs with enhanced details`);
+        
+        // Store search metadata if available
+        if (data.searchMetadata) {
+          setSearchMetadata(data.searchMetadata);
+        } else {
+          setSearchMetadata({
+            query: query,
+            resultCount: enhancedResults.length
+          });
+        }
+
+        // Show appropriate success message
+        if (data.parseError) {
+          toast.warning(`Found ${enhancedResults.length} programs with limited details. Data quality may vary.`);
+        } else if (data.searchMetadata?.fallback) {
+          toast.warning(`Limited search results retrieved. Showing ${enhancedResults.length} programs with basic details.`);
+        } else {
+          toast.success(`Found ${enhancedResults.length} programs with enhanced details`);
+        }
       } else if (data && data.error) {
         throw new Error(data.error);
       } else {
@@ -176,6 +219,7 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
       console.error("Search error:", error);
       toast.error(error instanceof Error ? error.message : 'Failed to search programs. Please try again.');
       setSearchResults([]);
+      setSearchMetadata(undefined);
     } finally {
       setIsLoading(false);
     }
@@ -186,6 +230,7 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
       value={{
         isLoading,
         searchResults,
+        searchMetadata,
         searchPrograms,
         clearResults,
       }}

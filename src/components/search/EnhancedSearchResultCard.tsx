@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,12 +14,16 @@ import {
   Award,
   BookOpen,
   Target,
-  Plus
+  Plus,
+  Languages,
+  ClipboardList,
+  Building
 } from "lucide-react";
 import { SearchResult } from "@/contexts/PerplexityContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { toast } from "sonner";
 import { useState } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface EnhancedSearchResultCardProps {
   result: SearchResult;
@@ -52,6 +57,8 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           result.website ? `Website: ${result.website}\n` : ''
         }${
           result.scholarships ? `Scholarships: ${result.scholarships}\n` : ''
+        }${
+          result.careerOutcomes ? `Career Outcomes: ${result.careerOutcomes}\n` : ''
         }`,
       });
       toast.success(`${result.programName} added to your shortlist!`);
@@ -60,6 +67,31 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
     } finally {
       setIsAdding(false);
     }
+  };
+
+  // Helper function to format application deadlines nicely
+  const formatDeadline = (deadline: string) => {
+    if (!deadline) return 'Not specified';
+    
+    if (deadline.toLowerCase().includes('rolling')) {
+      return 'Rolling Admissions';
+    }
+    
+    // Try to parse the date, if it's a valid date format
+    try {
+      const date = new Date(deadline);
+      if (!isNaN(date.getTime())) {
+        return new Intl.DateTimeFormat('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        }).format(date);
+      }
+    } catch (e) {
+      // If parsing fails, just return the original string
+    }
+    
+    return deadline;
   };
 
   return (
@@ -75,15 +107,24 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
               {result.university}
             </CardDescription>
           </div>
-          <Button
-            onClick={handleAddToShortlist}
-            disabled={isAdding}
-            size="sm"
-            className="shrink-0"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            {isAdding ? "Adding..." : "Add"}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleAddToShortlist}
+                  disabled={isAdding}
+                  size="sm"
+                  className="shrink-0"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  {isAdding ? "Adding..." : "Add"}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add to your program shortlist</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </CardHeader>
 
@@ -102,6 +143,12 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
             <Badge variant="outline" className="flex items-center gap-1">
               <Users className="h-3 w-3" />
               {result.programDetails.format}
+            </Badge>
+          )}
+          {result.programDetails?.language && (
+            <Badge variant="outline" className="flex items-center gap-1">
+              <Languages className="h-3 w-3" />
+              {result.programDetails.language}
             </Badge>
           )}
         </div>
@@ -123,7 +170,7 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
               <Calendar className="h-4 w-4 text-red-600" />
               <div>
                 <div className="font-medium">Deadline</div>
-                <div className="text-muted-foreground">{result.deadline}</div>
+                <div className="text-muted-foreground">{formatDeadline(result.deadline)}</div>
               </div>
             </div>
           )}
@@ -144,6 +191,36 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
               <div>
                 <div className="font-medium">Ranking</div>
                 <div className="text-muted-foreground">{result.ranking}</div>
+              </div>
+            </div>
+          )}
+
+          {result.programDetails?.startDate && (
+            <div className="flex items-center gap-2 text-sm">
+              <Calendar className="h-4 w-4 text-purple-600" />
+              <div>
+                <div className="font-medium">Start Date</div>
+                <div className="text-muted-foreground">{result.programDetails.startDate}</div>
+              </div>
+            </div>
+          )}
+
+          {result.programDetails?.accreditation && (
+            <div className="flex items-center gap-2 text-sm">
+              <Building className="h-4 w-4 text-indigo-600" />
+              <div>
+                <div className="font-medium">Accreditation</div>
+                <div className="text-muted-foreground">{result.programDetails.accreditation}</div>
+              </div>
+            </div>
+          )}
+
+          {result.applicationProcess && (
+            <div className="flex items-center gap-2 text-sm">
+              <ClipboardList className="h-4 w-4 text-teal-600" />
+              <div>
+                <div className="font-medium">Application</div>
+                <div className="text-muted-foreground line-clamp-1">{result.applicationProcess}</div>
               </div>
             </div>
           )}

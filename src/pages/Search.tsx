@@ -3,24 +3,26 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Search as SearchIcon, Filter, X } from "lucide-react";
+import { Loader2, Search as SearchIcon, Filter, X, Info, Settings2 } from "lucide-react";
 import { usePerplexityContext } from "@/contexts/PerplexityContext";
 import EnhancedSearchResultCard from "@/components/search/EnhancedSearchResultCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const Search = () => {
-  const { searchPrograms, searchResults, isLoading, clearResults } = usePerplexityContext();
+  const { searchPrograms, searchResults, isLoading, clearResults, searchMetadata } = usePerplexityContext();
   const [query, setQuery] = useState("");
   const [countryFilter, setCountryFilter] = useState<string>("");
   const [degreeFilter, setDegreeFilter] = useState<string>("");
   const [formatFilter, setFormatFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("relevance");
+  const [resultCount, setResultCount] = useState<number>(8);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      await searchPrograms(query.trim());
+      await searchPrograms(query.trim(), resultCount);
     }
   };
 
@@ -114,6 +116,62 @@ const Search = () => {
                   <X className="h-4 w-4 mr-2" />
                   Clear
                 </Button>
+              )}
+            </div>
+
+            {/* Advanced Search Options */}
+            <div className="flex flex-wrap gap-2 items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Results:</span>
+                <Select value={resultCount.toString()} onValueChange={(value) => setResultCount(parseInt(value))}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue placeholder="Count" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="8">8</SelectItem>
+                    <SelectItem value="12">12</SelectItem>
+                    <SelectItem value="15">15</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Search Tips</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Include specific keywords for better results:
+                      </p>
+                      <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
+                        <li>Program field or major (e.g., "Computer Science", "Psychology")</li>
+                        <li>Degree level (e.g., "Bachelor's", "Master's", "PhD")</li>
+                        <li>Region or country (e.g., "UK", "Europe", "Canada")</li>
+                        <li>Format (e.g., "Online", "Part-time")</li>
+                        <li>Requirements (e.g., "GMAT waiver", "no GRE")</li>
+                      </ul>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {searchMetadata && (
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-medium">Enhanced search:</span>{" "}
+                  {searchMetadata.query !== query && !searchMetadata.fallback && (
+                    <span>Query enhanced for better results • </span>
+                  )}
+                  {searchMetadata.model && (
+                    <span>Using {searchMetadata.model} • </span>
+                  )}
+                  {searchMetadata.fallback && (
+                    <Badge variant="outline" className="text-amber-600 bg-amber-50">Limited data quality</Badge>
+                  )}
+                </div>
               )}
             </div>
           </form>
