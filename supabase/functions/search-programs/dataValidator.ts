@@ -1,4 +1,4 @@
-// Enhanced data validation and quality assessment utilities
+// Enhanced data validation and quality assessment utilities with relaxed validation
 
 export function validateProgramData(result: any, originalQuery: string): boolean {
   if (!result.programName || !result.university || !result.degreeType) {
@@ -10,64 +10,54 @@ export function validateProgramData(result: any, originalQuery: string): boolean
   const university = result.university.toLowerCase()
   const tuition = result.tuition ? result.tuition.toLowerCase() : ''
   
-  // Reject obviously generic or placeholder data
+  // Only reject obviously generic or placeholder data
   const genericIndicators = [
     'program name', 'degree program', 'university name', 'example university',
-    'multiple universities', 'various universities', 'tbd', 'tba', 'contact university',
-    'check website', 'varies by', 'placeholder', 'sample program', 'example program',
-    'approximate', 'estimated', 'around', 'roughly', 'about'
+    'multiple universities', 'various universities', 'tbd', 'tba',
+    'placeholder', 'sample program', 'example program'
   ]
   
   for (const indicator of genericIndicators) {
-    if (programName.includes(indicator) || university.includes(indicator) || tuition.includes(indicator)) {
+    if (programName.includes(indicator) || university.includes(indicator)) {
       console.log('Generic indicator found:', indicator, 'in program:', result.programName);
       return false
     }
   }
 
-  // Enhanced validation for tuition fees
+  // Relaxed tuition validation - accept any specific amounts with currency symbols
   if (result.tuition) {
-    // Check for vague tuition indicators
+    // Only reject if it's clearly vague or missing
     const vagueTuitionIndicators = [
-      'varies', 'contact', 'tbc', 'tbd', 'check', 'see website', 'depends on',
-      'range from', 'between', 'starting from', 'up to', 'approximately'
+      'tbc', 'tbd', 'varies significantly', 'contact for pricing', 'price varies',
+      'depends on many factors', 'see individual programs'
     ]
     
-    const hasvagueTuition = vagueTuitionIndicators.some(indicator => 
+    const hasVagueTuition = vagueTuitionIndicators.some(indicator => 
       tuition.includes(indicator)
     )
     
-    if (hasvagueTuition) {
+    if (hasVagueTuition) {
       console.log('Vague tuition information found:', result.tuition);
       return false
     }
 
-    // Ensure tuition has specific currency and amount
-    const hasCurrencyAndAmount = /[£$€¥₹]\s*\d{3,}/.test(result.tuition) || /\d{3,}\s*[£$€¥₹]/.test(result.tuition)
-    if (!hasCurrencyAndAmount) {
-      console.log('Missing specific currency and amount in tuition:', result.tuition);
-      return false
+    // Accept any tuition that has currency and numbers (including citations)
+    const hasCurrencyAndAmount = /[£$€¥₹]/.test(tuition) && /\d/.test(tuition)
+    if (!hasCurrencyAndAmount && !tuition.includes('contact university')) {
+      console.log('Missing currency format but allowing through:', result.tuition);
+      // Don't reject, just log for awareness
     }
   }
 
-  // Check for overly generic program names
-  if (programName.length < 10 && !programName.includes('mba') && !programName.includes('phd') && !programName.includes('llm')) {
-    console.log('Program name too short:', result.programName);
+  // More lenient program name validation
+  if (programName.length < 5) {
+    console.log('Program name very short:', result.programName);
     return false
   }
 
-  // Validate university name format (should be more than just "University")
-  if (university.length < 5 || university === 'university' || university === 'college') {
+  // More lenient university name validation
+  if (university.length < 3 || university === 'university' || university === 'college') {
     console.log('Invalid university name:', result.university);
-    return false
-  }
-
-  // Check for proper program name structure
-  const hasProperStructure = /\b(msc|master|ma|mba|phd|doctorate|bachelor|ba|bsc|llm|pgdip|pgcert)\b/i.test(programName) ||
-                            /\b(degree|diploma|certificate|program|programme)\b/i.test(programName)
-  
-  if (!hasProperStructure) {
-    console.log('Program name lacks proper academic structure:', result.programName);
     return false
   }
 
@@ -75,39 +65,33 @@ export function validateProgramData(result: any, originalQuery: string): boolean
 }
 
 export function sanitizeAndEnhanceProgramData(result: any): any {
-  // Enhanced data cleaning with better fallbacks
+  // More permissive data cleaning
   const cleanTuition = (tuition: string) => {
     if (!tuition) return 'Contact university for current tuition fees'
     
-    // If it contains verification language, keep as is
+    // Keep most tuition data as-is, just clean up obvious issues
     if (tuition.toLowerCase().includes('contact university') || 
         tuition.toLowerCase().includes('check university')) {
       return tuition
     }
     
-    // If it has specific amounts, keep as is
-    if (/[£$€¥₹]\s*\d{3,}/.test(tuition) || /\d{3,}\s*[£$€¥₹]/.test(tuition)) {
+    // Accept any tuition with currency symbols and numbers
+    if (/[£$€¥₹]/.test(tuition) && /\d/.test(tuition)) {
       return tuition
     }
     
-    return 'Contact university for current tuition fees'
+    return tuition // Keep original if it doesn't match patterns
   }
 
   const cleanDeadline = (deadline: string) => {
     if (!deadline) return 'Check university website for application deadlines'
     
-    // If it's a specific date format, keep as is
-    if (/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(deadline) ||
-        /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4}/i.test(deadline)) {
-      return deadline
+    // More permissive deadline handling
+    if (deadline.toLowerCase().includes('rolling')) {
+      return 'Rolling admissions'
     }
     
-    // If it contains verification language, keep as is
-    if (deadline.toLowerCase().includes('check') || deadline.toLowerCase().includes('contact')) {
-      return deadline
-    }
-    
-    return deadline.includes('rolling') ? 'Rolling admissions' : 'Check university website for application deadlines'
+    return deadline // Keep most deadlines as-is
   }
 
   return {
@@ -134,95 +118,65 @@ export function sanitizeAndEnhanceProgramData(result: any): any {
     scholarships: result.scholarships || 'Contact university for funding opportunities',
     careers: result.careers || result.careerOutcomes || 'Career guidance available through university',
     website: result.website || 'Visit university website for program details',
-    dataQuality: assessSingleResultQuality(result)
+    dataQuality: assessSingleResultQuality(result),
+    confidenceScore: calculateConfidenceScore(result)
   }
 }
 
-function assessSingleResultQuality(result: any): string {
+function calculateConfidenceScore(result: any): number {
   let score = 0
-  let maxScore = 4
+  let maxScore = 6
 
-  // Check tuition specificity
-  if (result.tuition && /[£$€¥₹]\s*\d{3,}/.test(result.tuition) && 
-      !result.tuition.toLowerCase().includes('contact') && 
-      !result.tuition.toLowerCase().includes('check')) {
-    score++
+  // Check tuition specificity (more lenient)
+  if (result.tuition && /[£$€¥₹]/.test(result.tuition) && /\d{3,}/.test(result.tuition)) {
+    score += 2 // Higher weight for having tuition
+  } else if (result.tuition && result.tuition.length > 10) {
+    score += 1 // Some points for any detailed tuition info
   }
 
   // Check deadline specificity
-  if (result.deadline && 
-      (/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(result.deadline) ||
-       /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4}/i.test(result.deadline)) &&
-      !result.deadline.toLowerCase().includes('check') && 
-      !result.deadline.toLowerCase().includes('varies')) {
-    score++
+  if (result.deadline && result.deadline.length > 5 && !result.deadline.toLowerCase().includes('check')) {
+    score += 1
   }
 
   // Check description quality
-  if (result.description && result.description.length > 100 && 
-      !result.description.toLowerCase().includes('requires verification')) {
-    score++
+  if (result.description && result.description.length > 100) {
+    score += 1
   }
 
-  // Check website authenticity
-  if (result.website && (result.website.includes('.edu') || result.website.includes('.ac.'))) {
-    score++
+  // Check if has specific requirements
+  if (result.requirements && result.requirements.length > 20) {
+    score += 1
   }
 
-  const percentage = score / maxScore
-  if (percentage >= 0.75) return 'verified'
-  if (percentage >= 0.5) return 'good'
-  if (percentage >= 0.25) return 'moderate'
+  // Check for additional details
+  if (result.duration || result.website || result.scholarships) {
+    score += 1
+  }
+
+  return Math.round((score / maxScore) * 100)
+}
+
+function assessSingleResultQuality(result: any): string {
+  const confidence = calculateConfidenceScore(result)
+  
+  if (confidence >= 80) return 'high-confidence'
+  if (confidence >= 60) return 'good'
+  if (confidence >= 40) return 'moderate'
   return 'needs-verification'
 }
 
 export function assessDataQuality(results: any[]): string {
-  const qualityMetrics = {
-    hasSpecificTuition: 0,
-    hasSpecificDeadlines: 0,
-    hasDetailedDescriptions: 0,
-    hasOfficialWebsites: 0
-  }
+  if (results.length === 0) return 'no-results'
+  
+  const avgConfidence = results.reduce((sum, result) => {
+    return sum + (result.confidenceScore || 50)
+  }, 0) / results.length
 
-  results.forEach(result => {
-    if (result.tuition && /[£$€¥₹]\s*\d{3,}/.test(result.tuition) && 
-        !result.tuition.toLowerCase().includes('contact') && 
-        !result.tuition.toLowerCase().includes('check')) {
-      qualityMetrics.hasSpecificTuition++
-    }
-    if (result.deadline && 
-        (/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(result.deadline) ||
-         /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4}/i.test(result.deadline)) &&
-        !result.deadline.toLowerCase().includes('check') && 
-        !result.deadline.toLowerCase().includes('varies')) {
-      qualityMetrics.hasSpecificDeadlines++
-    }
-    if (result.description && result.description.length > 100) {
-      qualityMetrics.hasDetailedDescriptions++
-    }
-    if (result.website && (result.website.includes('.edu') || result.website.includes('.ac.'))) {
-      qualityMetrics.hasOfficialWebsites++
-    }
-  })
-
-  const totalResults = results.length
-  const qualityScore = (
-    qualityMetrics.hasSpecificTuition + 
-    qualityMetrics.hasSpecificDeadlines + 
-    qualityMetrics.hasDetailedDescriptions + 
-    qualityMetrics.hasOfficialWebsites
-  ) / (totalResults * 4)
-
-  console.log('Data quality assessment:', {
-    qualityMetrics,
-    totalResults,
-    qualityScore
-  })
-
-  if (qualityScore >= 0.8) return 'verified'
-  if (qualityScore >= 0.6) return 'good'
-  if (qualityScore >= 0.4) return 'moderate'
-  return 'needs-verification'
+  if (avgConfidence >= 75) return 'high-quality'
+  if (avgConfidence >= 60) return 'good-quality'
+  if (avgConfidence >= 40) return 'moderate-quality'
+  return 'mixed-quality'
 }
 
 export function calculateSearchQuality(results: any[], query: string): number {

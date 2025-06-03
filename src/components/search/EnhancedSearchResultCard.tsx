@@ -16,8 +16,8 @@ import {
   Target,
   Plus,
   Languages,
-  ClipboardList,
-  Building
+  Building,
+  TrendingUp
 } from "lucide-react";
 import { SearchResult } from "@/contexts/PerplexityContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
@@ -95,6 +95,19 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
     return deadline;
   };
 
+  // Get confidence level styling
+  const getConfidenceBadge = () => {
+    const confidence = (result as any).confidenceScore || 50;
+    const quality = (result as any).dataQuality || 'moderate';
+    
+    if (confidence >= 80) return { variant: "default" as const, text: "High Confidence", color: "text-green-600" };
+    if (confidence >= 60) return { variant: "secondary" as const, text: "Good Data", color: "text-blue-600" };
+    if (confidence >= 40) return { variant: "outline" as const, text: "Verify Details", color: "text-amber-600" };
+    return { variant: "outline" as const, text: "Needs Verification", color: "text-red-600" };
+  };
+
+  const confidenceBadge = getConfidenceBadge();
+
   return (
     <Card className="h-full hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="pb-3">
@@ -130,38 +143,41 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Data Quality Warning */}
-        {(result as any).dataQuality && (result as any).dataQuality !== 'verified' && (
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
-            <p className="text-xs text-amber-800">
-              ⚠️ This data needs verification. Please confirm details with the university directly.
-            </p>
+        {/* Data Quality Indicator */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <BookOpen className="h-3 w-3" />
+              {result.degreeType}
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              {result.country}
+            </Badge>
+          </div>
+          <Badge variant={confidenceBadge.variant} className={`flex items-center gap-1 ${confidenceBadge.color}`}>
+            <TrendingUp className="h-3 w-3" />
+            {confidenceBadge.text}
+          </Badge>
+        </div>
+
+        {/* Additional Format/Language Badges */}
+        {(result.programDetails?.format || result.programDetails?.language) && (
+          <div className="flex flex-wrap gap-2">
+            {result.programDetails?.format && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                {result.programDetails.format}
+              </Badge>
+            )}
+            {result.programDetails?.language && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Languages className="h-3 w-3" />
+                {result.programDetails.language}
+              </Badge>
+            )}
           </div>
         )}
-
-        {/* Basic Info Row */}
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary" className="flex items-center gap-1">
-            <BookOpen className="h-3 w-3" />
-            {result.degreeType}
-          </Badge>
-          <Badge variant="outline" className="flex items-center gap-1">
-            <MapPin className="h-3 w-3" />
-            {result.country}
-          </Badge>
-          {result.programDetails?.format && (
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              {result.programDetails.format}
-            </Badge>
-          )}
-          {result.programDetails?.language && (
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Languages className="h-3 w-3" />
-              {result.programDetails.language}
-            </Badge>
-          )}
-        </div>
 
         {/* Key Details Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -273,7 +289,7 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
             onClick={handleGoogleSearch}
           >
             <Search className="h-4 w-4 mr-2" />
-            Search on Google
+            Verify on Google
           </Button>
         </div>
       </CardContent>

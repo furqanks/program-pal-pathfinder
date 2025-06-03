@@ -43,6 +43,9 @@ export type SearchResult = {
   careerOutcomes?: string;
   researchOpportunities?: string;
   applicationProcess?: string;
+  // New quality assessment fields
+  dataQuality?: string;
+  confidenceScore?: number;
 };
 
 type SearchMetadata = {
@@ -50,6 +53,9 @@ type SearchMetadata = {
   resultCount: number;
   model?: string;
   fallback?: boolean;
+  dataQuality?: string;
+  searchQuality?: number;
+  accuracy?: string;
 };
 
 type PerplexityContextType = {
@@ -74,8 +80,8 @@ export const usePerplexityContext = () => {
 const parseStructuredData = (description: string): Partial<SearchResult>=> {
   const parsed: Partial<SearchResult> = {};
   
-  // Extract tuition/fees information
-  const tuitionMatch = description.match(/(?:tuition|fees?|cost)[:\s]*([£$€]?[\d,]+(?:\.\d{2})?[\/\s]*(?:per\s+)?(?:year|semester|term|annum)?)/i);
+  // Extract tuition/fees information (more permissive)
+  const tuitionMatch = description.match(/(?:tuition|fees?|cost)[:\s]*([£$€¥₹]?[\d,]+(?:\.\d{2})?[\/\s]*(?:per\s+)?(?:year|semester|term|annum)?)/i);
   if (tuitionMatch) {
     parsed.tuition = tuitionMatch[1].trim();
   }
@@ -202,13 +208,16 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
           });
         }
 
-        // Show appropriate success message
-        if (data.parseError) {
-          toast.warning(`Found ${enhancedResults.length} programs with limited details. Data quality may vary.`);
-        } else if (data.searchMetadata?.fallback) {
-          toast.warning(`Limited search results retrieved. Showing ${enhancedResults.length} programs with basic details.`);
+        // Show appropriate success message based on data quality
+        const dataQuality = data.searchMetadata?.dataQuality || 'mixed-quality';
+        if (dataQuality === 'high-quality') {
+          toast.success(`Found ${enhancedResults.length} high-quality programs`);
+        } else if (dataQuality === 'good-quality') {
+          toast.success(`Found ${enhancedResults.length} programs with good data`);
+        } else if (dataQuality === 'moderate-quality') {
+          toast.success(`Found ${enhancedResults.length} programs - some details may need verification`);
         } else {
-          toast.success(`Found ${enhancedResults.length} programs with enhanced details`);
+          toast.success(`Found ${enhancedResults.length} programs - please verify details with universities`);
         }
       } else if (data && data.error) {
         throw new Error(data.error);
