@@ -41,56 +41,8 @@ serve(async (req) => {
     console.log('Original query:', query)
     console.log('Processed query:', processedQuery)
 
-    // More specific prompt for better data quality
-    const enhancedPrompt = `
-Search for REAL, currently available Masters by Research (MRes) programs that match: "${processedQuery}"
-
-CRITICAL REQUIREMENTS:
-1. Return ONLY actual MRes programs that exist at real universities
-2. Verify each program exists on official university websites
-3. Include specific tuition fees, application deadlines, and program details
-4. Focus on programs accepting applications for September 2025 intake
-5. Return exactly ${resultCount} real programs with verified information
-
-Return ONLY a valid JSON object (no markdown formatting) with this structure:
-{
-  "searchResults": [
-    {
-      "programName": "Exact MRes program title from university",
-      "university": "Full official university name",
-      "degreeType": "Master's",
-      "country": "United Kingdom",
-      "description": "Detailed program description with curriculum and research focus",
-      "tuition": "Exact fee amount (e.g., £15,000 per year for international students)",
-      "deadline": "Specific application deadline (e.g., March 31, 2025)",
-      "duration": "Program length (e.g., 1 year full-time)",
-      "requirements": "Detailed admission requirements including academic qualifications",
-      "fees": {
-        "international": "International student fees",
-        "domestic": "UK/Home student fees"
-      },
-      "programDetails": {
-        "format": "Full-time",
-        "startDate": "September 2025",
-        "language": "English",
-        "accreditation": "Relevant accreditation body"
-      },
-      "ranking": "University ranking information",
-      "scholarships": "Available funding and scholarship options",
-      "careerOutcomes": "Career prospects and research opportunities"
-    }
-  ]
-}
-
-VALIDATION RULES:
-- Program names must be specific (not generic like "degreeType" or query repetition)
-- Universities must be real, accredited institutions
-- Tuition fees must be specific amounts, not "varies" or "contact university"
-- Deadlines must be actual dates, not generic phrases
-- All information must be verifiable from official sources
-
-Return ONLY the JSON object without any markdown formatting or explanations.
-`;
+    // Dynamic prompt based on user query
+    const enhancedPrompt = createDynamicPrompt(processedQuery, resultCount)
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -103,7 +55,7 @@ Return ONLY the JSON object without any markdown formatting or explanations.
         messages: [
           {
             role: 'system',
-            content: 'You are a university program researcher. Return only valid JSON with real, verified MRes program data. Never include markdown formatting or generic placeholder data.'
+            content: 'You are a university program researcher. Search for real, currently available university programs based on user queries. Return only valid JSON with real, verified program data. Never include markdown formatting or generic placeholder data.'
           },
           {
             role: 'user',
@@ -115,7 +67,6 @@ Return ONLY the JSON object without any markdown formatting or explanations.
         top_p: 0.9,
         return_citations: true,
         search_recency_filter: "month"
-        // Removed the invalid search_domain_filter that was causing the 500 error
       }),
     })
 
@@ -160,13 +111,12 @@ Return ONLY the JSON object without any markdown formatting or explanations.
 
         // Check if we have quality results
         if (validatedResults.length === 0) {
-          throw new Error('No valid MRes programs found matching your criteria');
+          throw new Error('No valid programs found matching your criteria');
         }
 
         const dataQuality = validatedResults.every(r => 
           r.programName && 
-          !r.programName.toLowerCase().includes('degreetype') &&
-          !r.programName.toLowerCase().includes(query.toLowerCase().split(' ')[0]) &&
+          !r.programName.toLowerCase().includes('program name') &&
           r.tuition && 
           !r.tuition.toLowerCase().includes('contact') &&
           r.deadline &&
@@ -224,20 +174,132 @@ Return ONLY the JSON object without any markdown formatting or explanations.
   }
 })
 
+// Create dynamic prompt based on user query
+function createDynamicPrompt(query: string, resultCount: number): string {
+  const lowerQuery = query.toLowerCase()
+  
+  // Detect program type from query
+  let programType = 'university programs'
+  if (lowerQuery.includes('mres') || lowerQuery.includes('masters by research')) {
+    programType = 'Masters by Research (MRes) programs'
+  } else if (lowerQuery.includes('phd') || lowerQuery.includes('doctorate')) {
+    programType = 'PhD/Doctorate programs'
+  } else if (lowerQuery.includes('master') || lowerQuery.includes('msc') || lowerQuery.includes('ma')) {
+    programType = 'Masters programs'
+  } else if (lowerQuery.includes('bachelor') || lowerQuery.includes('undergraduate')) {
+    programType = 'Bachelor\'s/Undergraduate programs'
+  } else if (lowerQuery.includes('mba')) {
+    programType = 'MBA programs'
+  }
+
+  // Detect country/region preferences
+  let countryGuidance = ''
+  if (lowerQuery.includes('uk') || lowerQuery.includes('britain') || lowerQuery.includes('england')) {
+    countryGuidance = 'Focus on United Kingdom universities. '
+  } else if (lowerQuery.includes('us') || lowerQuery.includes('usa') || lowerQuery.includes('america')) {
+    countryGuidance = 'Focus on United States universities. '
+  } else if (lowerQuery.includes('canada')) {
+    countryGuidance = 'Focus on Canadian universities. '
+  } else if (lowerQuery.includes('europe')) {
+    countryGuidance = 'Focus on European universities. '
+  }
+
+  return `
+Search for REAL, currently available ${programType} that match: "${query}"
+
+${countryGuidance}
+
+CRITICAL REQUIREMENTS:
+1. Return ONLY actual programs that exist at real universities
+2. Verify each program exists on official university websites
+3. Include specific tuition fees, application deadlines, and program details
+4. Focus on programs accepting applications for 2025 intake (September/Fall)
+5. Return exactly ${resultCount} real programs with verified information
+
+Return ONLY a valid JSON object (no markdown formatting) with this structure:
+{
+  "searchResults": [
+    {
+      "programName": "Exact program title from university",
+      "university": "Full official university name",
+      "degreeType": "Degree level (e.g., Master's, Bachelor's, PhD)",
+      "country": "Country where university is located",
+      "description": "Detailed program description with curriculum and focus areas",
+      "tuition": "Exact fee amount (e.g., £15,000 per year for international students)",
+      "deadline": "Specific application deadline (e.g., March 31, 2025)",
+      "duration": "Program length (e.g., 1 year full-time, 2 years part-time)",
+      "requirements": "Detailed admission requirements including academic qualifications",
+      "fees": {
+        "international": "International student fees",
+        "domestic": "Domestic student fees"
+      },
+      "programDetails": {
+        "format": "Full-time/Part-time/Online",
+        "startDate": "Start date (e.g., September 2025)",
+        "language": "Language of instruction",
+        "accreditation": "Relevant accreditation information"
+      },
+      "ranking": "University ranking information if available",
+      "scholarships": "Available funding and scholarship options",
+      "careerOutcomes": "Career prospects and opportunities"
+    }
+  ]
+}
+
+VALIDATION RULES:
+- Program names must be specific and real (not generic like "Computer Science Program")
+- Universities must be real, accredited institutions
+- Tuition fees must be specific amounts when available
+- Deadlines should be actual dates when available
+- All information must be verifiable from official sources
+- Country should match the actual location of the university
+
+Return ONLY the JSON object without any markdown formatting or explanations.
+`;
+}
+
 // Enhanced query processing function
 function enhanceQuery(originalQuery: string): string {
   const query = originalQuery.toLowerCase().trim()
-  
   const enhancements = []
   
-  // MRes-specific enhancements
-  if (query.includes('mres') || query.includes('masters by research')) {
-    enhancements.push('MRes', 'Masters by Research', 'research degree')
+  // General program search enhancements
+  if (query.includes('university') || query.includes('college')) {
+    enhancements.push('higher education', 'academic programs')
+  }
+  
+  // Degree level enhancements
+  if (query.includes('master') && !query.includes('mres')) {
+    enhancements.push('Masters degree', 'graduate programs')
+  }
+  
+  if (query.includes('bachelor') || query.includes('undergraduate')) {
+    enhancements.push('undergraduate degree', 'bachelor programs')
+  }
+  
+  if (query.includes('phd') || query.includes('doctorate')) {
+    enhancements.push('doctoral programs', 'research degrees')
+  }
+
+  if (query.includes('mba')) {
+    enhancements.push('business administration', 'management programs')
   }
   
   // Field-specific enhancements
+  if (query.includes('computer') || query.includes('tech')) {
+    enhancements.push('technology', 'computing', 'IT programs')
+  }
+  
+  if (query.includes('business') || query.includes('management')) {
+    enhancements.push('business studies', 'management programs')
+  }
+  
   if (query.includes('medicine') || query.includes('health')) {
-    enhancements.push('medical research', 'health sciences', 'biomedical research')
+    enhancements.push('medical programs', 'health sciences')
+  }
+  
+  if (query.includes('engineering')) {
+    enhancements.push('engineering programs', 'technical degrees')
   }
   
   // Location enhancements
@@ -245,9 +307,18 @@ function enhanceQuery(originalQuery: string): string {
     enhancements.push('United Kingdom', 'British universities')
   }
   
+  if (query.includes('usa') || query.includes('america')) {
+    enhancements.push('United States', 'American universities')
+  }
+  
   // Budget-specific enhancements
-  if (query.includes('budget') || query.includes('affordable')) {
-    enhancements.push('affordable tuition', 'funding opportunities')
+  if (query.includes('budget') || query.includes('affordable') || query.includes('cheap')) {
+    enhancements.push('affordable tuition', 'funding opportunities', 'scholarships')
+  }
+
+  // Online/format enhancements
+  if (query.includes('online') || query.includes('distance')) {
+    enhancements.push('online learning', 'remote programs', 'distance education')
   }
 
   const enhancedQuery = `${originalQuery} ${enhancements.join(' ')}`
@@ -295,9 +366,9 @@ function parseAndValidateResponse(content: string): any {
   throw new Error('Could not parse API response as valid JSON')
 }
 
-// Validate program data quality
+// Improved validation for program data quality
 function validateProgramData(result: any, originalQuery: string): boolean {
-  if (!result.programName || !result.university || !result.country) {
+  if (!result.programName || !result.university || !result.degreeType) {
     return false
   }
 
@@ -306,18 +377,28 @@ function validateProgramData(result: any, originalQuery: string): boolean {
   const university = result.university.toLowerCase()
   
   // Reject generic names
-  if (programName.includes('degreetype') || 
-      programName.includes('program name') ||
+  if (programName.includes('program name') || 
+      programName.includes('degree program') ||
       programName === 'masters' ||
+      programName === 'bachelor' ||
       university.includes('university name') ||
+      university.includes('example university') ||
       university.includes('multiple universities')) {
     return false
   }
 
-  // Reject if program name is just the query repeated
-  const queryWords = originalQuery.toLowerCase().split(' ')
-  if (queryWords.length > 2 && programName === queryWords.slice(0, 3).join(' ')) {
-    return false
+  // Check if program name is too generic or just repeats the query
+  const queryWords = originalQuery.toLowerCase().split(' ').filter(word => word.length > 2)
+  const programWords = programName.split(' ')
+  
+  // If program name is just the first few words of the query, it's likely generic
+  if (queryWords.length > 1 && programWords.length <= 3) {
+    const matchingWords = programWords.filter(word => 
+      queryWords.some(qWord => qWord.includes(word) || word.includes(qWord))
+    )
+    if (matchingWords.length === programWords.length) {
+      return false
+    }
   }
 
   return true
@@ -328,21 +409,21 @@ function sanitizeAndEnhanceProgramData(result: any): any {
   return {
     programName: result.programName || 'Program name needs verification',
     university: result.university || 'University needs verification',
-    degreeType: result.degreeType || 'Master\'s',
-    country: result.country || 'United Kingdom',
+    degreeType: result.degreeType || 'Degree type not specified',
+    country: result.country || 'Country not specified',
     description: result.description || 'Program details need verification. Please check the university website for accurate information.',
     tuition: result.tuition || 'Contact university for current tuition fees',
     deadline: result.deadline || 'Check university website for application deadlines',
     duration: result.duration || 'Duration varies by program',
     requirements: result.requirements || 'Check university website for admission requirements',
     fees: result.fees || { 
-      international: result.tuition || 'Contact university', 
-      domestic: 'Contact university for home student fees'
+      international: result.tuition || 'Contact university for international fees', 
+      domestic: 'Contact university for domestic fees'
     },
     programDetails: {
-      format: result.programDetails?.format || 'Full-time',
-      startDate: result.programDetails?.startDate || 'September 2025',
-      language: result.programDetails?.language || 'English',
+      format: result.programDetails?.format || 'Check with university',
+      startDate: result.programDetails?.startDate || '2025 intake',
+      language: result.programDetails?.language || 'Check with university',
       accreditation: result.programDetails?.accreditation || 'Check with university',
       ...result.programDetails
     },
