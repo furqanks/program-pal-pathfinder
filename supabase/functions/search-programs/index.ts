@@ -114,8 +114,8 @@ Return ONLY the JSON object without any markdown formatting or explanations.
         temperature: 0.1,
         top_p: 0.9,
         return_citations: true,
-        search_recency_filter: "month",
-        search_domain_filter: ["ac.uk", "edu", "university"]
+        search_recency_filter: "month"
+        // Removed the invalid search_domain_filter that was causing the 500 error
       }),
     })
 
