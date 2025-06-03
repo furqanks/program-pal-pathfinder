@@ -45,9 +45,9 @@ const Search = () => {
   // Filter and sort results
   const filteredResults = searchResults
     .filter(result => {
-      if (countryFilter && result.country !== countryFilter) return false;
-      if (degreeFilter && result.degreeType !== degreeFilter) return false;
-      if (formatFilter && result.programDetails?.format !== formatFilter) return false;
+      if (countryFilter && countryFilter !== "all" && result.country !== countryFilter) return false;
+      if (degreeFilter && degreeFilter !== "all" && result.degreeType !== degreeFilter) return false;
+      if (formatFilter && formatFilter !== "all" && result.programDetails?.format !== formatFilter) return false;
       return true;
     })
     .sort((a, b) => {
@@ -69,7 +69,7 @@ const Search = () => {
       }
     });
 
-  const activeFiltersCount = [countryFilter, degreeFilter, formatFilter].filter(Boolean).length;
+  const activeFiltersCount = [countryFilter, degreeFilter, formatFilter].filter(f => f && f !== "all").length;
 
   return (
     <div className="space-y-6">
@@ -141,7 +141,7 @@ const Search = () => {
                     <SelectValue placeholder="Filter by Country" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Countries</SelectItem>
+                    <SelectItem value="all">All Countries</SelectItem>
                     {uniqueCountries.map(country => (
                       <SelectItem key={country} value={country}>{country}</SelectItem>
                     ))}
@@ -153,7 +153,7 @@ const Search = () => {
                     <SelectValue placeholder="Filter by Degree" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Degrees</SelectItem>
+                    <SelectItem value="all">All Degrees</SelectItem>
                     {uniqueDegreeTypes.map(degree => (
                       <SelectItem key={degree} value={degree}>{degree}</SelectItem>
                     ))}
@@ -166,7 +166,7 @@ const Search = () => {
                       <SelectValue placeholder="Filter by Format" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Formats</SelectItem>
+                      <SelectItem value="all">All Formats</SelectItem>
                       {uniqueFormats.map(format => (
                         <SelectItem key={format} value={format}>{format}</SelectItem>
                       ))}
