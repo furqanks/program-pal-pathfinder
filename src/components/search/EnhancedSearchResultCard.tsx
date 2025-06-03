@@ -8,7 +8,7 @@ import {
   Calendar, 
   DollarSign, 
   Clock, 
-  ExternalLink, 
+  Search,
   GraduationCap, 
   Users, 
   Award,
@@ -41,10 +41,8 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
         university: result.university,
         degreeType: result.degreeType,
         country: result.country,
-        // Use the enhanced data instead of hardcoded empty values
         tuition: result.tuition || result.fees?.international || result.fees?.domestic || '',
         deadline: result.deadline || '',
-        // Add the missing required properties
         statusTagId: 'status-considering',
         customTagIds: [],
         notes: `Added from search results.\n\nProgram Details:\n${result.description}\n\n${
@@ -53,8 +51,6 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           result.duration ? `Duration: ${result.duration}\n` : ''
         }${
           result.programDetails?.format ? `Format: ${result.programDetails.format}\n` : ''
-        }${
-          result.website ? `Website: ${result.website}\n` : ''
         }${
           result.scholarships ? `Scholarships: ${result.scholarships}\n` : ''
         }${
@@ -69,6 +65,12 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
     }
   };
 
+  const handleGoogleSearch = () => {
+    const searchQuery = `"${result.programName}" "${result.university}" ${result.country} admissions 2025`
+    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`
+    window.open(googleUrl, '_blank')
+  };
+
   // Helper function to format application deadlines nicely
   const formatDeadline = (deadline: string) => {
     if (!deadline) return 'Not specified';
@@ -77,7 +79,6 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
       return 'Rolling Admissions';
     }
     
-    // Try to parse the date, if it's a valid date format
     try {
       const date = new Date(deadline);
       if (!isNaN(date.getTime())) {
@@ -88,7 +89,7 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
         }).format(date);
       }
     } catch (e) {
-      // If parsing fails, just return the original string
+      // If parsing fails, return the original string
     }
     
     return deadline;
@@ -129,6 +130,15 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Data Quality Warning */}
+        {(result as any).dataQuality && (result as any).dataQuality !== 'verified' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
+            <p className="text-xs text-amber-800">
+              ⚠️ This data needs verification. Please confirm details with the university directly.
+            </p>
+          </div>
+        )}
+
         {/* Basic Info Row */}
         <div className="flex flex-wrap gap-2">
           <Badge variant="secondary" className="flex items-center gap-1">
@@ -214,16 +224,6 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
               </div>
             </div>
           )}
-
-          {result.applicationProcess && (
-            <div className="flex items-center gap-2 text-sm">
-              <ClipboardList className="h-4 w-4 text-teal-600" />
-              <div>
-                <div className="font-medium">Application</div>
-                <div className="text-muted-foreground line-clamp-1">{result.applicationProcess}</div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Requirements */}
@@ -264,20 +264,18 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           </div>
         )}
 
-        {/* Website Link */}
-        {result.website && (
-          <div className="pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => window.open(result.website, '_blank')}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Visit Program Website
-            </Button>
-          </div>
-        )}
+        {/* Google Search Button */}
+        <div className="pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={handleGoogleSearch}
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Search on Google
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
