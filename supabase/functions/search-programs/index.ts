@@ -97,7 +97,6 @@ Please find 5-8 relevant programs and include as much specific detail as possibl
         temperature: 0.2,
         top_p: 0.9,
         return_citations: true,
-        search_domain_filter: ["edu", "ac.uk", "edu.au", "ca"],
         search_recency_filter: "month"
       }),
     })
