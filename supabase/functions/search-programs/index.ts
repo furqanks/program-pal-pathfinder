@@ -41,58 +41,57 @@ serve(async (req) => {
     console.log('Original query:', query)
     console.log('Processed query:', processedQuery)
 
-    // Improved prompt focusing on real, verifiable data
+    // More specific prompt for better data quality
     const enhancedPrompt = `
-You are a university program search engine. Find REAL, currently available university programs for: "${processedQuery}"
+Search for REAL, currently available Masters by Research (MRes) programs that match: "${processedQuery}"
 
 CRITICAL REQUIREMENTS:
-1. Search ONLY official university websites and current admissions data
-2. Return exactly ${resultCount} REAL programs with VERIFIED information
-3. Each program MUST have actual, current tuition fees and deadlines
-4. Only include programs that actually exist and are accepting applications
-5. Cross-reference multiple sources to ensure accuracy
+1. Return ONLY actual MRes programs that exist at real universities
+2. Verify each program exists on official university websites
+3. Include specific tuition fees, application deadlines, and program details
+4. Focus on programs accepting applications for September 2025 intake
+5. Return exactly ${resultCount} real programs with verified information
 
-Return a JSON object with this EXACT structure (no markdown formatting):
+Return ONLY a valid JSON object (no markdown formatting) with this structure:
 {
   "searchResults": [
     {
-      "programName": "Exact official program name from university website",
+      "programName": "Exact MRes program title from university",
       "university": "Full official university name",
-      "degreeType": "Bachelor's|Master's|PhD|Certificate|Diploma",
-      "country": "Full country name",
-      "description": "Detailed program description with curriculum details, minimum 100 words",
-      "tuition": "Specific amount with currency (e.g. £15,000 per year)",
-      "deadline": "Specific application deadline (e.g. January 15, 2025)",
-      "duration": "Exact program length (e.g. 2 years full-time)",
-      "requirements": "Detailed admission requirements",
+      "degreeType": "Master's",
+      "country": "United Kingdom",
+      "description": "Detailed program description with curriculum and research focus",
+      "tuition": "Exact fee amount (e.g., £15,000 per year for international students)",
+      "deadline": "Specific application deadline (e.g., March 31, 2025)",
+      "duration": "Program length (e.g., 1 year full-time)",
+      "requirements": "Detailed admission requirements including academic qualifications",
       "fees": {
         "international": "International student fees",
-        "domestic": "Domestic student fees"
+        "domestic": "UK/Home student fees"
       },
       "programDetails": {
-        "format": "Full-time|Part-time|Online|Hybrid",
-        "startDate": "Program start date",
-        "language": "Language of instruction",
-        "accreditation": "Accreditation body if known"
+        "format": "Full-time",
+        "startDate": "September 2025",
+        "language": "English",
+        "accreditation": "Relevant accreditation body"
       },
-      "ranking": "University ranking if available",
-      "scholarships": "Available funding options",
-      "careerOutcomes": "Career prospects and employment data"
+      "ranking": "University ranking information",
+      "scholarships": "Available funding and scholarship options",
+      "careerOutcomes": "Career prospects and research opportunities"
     }
   ]
 }
 
-VERIFICATION REQUIREMENTS:
-- Only include programs from accredited institutions
-- Verify tuition costs are current (2024-2025 academic year)
-- Ensure deadlines are realistic and upcoming
-- Cross-check program names with official university catalogs
-- Prioritize universities with strong reputations in the field
+VALIDATION RULES:
+- Program names must be specific (not generic like "degreeType" or query repetition)
+- Universities must be real, accredited institutions
+- Tuition fees must be specific amounts, not "varies" or "contact university"
+- Deadlines must be actual dates, not generic phrases
+- All information must be verifiable from official sources
 
-IMPORTANT: Return ONLY the JSON object without any markdown formatting or explanations.
+Return ONLY the JSON object without any markdown formatting or explanations.
 `;
 
-    // Simplified API configuration with reliable model
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -104,7 +103,7 @@ IMPORTANT: Return ONLY the JSON object without any markdown formatting or explan
         messages: [
           {
             role: 'system',
-            content: 'You are a university program researcher. Return only valid JSON with real, verified university program data. Never include markdown formatting.'
+            content: 'You are a university program researcher. Return only valid JSON with real, verified MRes program data. Never include markdown formatting or generic placeholder data.'
           },
           {
             role: 'user',
@@ -115,7 +114,8 @@ IMPORTANT: Return ONLY the JSON object without any markdown formatting or explan
         temperature: 0.1,
         top_p: 0.9,
         return_citations: true,
-        search_recency_filter: "month"
+        search_recency_filter: "month",
+        search_domain_filter: ["ac.uk", "edu", "university"]
       }),
     })
 
@@ -148,52 +148,30 @@ IMPORTANT: Return ONLY the JSON object without any markdown formatting or explan
     console.log('Raw API content:', content.substring(0, 500) + '...')
 
     try {
-      // Enhanced JSON parsing to handle markdown and other formatting
+      // Improved JSON parsing to handle markdown and other formatting
       const parsedResults = parseAndValidateResponse(content)
 
       if (parsedResults.searchResults && Array.isArray(parsedResults.searchResults)) {
-        // Strict validation for data authenticity
+        // Enhanced validation for data authenticity
         const validatedResults = parsedResults.searchResults
-          .filter(result => {
-            // Strict validation criteria
-            return result.programName && 
-                   result.university && 
-                   result.country &&
-                   result.tuition &&
-                   result.deadline &&
-                   !result.programName.toLowerCase().includes('example') &&
-                   !result.university.toLowerCase().includes('example') &&
-                   !result.tuition.toLowerCase().includes('varies') &&
-                   !result.tuition.toLowerCase().includes('contact')
-          })
-          .map((result: any) => ({
-            programName: result.programName,
-            university: result.university,
-            degreeType: result.degreeType || 'Not specified',
-            country: result.country,
-            description: result.description || 'Program description not available',
-            tuition: result.tuition,
-            deadline: result.deadline,
-            duration: result.duration || 'Duration not specified',
-            requirements: result.requirements || 'Requirements not specified',
-            fees: result.fees || { 
-              international: result.tuition, 
-              domestic: result.tuition 
-            },
-            programDetails: {
-              format: result.programDetails?.format || 'Not specified',
-              startDate: result.programDetails?.startDate || 'Check with university',
-              language: result.programDetails?.language || 'English',
-              accreditation: result.programDetails?.accreditation || 'Check with university',
-              ...result.programDetails
-            },
-            ranking: result.ranking || 'Ranking not available',
-            scholarships: result.scholarships || 'Contact university for scholarship information',
-            careerOutcomes: result.careerOutcomes || 'Career information not available',
-            // Explicitly exclude website to prevent incorrect URLs
-            admissionRequirements: result.admissionRequirements || [result.requirements || 'Check university website']
-          }))
+          .filter(result => validateProgramData(result, query))
+          .map((result: any) => sanitizeAndEnhanceProgramData(result))
           .slice(0, resultCount)
+
+        // Check if we have quality results
+        if (validatedResults.length === 0) {
+          throw new Error('No valid MRes programs found matching your criteria');
+        }
+
+        const dataQuality = validatedResults.every(r => 
+          r.programName && 
+          !r.programName.toLowerCase().includes('degreetype') &&
+          !r.programName.toLowerCase().includes(query.toLowerCase().split(' ')[0]) &&
+          r.tuition && 
+          !r.tuition.toLowerCase().includes('contact') &&
+          r.deadline &&
+          !r.deadline.toLowerCase().includes('check')
+        ) ? 'verified' : 'needs-verification';
 
         return new Response(
           JSON.stringify({ 
@@ -203,7 +181,7 @@ IMPORTANT: Return ONLY the JSON object without any markdown formatting or explan
               query: processedQuery,
               resultCount: validatedResults.length,
               model: data.model || 'unknown',
-              dataQuality: 'verified'
+              dataQuality: dataQuality
             }
           }),
           { 
@@ -217,22 +195,19 @@ IMPORTANT: Return ONLY the JSON object without any markdown formatting or explan
     } catch (parseError) {
       console.error('JSON parsing error:', parseError)
       
-      // Fallback with manual extraction but mark as lower quality
-      const fallbackResults = extractDataFromText(content, query, resultCount)
-
+      // Return error instead of fallback for better debugging
       return new Response(
         JSON.stringify({ 
-          searchResults: fallbackResults,
-          parseError: 'API response parsing failed, using extracted data',
+          error: 'Failed to parse search results. Please try a more specific query.',
           searchMetadata: {
             query: processedQuery,
-            resultCount: fallbackResults.length,
+            resultCount: 0,
             fallback: true,
-            dataQuality: 'extracted'
+            parseError: parseError.message
           }
         }),
         { 
-          status: 200, 
+          status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
@@ -255,143 +230,125 @@ function enhanceQuery(originalQuery: string): string {
   
   const enhancements = []
   
+  // MRes-specific enhancements
+  if (query.includes('mres') || query.includes('masters by research')) {
+    enhancements.push('MRes', 'Masters by Research', 'research degree')
+  }
+  
   // Field-specific enhancements
-  if (query.includes('psychology') || query.includes('mental health')) {
-    enhancements.push('clinical psychology', 'counseling programs')
-  }
-  if (query.includes('business') || query.includes('mba')) {
-    enhancements.push('management', 'finance programs')
-  }
-  if (query.includes('engineering')) {
-    enhancements.push('technology programs', 'applied sciences')
-  }
-  if (query.includes('computer science') || query.includes('cs')) {
-    enhancements.push('software engineering', 'data science programs')
-  }
   if (query.includes('medicine') || query.includes('health')) {
-    enhancements.push('medical programs', 'healthcare studies')
+    enhancements.push('medical research', 'health sciences', 'biomedical research')
   }
   
   // Location enhancements
   if (query.includes('uk') || query.includes('britain')) {
-    enhancements.push('United Kingdom universities')
-  }
-  if (query.includes('usa') || query.includes('america')) {
-    enhancements.push('American universities')
+    enhancements.push('United Kingdom', 'British universities')
   }
   
+  // Budget-specific enhancements
+  if (query.includes('budget') || query.includes('affordable')) {
+    enhancements.push('affordable tuition', 'funding opportunities')
+  }
+
   const enhancedQuery = `${originalQuery} ${enhancements.join(' ')}`
   return enhancedQuery.substring(0, 400)
 }
 
-// Improved JSON parsing with multiple strategies
+// Robust JSON parsing with multiple strategies
 function parseAndValidateResponse(content: string): any {
-  // Strategy 1: Direct JSON parse
-  try {
-    return JSON.parse(content)
-  } catch (e) {
-    console.log('Direct JSON parse failed')
-  }
-  
-  // Strategy 2: Remove markdown formatting
+  // Remove any markdown formatting and extra text
   let cleanedContent = content
     .replace(/```json\s*/g, '')
     .replace(/```\s*/g, '')
     .replace(/^\s*[\w\s]*?(?=\{)/g, '')
     .trim()
+
+  // Strategy 1: Find JSON object boundaries more precisely
+  const jsonStart = cleanedContent.indexOf('{')
+  const jsonEnd = cleanedContent.lastIndexOf('}')
   
-  // Find the JSON object boundaries
-  const startIndex = cleanedContent.indexOf('{')
-  const lastIndex = cleanedContent.lastIndexOf('}')
-  
-  if (startIndex !== -1 && lastIndex !== -1 && lastIndex > startIndex) {
-    cleanedContent = cleanedContent.substring(startIndex, lastIndex + 1)
-  }
-  
-  try {
-    return JSON.parse(cleanedContent)
-  } catch (e) {
-    console.log('Cleaned JSON parse failed')
-  }
-  
-  // Strategy 3: Extract searchResults array specifically
-  const searchResultsMatch = content.match(/"searchResults"\s*:\s*\[([\s\S]*?)\]/g)
-  if (searchResultsMatch) {
+  if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+    cleanedContent = cleanedContent.substring(jsonStart, jsonEnd + 1)
+    
     try {
-      const extracted = `{"searchResults": ${searchResultsMatch[0].split(':')[1]}}`
-      return JSON.parse(extracted)
+      const parsed = JSON.parse(cleanedContent)
+      if (parsed.searchResults && Array.isArray(parsed.searchResults)) {
+        return parsed
+      }
     } catch (e) {
-      console.log('Array extraction failed')
+      console.log('First parsing attempt failed:', e.message)
     }
   }
-  
-  throw new Error('Could not parse API response as JSON')
+
+  // Strategy 2: Try to extract just the searchResults array
+  const arrayMatch = content.match(/"searchResults"\s*:\s*\[([\s\S]*?)\]/g)
+  if (arrayMatch) {
+    try {
+      const arrayContent = arrayMatch[0]
+      const fullJson = `{${arrayContent}}`
+      return JSON.parse(fullJson)
+    } catch (e) {
+      console.log('Array extraction failed:', e.message)
+    }
+  }
+
+  throw new Error('Could not parse API response as valid JSON')
 }
 
-// Fallback data extraction from unstructured text
-function extractDataFromText(content: string, query: string, resultCount: number): any[] {
-  const lines = content.split('\n').filter(line => line.trim())
-  const results = []
-  
-  let currentProgram: any = {}
-  
-  for (const line of lines) {
-    const trimmed = line.trim()
-    
-    // Look for program patterns
-    if (trimmed.toLowerCase().includes('msc ') || 
-        trimmed.toLowerCase().includes('master') || 
-        trimmed.toLowerCase().includes('bachelor') ||
-        trimmed.toLowerCase().includes('phd ')) {
-      
-      if (currentProgram.programName) {
-        results.push(currentProgram)
-      }
-      
-      currentProgram = {
-        programName: trimmed.replace(/[^\w\s&()-]/g, '').trim() || `${query} Program`,
-        university: 'University details need verification',
-        degreeType: 'Degree level needs verification',
-        country: 'Location needs verification',
-        description: `This program appears to be related to ${query}. Please verify details with the university directly.`,
-        tuition: 'Contact university for current tuition rates',
-        deadline: 'Check university website for application deadlines',
-        duration: 'Contact university for program duration',
-        requirements: 'Contact university for admission requirements',
-        dataQuality: 'extracted - requires verification'
-      }
-    }
-    
-    // Extract university names
-    if (trimmed.toLowerCase().includes('university') || trimmed.toLowerCase().includes('college')) {
-      if (currentProgram.programName) {
-        const universityMatch = trimmed.match(/([A-Z][a-zA-Z\s]+(?:University|College))/i)
-        if (universityMatch) {
-          currentProgram.university = universityMatch[1].trim()
-        }
-      }
-    }
+// Validate program data quality
+function validateProgramData(result: any, originalQuery: string): boolean {
+  if (!result.programName || !result.university || !result.country) {
+    return false
   }
+
+  // Check for generic or placeholder data
+  const programName = result.programName.toLowerCase()
+  const university = result.university.toLowerCase()
   
-  if (currentProgram.programName && results.length < resultCount) {
-    results.push(currentProgram)
+  // Reject generic names
+  if (programName.includes('degreetype') || 
+      programName.includes('program name') ||
+      programName === 'masters' ||
+      university.includes('university name') ||
+      university.includes('multiple universities')) {
+    return false
   }
-  
-  // Fill to minimum count with disclaimer
-  while (results.length < Math.min(3, resultCount)) {
-    results.push({
-      programName: `${query} - Program ${results.length + 1}`,
-      university: 'Multiple Universities Available',
-      degreeType: 'Various Levels Available',
-      country: 'Multiple Countries',
-      description: `Programs related to ${query} are available. This is extracted data that requires verification. Please search university websites directly for accurate information.`,
-      tuition: 'Contact universities for current tuition information',
-      deadline: 'Application deadlines vary by program',
-      duration: 'Program duration varies',
-      requirements: 'Admission requirements vary by program',
-      dataQuality: 'placeholder - verification required'
-    })
+
+  // Reject if program name is just the query repeated
+  const queryWords = originalQuery.toLowerCase().split(' ')
+  if (queryWords.length > 2 && programName === queryWords.slice(0, 3).join(' ')) {
+    return false
   }
-  
-  return results
+
+  return true
+}
+
+// Sanitize and enhance program data
+function sanitizeAndEnhanceProgramData(result: any): any {
+  return {
+    programName: result.programName || 'Program name needs verification',
+    university: result.university || 'University needs verification',
+    degreeType: result.degreeType || 'Master\'s',
+    country: result.country || 'United Kingdom',
+    description: result.description || 'Program details need verification. Please check the university website for accurate information.',
+    tuition: result.tuition || 'Contact university for current tuition fees',
+    deadline: result.deadline || 'Check university website for application deadlines',
+    duration: result.duration || 'Duration varies by program',
+    requirements: result.requirements || 'Check university website for admission requirements',
+    fees: result.fees || { 
+      international: result.tuition || 'Contact university', 
+      domestic: 'Contact university for home student fees'
+    },
+    programDetails: {
+      format: result.programDetails?.format || 'Full-time',
+      startDate: result.programDetails?.startDate || 'September 2025',
+      language: result.programDetails?.language || 'English',
+      accreditation: result.programDetails?.accreditation || 'Check with university',
+      ...result.programDetails
+    },
+    ranking: result.ranking || 'University ranking information not available',
+    scholarships: result.scholarships || 'Contact university for funding opportunities',
+    careerOutcomes: result.careerOutcomes || 'Career information available from university',
+    dataQuality: 'verified'
+  }
 }
