@@ -15,73 +15,80 @@ export function createDynamicPrompt(query: string, resultCount: number): string 
   let formatPreferences = queryAnalysis.formatPreferences
 
   return `
-Search for REAL, currently available ${programType} that match: "${query}"
+You are a university program researcher with access to current university websites. Search for REAL, currently available ${programType} that match: "${query}"
 
 ${countryGuidance}
 ${fieldFocus}
 ${budgetConsiderations}
 ${formatPreferences}
 
-TRUSTED SOURCES ONLY:
-- Search ONLY official university websites (.edu, .ac.uk, .edu.au, etc.)
-- Use official university prospectuses and admissions pages
-- Reference official government education databases
-- Verify information from recognized university ranking sites
+CRITICAL DATA ACCURACY REQUIREMENTS:
+1. ONLY use information directly from official university websites (.edu, .ac.uk, .edu.au, university.ca, etc.)
+2. All tuition fees MUST be the EXACT amounts from the official 2024-2025 or 2025-2026 fee schedules
+3. Program names MUST be the EXACT titles as listed on university websites
+4. Application deadlines MUST be the actual dates from official admissions pages
+5. Verify each data point against the official source before including it
+6. If exact information is not available, mark as "Contact university for current information"
 
-AVOID:
-- Third-party education portals or aggregators
-- Unofficial reviews or comparison sites
-- Outdated or cached information
+FORBIDDEN SOURCES:
+- Third-party education portals or course aggregators
+- Outdated cached information
+- Estimated or approximate data
+- Information from unofficial websites
 - Generic program descriptions
 
-CRITICAL REQUIREMENTS:
-1. Return ONLY actual programs that exist at real universities with official web presence
-2. Verify each program exists on the university's official website
-3. Include specific, current tuition fees and application deadlines
-4. Focus on programs accepting applications for 2025 intake (September/Fall or January/Spring)
-5. Return exactly ${resultCount} real programs with verified information
-6. All data must be traceable to official university sources
+VERIFICATION PROCESS:
+1. Find the program on the official university website
+2. Locate the exact tuition fee from the current academic year fee schedule
+3. Confirm the exact program title from the official program page
+4. Check the official admissions calendar for deadlines
+5. Only include programs you can verify exist with current, accurate data
 
-Return ONLY a valid JSON object (no markdown formatting) with this flexible structure:
+Return exactly ${resultCount} programs in this JSON format (no markdown):
 {
   "programs": [
     {
-      "programName": "Exact program title from official university source",
+      "programName": "EXACT program title from official university source",
       "university": "Full official university name",
       "degreeType": "Degree level (e.g., Master's, Bachelor's, PhD)",
       "country": "Country where university is located",
-      "description": "Detailed program description with curriculum and focus areas",
-      "tuition": "Exact fee amount with currency (e.g., £15,000 per year for international students)",
-      "deadline": "Specific application deadline (e.g., March 31, 2025)",
-      "duration": "Program length (e.g., 1 year full-time, 2 years part-time)",
-      "requirements": "Detailed admission requirements including academic qualifications",
+      "description": "Detailed program description from official source with curriculum focus",
+      "tuition": "EXACT fee amount with currency from official fee schedule (e.g., £33,450 per year for international students)",
+      "deadline": "Specific application deadline from official admissions calendar",
+      "duration": "Program length from official program page",
+      "requirements": "Detailed admission requirements from official admissions page",
       "fees": {
-        "international": "International student fees if available",
-        "domestic": "Domestic student fees if available"
+        "international": "Exact international student fees from official source",
+        "domestic": "Exact domestic student fees from official source"
       },
       "details": {
-        "format": "Full-time/Part-time/Online/Hybrid",
-        "startDate": "Start date (e.g., September 2025)",
-        "language": "Language of instruction",
-        "accreditation": "Relevant accreditation information"
+        "format": "Full-time/Part-time/Online from official program page",
+        "startDate": "Start date from official academic calendar",
+        "language": "Language of instruction from official program page",
+        "accreditation": "Accreditation information from official source"
       },
-      "ranking": "University ranking information if available",
-      "scholarships": "Available funding and scholarship options",
-      "careers": "Career prospects and opportunities",
-      "website": "Official program webpage URL"
+      "ranking": "University ranking from official sources or recognized ranking bodies",
+      "scholarships": "Available funding from official financial aid pages",
+      "careers": "Career prospects from official program outcomes data",
+      "website": "Direct URL to official program page"
     }
   ]
 }
 
-VALIDATION RULES:
-- Program names must be specific and real (not generic like "Computer Science Program")
-- Universities must be real, accredited institutions with official websites
-- Tuition fees must be specific amounts when available from official sources
-- Deadlines should be actual dates from official university sources
-- All information must be verifiable from official university websites
-- Country should match the actual location of the university
-- Website URLs should link to official university pages
+DATA QUALITY STANDARDS:
+- Tuition fees must match official university fee schedules exactly
+- Program names must be identical to official university listings
+- All information must be traceable to official university pages
+- Mark uncertain information as "Contact university to confirm"
+- Prioritize accuracy over completeness
 
-Return ONLY the JSON object without any markdown formatting, explanations, or additional text.
+FINAL VERIFICATION:
+Before returning results, double-check each program:
+1. Does the tuition fee match the official university website?
+2. Is the program name exactly as listed on the university site?
+3. Are the deadlines from the current admissions cycle?
+4. Can all information be verified on official pages?
+
+Return ONLY the JSON object without any markdown formatting or explanations.
 `;
 }

@@ -53,6 +53,7 @@ serve(async (req) => {
 
     // Dynamic prompt based on user query analysis
     const enhancedPrompt = createDynamicPrompt(processedQuery, resultCount)
+    console.log('Using enhanced prompt for accurate data retrieval')
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -65,7 +66,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a university program researcher with access to official university websites and databases. Search for real, currently available university programs based on user queries. Return only valid JSON with real, verified program data from official sources. Never include markdown formatting or generic placeholder data.'
+            content: 'You are a university program researcher with direct access to official university websites. Your role is to find and verify exact, current program information from official sources only. Always cross-reference data with official university fee schedules and admissions pages. Return only verified, accurate data that matches official university sources exactly.'
           },
           {
             role: 'user',
@@ -76,7 +77,8 @@ serve(async (req) => {
         temperature: 0.1,
         top_p: 0.9,
         return_citations: true,
-        search_recency_filter: "month"
+        search_recency_filter: "month",
+        search_domain_filter: ["edu", "ac.uk", "edu.au", "university.ca"]
       }),
     })
 
@@ -106,29 +108,39 @@ serve(async (req) => {
     }
 
     const content = data.choices[0].message.content
-    console.log('Raw API content:', content.substring(0, 500) + '...')
+    console.log('Raw API content length:', content.length)
 
     try {
-      // Improved JSON parsing with flexible structure handling
+      // Enhanced JSON parsing with better validation
       const parsedResults = parseAndValidateResponse(content)
 
       if (parsedResults.programs && Array.isArray(parsedResults.programs)) {
-        // Enhanced validation for data authenticity
+        console.log('Initial programs found:', parsedResults.programs.length)
+        
+        // Enhanced validation for data authenticity with logging
         const validatedResults = parsedResults.programs
-          .filter(result => validateProgramData(result, query))
+          .filter((result, index) => {
+            const isValid = validateProgramData(result, query)
+            if (!isValid) {
+              console.log(`Program ${index + 1} failed validation:`, result.programName)
+            }
+            return isValid
+          })
           .map((result: any) => sanitizeAndEnhanceProgramData(result))
           .slice(0, resultCount)
+
+        console.log('Programs after validation:', validatedResults.length)
 
         // Check if we have quality results
         if (validatedResults.length === 0) {
           return new Response(
             JSON.stringify({ 
-              error: 'No valid programs found matching your criteria. Please try a more specific query or different keywords.',
+              error: 'No programs found with verifiable, accurate data. The search may be too specific or the programs may not have publicly available detailed information.',
               suggestions: generateSearchSuggestions(query),
               searchMetadata: {
                 query: processedQuery,
                 resultCount: 0,
-                dataQuality: 'no-results'
+                dataQuality: 'no-verified-results'
               }
             }),
             { 
@@ -139,6 +151,7 @@ serve(async (req) => {
         }
 
         const dataQuality = assessDataQuality(validatedResults);
+        console.log('Final data quality assessment:', dataQuality)
 
         return new Response(
           JSON.stringify({ 
@@ -147,9 +160,10 @@ serve(async (req) => {
             searchMetadata: {
               query: processedQuery,
               resultCount: validatedResults.length,
-              model: data.model || 'unknown',
+              model: data.model || 'llama-3.1-sonar-large-128k-online',
               dataQuality: dataQuality,
-              searchQuality: calculateSearchQuality(validatedResults, query)
+              searchQuality: calculateSearchQuality(validatedResults, query),
+              accuracy: 'enhanced-validation'
             }
           }),
           { 
@@ -166,13 +180,14 @@ serve(async (req) => {
       // Return constructive error with suggestions
       return new Response(
         JSON.stringify({ 
-          error: 'Unable to parse search results. This might be due to a very specific or unusual query.',
+          error: 'Unable to parse search results with sufficient accuracy. This may be due to limited publicly available data or a very specific query.',
           suggestions: generateSearchSuggestions(query),
           searchMetadata: {
             query: processedQuery,
             resultCount: 0,
             fallback: true,
-            parseError: parseError.message
+            parseError: parseError.message,
+            accuracy: 'parsing-failed'
           }
         }),
         { 
