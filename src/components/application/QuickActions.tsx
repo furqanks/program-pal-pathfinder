@@ -31,7 +31,7 @@ const QuickActions = ({ onAddProgram, onViewNotes }: QuickActionsProps) => {
       title: "Discover Programs",
       description: "Find programs that match your profile",
       onClick: () => navigate("/search"),
-      color: "bg-blue-50 text-blue-600 hover:bg-blue-100",
+      color: "bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200",
       priority: "high"
     },
     {
@@ -39,7 +39,7 @@ const QuickActions = ({ onAddProgram, onViewNotes }: QuickActionsProps) => {
       title: "Add to Shortlist",
       description: "Add a program to track",
       onClick: onAddProgram || (() => {}),
-      color: "bg-purple-50 text-purple-600 hover:bg-purple-100",
+      color: "bg-purple-50 text-purple-600 hover:bg-purple-100 border-purple-200",
       priority: "high"
     },
     {
@@ -47,7 +47,7 @@ const QuickActions = ({ onAddProgram, onViewNotes }: QuickActionsProps) => {
       title: "Write Essays",
       description: "Create application documents",
       onClick: () => navigate("/documents"),
-      color: "bg-green-50 text-green-600 hover:bg-green-100",
+      color: "bg-green-50 text-green-600 hover:bg-green-100 border-green-200",
       priority: "high"
     },
     {
@@ -55,7 +55,7 @@ const QuickActions = ({ onAddProgram, onViewNotes }: QuickActionsProps) => {
       title: "My Notes",
       description: "View and manage notes",
       onClick: onViewNotes || (() => {}),
-      color: "bg-yellow-50 text-yellow-600 hover:bg-yellow-100",
+      color: "bg-yellow-50 text-yellow-600 hover:bg-yellow-100 border-yellow-200",
       priority: "high"
     },
     {
@@ -63,7 +63,7 @@ const QuickActions = ({ onAddProgram, onViewNotes }: QuickActionsProps) => {
       title: "US Universities",
       description: "Search US college database",
       onClick: () => navigate("/us-search"),
-      color: "bg-indigo-50 text-indigo-600 hover:bg-indigo-100",
+      color: "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border-indigo-200",
       priority: "medium"
     },
     {
@@ -71,7 +71,7 @@ const QuickActions = ({ onAddProgram, onViewNotes }: QuickActionsProps) => {
       title: "Check Deadlines",
       description: "View upcoming deadlines",
       onClick: () => {}, // Will scroll to deadlines section
-      color: "bg-red-50 text-red-600 hover:bg-red-100",
+      color: "bg-red-50 text-red-600 hover:bg-red-100 border-red-200",
       priority: "medium"
     },
     {
@@ -79,7 +79,7 @@ const QuickActions = ({ onAddProgram, onViewNotes }: QuickActionsProps) => {
       title: "Track Progress",
       description: "View application analytics",
       onClick: () => navigate("/insights"),
-      color: "bg-orange-50 text-orange-600 hover:bg-orange-100",
+      color: "bg-orange-50 text-orange-600 hover:bg-orange-100 border-orange-200",
       priority: "medium"
     }
   ];
@@ -90,40 +90,38 @@ const QuickActions = ({ onAddProgram, onViewNotes }: QuickActionsProps) => {
     : actions;
 
   return (
-    <Card>
-      <CardHeader className={isMobile ? "pb-3 px-4" : ""}>
-        <CardTitle className={isMobile ? "text-lg" : "text-lg flex items-center gap-2"}>
-          <Target className="h-5 w-5" />
+    <Card className="shadow-sm">
+      <CardHeader className={cn("pb-4", isMobile ? "px-4 pt-4" : "px-6 pt-6")}>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Target className="h-5 w-5 text-primary" />
           Quick Actions
         </CardTitle>
       </CardHeader>
-      <CardContent className={isMobile ? "px-4" : ""}>
+      <CardContent className={cn(isMobile ? "px-4 pb-4" : "px-6 pb-6")}>
         <div className={cn(
           "grid gap-3",
-          isMobile ? "grid-cols-2" : "grid-cols-2 md:grid-cols-3"
+          isMobile ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         )}>
           {displayActions.map((action, index) => (
             <Button
               key={index}
-              variant="ghost"
+              variant="outline"
               className={cn(
-                "flex flex-col items-center gap-2 text-center justify-start",
+                "h-auto p-4 flex flex-col items-center gap-3 text-center justify-start transition-all duration-200",
                 action.color,
-                isMobile ? "h-auto p-3" : "h-auto p-3"
+                "hover:shadow-md hover:scale-105",
+                isMobile ? "min-h-[100px]" : "min-h-[120px]"
               )}
               onClick={action.onClick}
             >
-              <action.icon className={isMobile ? "h-5 w-5" : "h-5 w-5"} />
-              <div className="text-center">
-                <div className={cn(
-                  "font-medium",
-                  isMobile ? "text-xs" : "text-xs"
-                )}>
+              <action.icon className="h-6 w-6 shrink-0" />
+              <div className="text-center space-y-1">
+                <div className="font-medium text-sm leading-tight">
                   {action.title}
                 </div>
                 <div className={cn(
-                  "opacity-75",
-                  isMobile ? "text-xs mt-1" : "text-xs hidden md:block"
+                  "text-xs opacity-75 leading-tight",
+                  isMobile ? "line-clamp-2" : ""
                 )}>
                   {action.description}
                 </div>
@@ -134,10 +132,10 @@ const QuickActions = ({ onAddProgram, onViewNotes }: QuickActionsProps) => {
         {isMobile && (
           <div className="mt-4 text-center">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => navigate("/insights")}
-              className="text-xs"
+              className="text-xs text-muted-foreground hover:text-primary"
             >
               <TrendingUp className="h-3 w-3 mr-1" />
               View All Features
