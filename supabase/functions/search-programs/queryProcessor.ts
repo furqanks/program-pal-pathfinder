@@ -5,6 +5,13 @@ export function enhanceQuery(originalQuery: string): string {
   const query = originalQuery.toLowerCase().trim()
   const enhancements = []
   
+  // Budget-related enhancements - prioritize these
+  if (query.includes('budget') || query.includes('affordable') || 
+      query.includes('cheap') || query.includes('low cost') ||
+      query.includes('inexpensive') || query.includes('economical')) {
+    enhancements.push('affordable tuition', 'low cost programs', 'budget-friendly options', 'scholarships available', 'public universities', 'lower fees')
+  }
+  
   // Academic level enhancements
   if (query.includes('master') && !query.includes('mres')) {
     enhancements.push('postgraduate', 'graduate degree')
@@ -45,11 +52,6 @@ export function enhanceQuery(originalQuery: string): string {
     enhancements.push('highly ranked', 'prestigious', 'accredited')
   }
 
-  // Budget considerations
-  if (query.includes('budget') || query.includes('affordable')) {
-    enhancements.push('scholarships available', 'financial assistance')
-  }
-
   const enhancedQuery = `${originalQuery} ${enhancements.join(' ')}`
   return enhancedQuery.substring(0, 500)
 }
@@ -60,8 +62,13 @@ export function analyzeQuery(query: string): any {
     countryGuidance: '',
     fieldFocus: '',
     budgetConsiderations: '',
-    formatPreferences: ''
+    formatPreferences: '',
+    isBudgetFocused: false
   }
+
+  // Detect budget focus - this is crucial for filtering
+  const budgetTerms = ['budget', 'affordable', 'cheap', 'low cost', 'inexpensive', 'economical', 'budget-friendly']
+  analysis.isBudgetFocused = budgetTerms.some(term => query.includes(term))
 
   // Detect program type
   if (query.includes('mres') || query.includes('masters by research')) {
@@ -104,9 +111,9 @@ export function analyzeQuery(query: string): any {
     analysis.fieldFocus = 'FIELD FOCUS: Data Science, Analytics, and related quantitative programs.'
   }
 
-  // Detect budget considerations
-  if (query.includes('budget') || query.includes('affordable') || query.includes('cheap') || query.includes('low cost')) {
-    analysis.budgetConsiderations = 'BUDGET PRIORITY: Emphasize affordable options, scholarships, and funding opportunities. Include public universities and programs with lower tuition fees.'
+  // Enhanced budget considerations
+  if (analysis.isBudgetFocused) {
+    analysis.budgetConsiderations = 'CRITICAL BUDGET PRIORITY: Prioritize affordable options, public universities, and programs with lower tuition fees. EXCLUDE expensive private universities and premium programs. Focus on value-for-money options with good career outcomes relative to cost. Include detailed scholarship and financial aid information.'
   } else if (query.includes('funding') || query.includes('scholarship') || query.includes('financial aid')) {
     analysis.budgetConsiderations = 'FUNDING FOCUS: Highlight available scholarships, grants, and financial aid options for each program.'
   }

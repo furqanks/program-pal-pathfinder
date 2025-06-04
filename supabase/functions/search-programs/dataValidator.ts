@@ -1,4 +1,5 @@
-// Enhanced data validation and quality assessment utilities with relaxed validation
+
+// Enhanced data validation and quality assessment utilities with budget awareness
 
 export function validateProgramData(result: any, originalQuery: string): boolean {
   if (!result.programName || !result.university || !result.degreeType) {
@@ -9,6 +10,64 @@ export function validateProgramData(result: any, originalQuery: string): boolean
   const programName = result.programName.toLowerCase()
   const university = result.university.toLowerCase()
   const tuition = result.tuition ? result.tuition.toLowerCase() : ''
+  const query = originalQuery.toLowerCase()
+  
+  // Check if this is a budget-focused search
+  const isBudgetSearch = ['budget', 'affordable', 'cheap', 'low cost', 'inexpensive', 'economical'].some(term => 
+    query.includes(term)
+  )
+  
+  // Budget-focused validation
+  if (isBudgetSearch && result.tuition) {
+    // Extract numeric value from tuition string
+    const tuitionMatch = result.tuition.match(/[\d,]+/)
+    if (tuitionMatch) {
+      const tuitionAmount = parseInt(tuitionMatch[0].replace(/,/g, ''))
+      
+      // Define budget thresholds (adjust based on currency detection)
+      let threshold = 35000 // USD default
+      if (result.tuition.includes('£')) threshold = 25000 // GBP
+      if (result.tuition.includes('€')) threshold = 30000 // EUR
+      if (result.tuition.includes('₹')) threshold = 2000000 // INR
+      if (result.tuition.includes('C$')) threshold = 45000 // CAD
+      if (result.tuition.includes('A$')) threshold = 45000 // AUD
+      
+      if (tuitionAmount > threshold) {
+        // Only allow expensive programs if they have exceptional financial aid
+        const hasGoodFinancialAid = result.scholarships && 
+          (result.scholarships.includes('full tuition') || 
+           result.scholarships.includes('substantial aid') ||
+           result.scholarships.includes('merit scholarship'))
+        
+        if (!hasGoodFinancialAid) {
+          console.log('Budget search: Rejecting expensive program without good financial aid:', result.programName, result.tuition);
+          return false
+        }
+      }
+    }
+    
+    // Reject obviously elite/expensive universities for budget searches
+    const expensiveUniversityIndicators = [
+      'harvard', 'stanford', 'mit', 'oxford', 'cambridge', 'yale', 'princeton',
+      'imperial college', 'london school of economics', 'columbia university',
+      'university of pennsylvania', 'dartmouth', 'brown university'
+    ]
+    
+    for (const indicator of expensiveUniversityIndicators) {
+      if (university.includes(indicator)) {
+        // Only allow if there's specific mention of financial aid
+        const hasFinancialAidMention = result.scholarships && 
+          (result.scholarships.includes('need-based aid') || 
+           result.scholarships.includes('full funding') ||
+           result.scholarships.includes('fellowship'))
+        
+        if (!hasFinancialAidMention) {
+          console.log('Budget search: Rejecting elite university without financial aid mention:', result.university);
+          return false
+        }
+      }
+    }
+  }
   
   // Only reject obviously generic or placeholder data
   const genericIndicators = [
