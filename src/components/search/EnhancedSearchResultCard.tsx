@@ -17,7 +17,11 @@ import {
   Plus,
   Languages,
   Building,
-  TrendingUp
+  TrendingUp,
+  ExternalLink,
+  AlertTriangle,
+  Shield,
+  Info
 } from "lucide-react";
 import { SearchResult } from "@/contexts/PerplexityContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
@@ -41,11 +45,11 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
         university: result.university,
         degreeType: result.degreeType,
         country: result.country,
-        tuition: result.tuition || result.fees?.international || result.fees?.domestic || '',
+        tuition: result.feeRange || result.tuition || '',
         deadline: result.deadline || '',
         statusTagId: 'status-considering',
         customTagIds: [],
-        notes: `Added from search results.\n\nProgram Details:\n${result.description}\n\n${
+        notes: `Added from search results.\n\nFee Category: ${result.feeCategory || 'Not specified'}\nData Confidence: ${result.dataQuality?.confidence || 'Unknown'}\n\nProgram Details:\n${result.description}\n\n${
           result.requirements ? `Requirements: ${result.requirements}\n` : ''
         }${
           result.duration ? `Duration: ${result.duration}\n` : ''
@@ -55,7 +59,7 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           result.scholarships ? `Scholarships: ${result.scholarships}\n` : ''
         }${
           result.careerOutcomes ? `Career Outcomes: ${result.careerOutcomes}\n` : ''
-        }`,
+        }\nVerify all details with university before applying.`,
       });
       toast.success(`${result.programName} added to your shortlist!`);
     } catch (error) {
@@ -69,6 +73,14 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
     const searchQuery = `"${result.programName}" "${result.university}" ${result.country} admissions 2025`
     const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`
     window.open(googleUrl, '_blank')
+  };
+
+  const handleVisitFeesPage = () => {
+    if (result.feesPageUrl) {
+      window.open(result.feesPageUrl, '_blank')
+    } else if (result.website) {
+      window.open(result.website, '_blank')
+    }
   };
 
   // Helper function to format application deadlines nicely
@@ -95,18 +107,47 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
     return deadline;
   };
 
-  // Get confidence level styling
-  const getConfidenceBadge = () => {
-    const confidence = (result as any).confidenceScore || 50;
-    const quality = (result as any).dataQuality || 'moderate';
+  // Get fee category styling
+  const getFeeCategoryBadge = () => {
+    const category = (result.feeCategory || '').toLowerCase();
     
-    if (confidence >= 80) return { variant: "default" as const, text: "High Confidence", color: "text-green-600" };
-    if (confidence >= 60) return { variant: "secondary" as const, text: "Good Data", color: "text-blue-600" };
-    if (confidence >= 40) return { variant: "outline" as const, text: "Verify Details", color: "text-amber-600" };
-    return { variant: "outline" as const, text: "Needs Verification", color: "text-red-600" };
+    switch (category) {
+      case 'budget-friendly':
+        return { variant: "default" as const, text: "Budget-Friendly", color: "text-green-600 bg-green-50" };
+      case 'mid-range':
+        return { variant: "secondary" as const, text: "Mid-Range", color: "text-blue-600 bg-blue-50" };
+      case 'premium':
+        return { variant: "outline" as const, text: "Premium", color: "text-purple-600 bg-purple-50" };
+      case 'luxury':
+        return { variant: "outline" as const, text: "Luxury", color: "text-red-600 bg-red-50" };
+      case 'contact university':
+        return { variant: "outline" as const, text: "Contact University", color: "text-gray-600 bg-gray-50" };
+      default:
+        return { variant: "outline" as const, text: "Verify Fees", color: "text-amber-600 bg-amber-50" };
+    }
   };
 
+  // Get confidence level styling
+  const getConfidenceBadge = () => {
+    const confidence = (result.dataQuality?.confidence || '').toLowerCase();
+    
+    switch (confidence) {
+      case 'high':
+        return { variant: "default" as const, text: "High Confidence", color: "text-green-600", icon: Shield };
+      case 'good':
+        return { variant: "secondary" as const, text: "Good Data", color: "text-blue-600", icon: TrendingUp };
+      case 'moderate':
+        return { variant: "outline" as const, text: "Verify Details", color: "text-amber-600", icon: Info };
+      case 'low':
+        return { variant: "outline" as const, text: "Needs Verification", color: "text-red-600", icon: AlertTriangle };
+      default:
+        return { variant: "outline" as const, text: "Unknown Quality", color: "text-gray-600", icon: Info };
+    }
+  };
+
+  const feeBadge = getFeeCategoryBadge();
   const confidenceBadge = getConfidenceBadge();
+  const ConfidenceIcon = confidenceBadge.icon;
 
   return (
     <Card className="h-full hover:shadow-lg transition-shadow duration-300">
@@ -143,8 +184,8 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Data Quality Indicator */}
-        <div className="flex items-center justify-between">
+        {/* Data Quality and Fee Category Indicators */}
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="flex items-center gap-1">
               <BookOpen className="h-3 w-3" />
@@ -155,10 +196,12 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
               {result.country}
             </Badge>
           </div>
-          <Badge variant={confidenceBadge.variant} className={`flex items-center gap-1 ${confidenceBadge.color}`}>
-            <TrendingUp className="h-3 w-3" />
-            {confidenceBadge.text}
-          </Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant={confidenceBadge.variant} className={`flex items-center gap-1 ${confidenceBadge.color}`}>
+              <ConfidenceIcon className="h-3 w-3" />
+              {confidenceBadge.text}
+            </Badge>
+          </div>
         </div>
 
         {/* Additional Format/Language Badges */}
@@ -179,18 +222,53 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           </div>
         )}
 
-        {/* Key Details Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {result.tuition && (
+        {/* Enhanced Fee Information with Category */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm">
               <DollarSign className="h-4 w-4 text-green-600" />
               <div>
-                <div className="font-medium">Tuition</div>
-                <div className="text-muted-foreground">{result.tuition}</div>
+                <div className="font-medium">Tuition Category</div>
+                <Badge className={feeBadge.color} variant={feeBadge.variant}>
+                  {feeBadge.text}
+                </Badge>
               </div>
             </div>
+            {result.feesPageUrl && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleVisitFeesPage}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Visit official fees page</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+          
+          {result.feeRange && (
+            <div className="text-sm text-muted-foreground pl-6">
+              <span className="font-medium">Estimated Range:</span> {result.feeRange}
+            </div>
           )}
+          
+          <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border-l-4 border-amber-200">
+            <AlertTriangle className="h-3 w-3 inline mr-1" />
+            Always verify current fees with the university before applying
+          </div>
+        </div>
 
+        {/* Key Details Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {result.deadline && (
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="h-4 w-4 text-red-600" />
@@ -280,8 +358,8 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           </div>
         )}
 
-        {/* Google Search Button */}
-        <div className="pt-2">
+        {/* Action Buttons */}
+        <div className="pt-2 space-y-2">
           <Button
             variant="outline"
             size="sm"
@@ -291,6 +369,18 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
             <Search className="h-4 w-4 mr-2" />
             Verify on Google
           </Button>
+          
+          {result.feesPageUrl && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={handleVisitFeesPage}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Official Fees Page
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

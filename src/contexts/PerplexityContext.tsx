@@ -9,18 +9,24 @@ export type SearchResult = {
   degreeType: string;
   country: string;
   description: string;
-  // Enhanced fields for better data capture
-  tuition?: string;
+  // Enhanced fee structure with categories
+  feeCategory?: string; // "Budget-friendly", "Mid-range", "Premium", "Luxury", "Contact University"
+  feeRange?: string; // Estimated range instead of exact amount
+  tuition?: string; // For backward compatibility
   deadline?: string;
   applicationDeadline?: string;
   duration?: string;
   requirements?: string;
   fees?: {
+    category?: string;
+    estimatedRange?: string;
     domestic?: string;
     international?: string;
     eu?: string;
+    note?: string;
   };
   website?: string;
+  feesPageUrl?: string; // Direct link to university fees page
   admissionRequirements?: string[];
   programDetails?: {
     credits?: string;
@@ -30,7 +36,13 @@ export type SearchResult = {
     coursework?: string[];
     accreditation?: string;
   };
-  // Additional structured fields
+  // Enhanced quality assessment fields
+  dataQuality?: {
+    confidence?: string; // "High", "Good", "Moderate", "Low"
+    lastUpdated?: string;
+    sourceType?: string; // "Official website", "Educational directory", "Third party"
+  };
+  confidenceScore?: number;
   ranking?: string;
   accreditation?: string;
   scholarships?: string;
@@ -43,9 +55,6 @@ export type SearchResult = {
   careerOutcomes?: string;
   researchOpportunities?: string;
   applicationProcess?: string;
-  // New quality assessment fields
-  dataQuality?: string;
-  confidenceScore?: number;
 };
 
 type SearchMetadata = {
@@ -56,6 +65,7 @@ type SearchMetadata = {
   dataQuality?: string;
   searchQuality?: number;
   accuracy?: string;
+  feeAccuracyNote?: string;
 };
 
 type PerplexityContextType = {
@@ -80,11 +90,17 @@ export const usePerplexityContext = () => {
 const parseStructuredData = (description: string): Partial<SearchResult>=> {
   const parsed: Partial<SearchResult> = {};
   
-  // Extract tuition/fees information (more permissive)
-  const tuitionMatch = description.match(/(?:tuition|fees?|cost)[:\s]*([£$€¥₹]?[\d,]+(?:\.\d{2})?[\/\s]*(?:per\s+)?(?:year|semester|term|annum)?)/i);
-  if (tuitionMatch) {
-    parsed.tuition = tuitionMatch[1].trim();
-  }
+  // Extract fee information (more conservative approach)
+  const feePatterns = [
+    /(?:fees?|tuition|cost)[:\s]*([£$€¥₹]?[\d,]+(?:\.\d{2})?[\s\-to]*[£$€¥₹]?[\d,]*(?:\.\d{2})?[\/\s]*(?:per\s+)?(?:year|semester|term|annum)?)/i
+  ];
+  
+  feePatterns.forEach(pattern => {
+    const match = description.match(pattern);
+    if (match && !parsed.feeRange) {
+      parsed.feeRange = match[1].trim();
+    }
+  });
   
   // Extract deadline information
   const deadlineMatch = description.match(/(?:deadline|apply\s+by|application\s+due|applications\s+close)[:\s]*([a-zA-Z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{1,2}\s+[a-zA-Z]+\s+\d{4})/i);
@@ -177,48 +193,68 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data && data.searchResults && Array.isArray(data.searchResults)) {
-        // Enhanced data processing with structure parsing
+        // Enhanced data processing with fee category validation
         const enhancedResults = data.searchResults.map((result: SearchResult) => {
           const parsedData = parseStructuredData(result.description);
+          
+          // Ensure fee category is set
+          if (!result.feeCategory && result.tuition) {
+            // Try to categorize based on existing tuition data
+            const tuitionStr = result.tuition.toLowerCase();
+            if (tuitionStr.includes('budget') || tuitionStr.includes('affordable')) {
+              result.feeCategory = 'Budget-friendly';
+            } else if (tuitionStr.includes('premium') || tuitionStr.includes('expensive')) {
+              result.feeCategory = 'Premium';
+            } else {
+              result.feeCategory = 'Contact University';
+            }
+          }
+          
           return {
             ...result,
             ...parsedData,
-            // Ensure we don't override existing structured data with parsed data
-            tuition: result.tuition || parsedData.tuition,
+            // Preserve structured data from API over parsed data
+            feeCategory: result.feeCategory || 'Contact University',
+            feeRange: result.feeRange || parsedData.feeRange || 'Contact university for fees',
+            tuition: result.feeCategory ? `${result.feeCategory} - ${result.feeRange || 'Verify with university'}` : result.tuition,
             deadline: result.deadline || parsedData.deadline,
             duration: result.duration || parsedData.duration,
             website: result.website || parsedData.website,
             requirements: result.requirements || parsedData.requirements,
+            feesPageUrl: result.feesPageUrl || result.website,
             programDetails: {
               ...parsedData.programDetails,
               ...result.programDetails
+            },
+            dataQuality: {
+              confidence: result.dataQuality?.confidence || 'Moderate',
+              lastUpdated: result.dataQuality?.lastUpdated || 'Unknown',
+              sourceType: result.dataQuality?.sourceType || 'Educational directory',
+              ...result.dataQuality
+            },
+            fees: {
+              category: result.feeCategory || 'Contact University',
+              estimatedRange: result.feeRange || 'Contact university',
+              note: 'Always verify current fees with university',
+              ...result.fees
             }
           };
         });
         
         setSearchResults(enhancedResults);
         
-        // Store search metadata if available
-        if (data.searchMetadata) {
-          setSearchMetadata(data.searchMetadata);
-        } else {
-          setSearchMetadata({
-            query: query,
-            resultCount: enhancedResults.length
-          });
-        }
+        // Store enhanced search metadata
+        const metadata: SearchMetadata = {
+          query: query,
+          resultCount: enhancedResults.length,
+          feeAccuracyNote: 'Fee information shown as categories - always verify with universities',
+          ...data.searchMetadata
+        };
+        setSearchMetadata(metadata);
 
-        // Show appropriate success message based on data quality
-        const dataQuality = data.searchMetadata?.dataQuality || 'mixed-quality';
-        if (dataQuality === 'high-quality') {
-          toast.success(`Found ${enhancedResults.length} high-quality programs`);
-        } else if (dataQuality === 'good-quality') {
-          toast.success(`Found ${enhancedResults.length} programs with good data`);
-        } else if (dataQuality === 'moderate-quality') {
-          toast.success(`Found ${enhancedResults.length} programs - some details may need verification`);
-        } else {
-          toast.success(`Found ${enhancedResults.length} programs - please verify details with universities`);
-        }
+        // Show success message with fee accuracy note
+        toast.success(`Found ${enhancedResults.length} programs with fee categories - verify details with universities`);
+        
       } else if (data && data.error) {
         throw new Error(data.error);
       } else {
