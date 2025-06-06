@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,18 +10,9 @@ import {
   Clock, 
   Search,
   GraduationCap, 
-  Users, 
-  Award,
-  BookOpen,
-  Target,
   Plus,
-  Languages,
-  Building,
-  TrendingUp,
-  AlertTriangle,
-  Shield,
-  Info,
-  ExternalLink
+  ExternalLink,
+  Target
 } from "lucide-react";
 import { SearchResult } from "@/contexts/PerplexityContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
@@ -44,21 +36,15 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
         university: result.university,
         degreeType: result.degreeType,
         country: result.country,
-        tuition: result.feeRange || result.tuition || '',
-        deadline: result.deadline || '',
+        tuition: result.tuition || 'Contact university for fees',
+        deadline: result.deadline || 'Check university website',
         statusTagId: 'status-considering',
         customTagIds: [],
-        notes: `Added from search results.\n\nFee Category: ${result.feeCategory || 'Not specified'}\nData Confidence: ${result.dataQuality?.confidence || 'Unknown'}\n\nIMPORTANT: ${result.accuracyDisclaimer}\n\nProgram Details:\n${result.description}\n\n${
+        notes: `Added from search results.\n\nProgram Details:\n${result.description}\n\n${
           result.requirements ? `Requirements: ${result.requirements}\n` : ''
         }${
           result.duration ? `Duration: ${result.duration}\n` : ''
-        }${
-          result.programDetails?.format ? `Format: ${result.programDetails.format}\n` : ''
-        }${
-          result.scholarships ? `Scholarships: ${result.scholarships}\n` : ''
-        }${
-          result.careerOutcomes ? `Career Outcomes: ${result.careerOutcomes}\n` : ''
-        }\nALWAYS verify all details directly with the university before applying.`,
+        }\n\nIMPORTANT: Always verify all details directly with the university before applying.`,
       });
       toast.success(`${result.programName} added to your shortlist!`);
     } catch (error) {
@@ -75,9 +61,8 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
   };
 
   const handleVisitWebsite = () => {
-    const url = result.feesPageUrl || result.website;
-    if (url) {
-      window.open(url, '_blank');
+    if (result.website) {
+      window.open(result.website, '_blank');
     } else {
       toast.info("No website URL available for this program");
     }
@@ -106,48 +91,6 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
     
     return deadline;
   };
-
-  // Get fee category styling
-  const getFeeCategoryBadge = () => {
-    const category = (result.feeCategory || '').toLowerCase();
-    
-    switch (category) {
-      case 'budget-friendly':
-        return { variant: "default" as const, text: "Budget-Friendly", color: "text-green-600 bg-green-50" };
-      case 'mid-range':
-        return { variant: "secondary" as const, text: "Mid-Range", color: "text-blue-600 bg-blue-50" };
-      case 'premium':
-        return { variant: "outline" as const, text: "Premium", color: "text-purple-600 bg-purple-50" };
-      case 'luxury':
-        return { variant: "outline" as const, text: "Luxury", color: "text-red-600 bg-red-50" };
-      case 'contact university':
-        return { variant: "outline" as const, text: "Contact University", color: "text-gray-600 bg-gray-50" };
-      default:
-        return { variant: "outline" as const, text: "Verify Fees", color: "text-amber-600 bg-amber-50" };
-    }
-  };
-
-  // Get confidence level styling
-  const getConfidenceBadge = () => {
-    const confidence = (result.dataQuality?.confidence || '').toLowerCase();
-    
-    switch (confidence) {
-      case 'high':
-        return { variant: "default" as const, text: "High Confidence", color: "text-green-600", icon: Shield };
-      case 'good':
-        return { variant: "secondary" as const, text: "Good Data", color: "text-blue-600", icon: TrendingUp };
-      case 'moderate':
-        return { variant: "outline" as const, text: "Verify Details", color: "text-amber-600", icon: Info };
-      case 'low':
-        return { variant: "outline" as const, text: "Needs Verification", color: "text-red-600", icon: AlertTriangle };
-      default:
-        return { variant: "outline" as const, text: "Unknown Quality", color: "text-gray-600", icon: Info };
-    }
-  };
-
-  const feeBadge = getFeeCategoryBadge();
-  const confidenceBadge = getConfidenceBadge();
-  const ConfidenceIcon = confidenceBadge.icon;
 
   return (
     <Card className="h-full hover:shadow-lg transition-shadow duration-300">
@@ -184,11 +127,11 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Enhanced Data Quality Indicators */}
+        {/* Basic Program Information */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="flex items-center gap-1">
-              <BookOpen className="h-3 w-3" />
+              <GraduationCap className="h-3 w-3" />
               {result.degreeType}
             </Badge>
             <Badge variant="outline" className="flex items-center gap-1">
@@ -196,58 +139,27 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
               {result.country}
             </Badge>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {result.dataQuality?.confidence && (
-              <Badge variant="outline" className="flex items-center gap-1 text-amber-600 bg-amber-50">
-                <Info className="h-3 w-3" />
-                {result.dataQuality.confidence} Confidence
-              </Badge>
-            )}
-          </div>
         </div>
 
-        {/* Additional Format/Language Badges */}
-        {(result.programDetails?.format || result.programDetails?.language) && (
-          <div className="flex flex-wrap gap-2">
-            {result.programDetails?.format && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                {result.programDetails.format}
-              </Badge>
-            )}
-            {result.programDetails?.language && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Languages className="h-3 w-3" />
-                {result.programDetails.language}
-              </Badge>
-            )}
+        {/* Fee Information */}
+        {(result.tuition || result.fees?.range) && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <DollarSign className="h-4 w-4 text-green-600" />
+              <div>
+                <div className="font-medium">Tuition Fees</div>
+                <div className="text-muted-foreground">
+                  {result.tuition || result.fees?.range || 'Contact university for fees'}
+                </div>
+              </div>
+            </div>
+            
+            {/* Verification Warning */}
+            <div className="text-xs text-amber-800 bg-amber-50 p-2 rounded border-l-4 border-amber-400">
+              <strong>Important:</strong> Fee information may vary. Always verify current fees and available scholarships directly with the university.
+            </div>
           </div>
         )}
-
-        {/* Enhanced Fee Information with Prominent Disclaimers */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm">
-            <DollarSign className="h-4 w-4 text-green-600" />
-            <div>
-              <div className="font-medium">Fee Category</div>
-              <Badge className="bg-blue-50 text-blue-600" variant="outline">
-                {result.feeCategory || 'Verify with University'}
-              </Badge>
-            </div>
-          </div>
-          
-          {result.feeRange && (
-            <div className="text-sm text-muted-foreground pl-6">
-              <span className="font-medium">Estimated Range:</span> {result.feeRange}
-            </div>
-          )}
-          
-          {/* Prominent Verification Warning */}
-          <div className="text-xs text-amber-800 bg-amber-50 p-3 rounded border-l-4 border-amber-400">
-            <AlertTriangle className="h-4 w-4 inline mr-2" />
-            <strong>Important:</strong> Fee information is estimated and may vary significantly. Always verify current fees, scholarships, and requirements directly with the university before applying.
-          </div>
-        </div>
 
         {/* Key Details Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -270,36 +182,6 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
               </div>
             </div>
           )}
-
-          {result.ranking && (
-            <div className="flex items-center gap-2 text-sm">
-              <Award className="h-4 w-4 text-yellow-600" />
-              <div>
-                <div className="font-medium">Ranking</div>
-                <div className="text-muted-foreground">{result.ranking}</div>
-              </div>
-            </div>
-          )}
-
-          {result.programDetails?.startDate && (
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-purple-600" />
-              <div>
-                <div className="font-medium">Start Date</div>
-                <div className="text-muted-foreground">{result.programDetails.startDate}</div>
-              </div>
-            </div>
-          )}
-
-          {result.programDetails?.accreditation && (
-            <div className="flex items-center gap-2 text-sm">
-              <Building className="h-4 w-4 text-indigo-600" />
-              <div>
-                <div className="font-medium">Accreditation</div>
-                <div className="text-muted-foreground">{result.programDetails.accreditation}</div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Requirements */}
@@ -318,29 +200,12 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
         {/* Description */}
         <div className="space-y-2">
           <Separator />
-          <p className="text-sm text-muted-foreground line-clamp-3">
+          <p className="text-sm text-muted-foreground line-clamp-4">
             {result.description}
           </p>
         </div>
 
-        {/* Additional Information */}
-        {(result.scholarships || result.careerOutcomes) && (
-          <div className="space-y-2">
-            <Separator />
-            {result.scholarships && (
-              <div className="text-xs text-muted-foreground">
-                <span className="font-medium">Scholarships:</span> {result.scholarships}
-              </div>
-            )}
-            {result.careerOutcomes && (
-              <div className="text-xs text-muted-foreground">
-                <span className="font-medium">Career Outcomes:</span> {result.careerOutcomes}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Enhanced Action Buttons */}
+        {/* Action Buttons */}
         <div className="pt-2 space-y-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Button
@@ -353,7 +218,7 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
               Google Search
             </Button>
             
-            {(result.website || result.feesPageUrl) && (
+            {result.website && (
               <Button
                 variant="outline"
                 size="sm"
@@ -367,11 +232,9 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           </div>
           
           {/* Data Source Information */}
-          {result.dataQuality?.sourceType && (
-            <div className="text-xs text-muted-foreground text-center pt-2 border-t">
-              Source: {result.dataQuality.sourceType} | Last updated: {result.dataQuality.lastUpdated || 'Unknown'}
-            </div>
-          )}
+          <div className="text-xs text-muted-foreground text-center pt-2 border-t">
+            Data sourced from Perplexity AI • Always verify details with the university
+          </div>
         </div>
       </CardContent>
     </Card>
