@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StickyNote, Plus, Search, Sparkles, Brain, Tag, BookOpen, Wand2, Trash2, Edit2, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ const Notes = () => {
   const [noteTitle, setNoteTitle] = useState("");
   const [selectedProgramId, setSelectedProgramId] = useState<string>("no-program");
   const [editingNote, setEditingNote] = useState<any>(null);
+  const [analyzing, setAnalyzing] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   const { notes, addNote, updateNote, deleteNote, analyzeNote, analyzeAllNotes, loading } = useAINotesContext();
@@ -71,16 +73,33 @@ const Notes = () => {
     }
     
     if (action === "analyze_all") {
-      await analyzeAllNotes();
+      setAnalyzing("all");
+      try {
+        await analyzeAllNotes();
+        toast.success("All notes analyzed successfully!");
+      } catch (error) {
+        console.error("Analysis error:", error);
+        toast.error("Failed to analyze notes");
+      } finally {
+        setAnalyzing(null);
+      }
       return;
     }
     
     if (noteId) {
-      await analyzeNote(noteId);
+      setAnalyzing(noteId);
+      try {
+        await analyzeNote(noteId);
+        toast.success("Note analyzed successfully!");
+      } catch (error) {
+        console.error("Analysis error:", error);
+        toast.error("Failed to analyze note");
+      } finally {
+        setAnalyzing(null);
+      }
     } else {
       // For current note, save it first then analyze
       await handleCreateNote();
-      // The newly created note will be analyzed automatically
     }
   };
 
@@ -133,6 +152,20 @@ const Notes = () => {
     if (categories.includes("application")) return "bg-purple-100 text-purple-800";
     if (categories.includes("research")) return "bg-rose-100 text-rose-800";
     return "bg-gray-100 text-gray-800";
+  };
+
+  const getPriorityColor = (score: number) => {
+    if (score >= 8) return "bg-red-100 text-red-800 border-red-200";
+    if (score >= 6) return "bg-orange-100 text-orange-800 border-orange-200";
+    if (score >= 4) return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    return "bg-green-100 text-green-800 border-green-200";
+  };
+
+  const getPriorityLabel = (score: number) => {
+    if (score >= 8) return "High Priority";
+    if (score >= 6) return "Medium Priority";
+    if (score >= 4) return "Low Priority";
+    return "Normal";
   };
 
   if (loading) {
@@ -229,8 +262,11 @@ const Notes = () => {
                 variant="outline" 
                 onClick={() => handleAIAction("summarize")}
                 className="border-purple-200 text-purple-700 hover:bg-purple-50"
-                disabled={!currentNote.trim()}
+                disabled={!currentNote.trim() || analyzing === "current"}
               >
+                {analyzing === "current" && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></div>
+                )}
                 <Sparkles className="mr-2 h-4 w-4" />
                 Summarize
               </Button>
@@ -238,8 +274,11 @@ const Notes = () => {
                 variant="outline" 
                 onClick={() => handleAIAction("analyze")}
                 className="border-green-200 text-green-700 hover:bg-green-50"
-                disabled={!currentNote.trim()}
+                disabled={!currentNote.trim() || analyzing === "current"}
               >
+                {analyzing === "current" && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
+                )}
                 <Brain className="mr-2 h-4 w-4" />
                 Analyze
               </Button>
@@ -247,8 +286,11 @@ const Notes = () => {
                 variant="outline" 
                 onClick={() => handleAIAction("enhance")}
                 className="border-rose-200 text-rose-700 hover:bg-rose-50"
-                disabled={!currentNote.trim()}
+                disabled={!currentNote.trim() || analyzing === "current"}
               >
+                {analyzing === "current" && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-rose-600 mr-2"></div>
+                )}
                 <Wand2 className="mr-2 h-4 w-4" />
                 Enhance
               </Button>
@@ -256,8 +298,11 @@ const Notes = () => {
                 variant="outline" 
                 onClick={() => handleAIAction("analyze_all")}
                 className="border-orange-200 text-orange-700 hover:bg-orange-50"
-                disabled={notes.length === 0}
+                disabled={notes.length === 0 || analyzing === "all"}
               >
+                {analyzing === "all" && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-2"></div>
+                )}
                 <Tag className="mr-2 h-4 w-4" />
                 Analyze All Notes
               </Button>
@@ -302,7 +347,7 @@ const Notes = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredGeneralNotes.map((note) => (
                   <Card key={note.id} className={cn(
-                    "hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105",
+                    "hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105 border-2",
                     getInsightColor(note.ai_categories || [])
                   )}>
                     <CardHeader className="pb-3">
@@ -311,6 +356,20 @@ const Notes = () => {
                           {note.title}
                         </CardTitle>
                         <div className="flex gap-1 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleAIAction("analyze", note.id)}
+                            className="h-8 w-8 p-0"
+                            disabled={analyzing === note.id}
+                            title="Analyze with AI"
+                          >
+                            {analyzing === note.id ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
+                            ) : (
+                              <Brain className="h-3 w-3" />
+                            )}
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -332,15 +391,27 @@ const Notes = () => {
                     </CardHeader>
                     <CardContent>
                       <p className="text-gray-600 text-sm line-clamp-3 mb-4">
-                        {note.ai_summary || note.content}
+                        {note.content}
                       </p>
                       
+                      {/* AI Summary */}
+                      {note.ai_summary && (
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
+                          <div className="flex items-center gap-1 mb-2">
+                            <Sparkles className="h-3 w-3 text-purple-600" />
+                            <span className="text-xs font-medium text-purple-800">AI Summary</span>
+                          </div>
+                          <p className="text-xs text-purple-700">{note.ai_summary}</p>
+                        </div>
+                      )}
+                      
+                      {/* AI Categories */}
                       {note.ai_categories && note.ai_categories.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-3">
                           {note.ai_categories.map((category: string, index: number) => (
                             <Badge
                               key={index}
-                              className={cn("text-xs", getTagColor(note.ai_categories || []))}
+                              className={cn("text-xs", getTagColor([category]))}
                               variant="secondary"
                             >
                               {category}
@@ -349,27 +420,43 @@ const Notes = () => {
                         </div>
                       )}
                       
+                      {/* Priority Score */}
                       {note.priority_score > 0 && (
                         <div className="mb-3">
-                          <Badge variant="outline" className="text-xs">
-                            Priority: {note.priority_score}/10
+                          <Badge 
+                            className={cn("text-xs border", getPriorityColor(note.priority_score))}
+                            variant="outline"
+                          >
+                            {getPriorityLabel(note.priority_score)} ({note.priority_score}/10)
                           </Badge>
+                        </div>
+                      )}
+
+                      {/* AI Insights */}
+                      {note.ai_insights && Array.isArray(note.ai_insights) && note.ai_insights.length > 0 && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                          <div className="flex items-center gap-1 mb-2">
+                            <Brain className="h-3 w-3 text-blue-600" />
+                            <span className="text-xs font-medium text-blue-800">AI Insights</span>
+                          </div>
+                          <ul className="text-xs text-blue-700 space-y-1">
+                            {note.ai_insights.slice(0, 2).map((insight: string, index: number) => (
+                              <li key={index} className="flex items-start gap-1">
+                                <span className="text-blue-400 mt-1">•</span>
+                                <span>{insight}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       )}
                       
                       <div className="flex justify-between items-center">
                         <p className="text-xs text-gray-500">
                           {new Date(note.created_at).toLocaleDateString()}
+                          {note.last_ai_analysis && (
+                            <span className="ml-2 text-purple-600">• AI Analyzed</span>
+                          )}
                         </p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleAIAction("analyze", note.id)}
-                          className="h-6 px-2 text-xs"
-                        >
-                          <Brain className="mr-1 h-3 w-3" />
-                          Re-analyze
-                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -385,7 +472,7 @@ const Notes = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProgramNotes.map((note) => (
                   <Card key={note.id} className={cn(
-                    "hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105",
+                    "hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105 border-2",
                     getInsightColor(note.ai_categories || [])
                   )}>
                     <CardHeader className="pb-3">
@@ -394,6 +481,20 @@ const Notes = () => {
                           {note.title}
                         </CardTitle>
                         <div className="flex gap-1 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleAIAction("analyze", note.id)}
+                            className="h-8 w-8 p-0"
+                            disabled={analyzing === note.id}
+                            title="Analyze with AI"
+                          >
+                            {analyzing === note.id ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
+                            ) : (
+                              <Brain className="h-3 w-3" />
+                            )}
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -415,7 +516,7 @@ const Notes = () => {
                     </CardHeader>
                     <CardContent>
                       <p className="text-gray-600 text-sm line-clamp-3 mb-4">
-                        {note.ai_summary || note.content}
+                        {note.content}
                       </p>
                       
                       {note.program_id && (
@@ -424,12 +525,24 @@ const Notes = () => {
                         </p>
                       )}
                       
+                      {/* AI Summary */}
+                      {note.ai_summary && (
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
+                          <div className="flex items-center gap-1 mb-2">
+                            <Sparkles className="h-3 w-3 text-purple-600" />
+                            <span className="text-xs font-medium text-purple-800">AI Summary</span>
+                          </div>
+                          <p className="text-xs text-purple-700">{note.ai_summary}</p>
+                        </div>
+                      )}
+                      
+                      {/* AI Categories */}
                       {note.ai_categories && note.ai_categories.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-3">
                           {note.ai_categories.map((category: string, index: number) => (
                             <Badge
                               key={index}
-                              className={cn("text-xs", getTagColor(note.ai_categories || []))}
+                              className={cn("text-xs", getTagColor([category]))}
                               variant="secondary"
                             >
                               {category}
@@ -438,27 +551,43 @@ const Notes = () => {
                         </div>
                       )}
                       
+                      {/* Priority Score */}
                       {note.priority_score > 0 && (
                         <div className="mb-3">
-                          <Badge variant="outline" className="text-xs">
-                            Priority: {note.priority_score}/10
+                          <Badge 
+                            className={cn("text-xs border", getPriorityColor(note.priority_score))}
+                            variant="outline"
+                          >
+                            {getPriorityLabel(note.priority_score)} ({note.priority_score}/10)
                           </Badge>
+                        </div>
+                      )}
+
+                      {/* AI Insights */}
+                      {note.ai_insights && Array.isArray(note.ai_insights) && note.ai_insights.length > 0 && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                          <div className="flex items-center gap-1 mb-2">
+                            <Brain className="h-3 w-3 text-blue-600" />
+                            <span className="text-xs font-medium text-blue-800">AI Insights</span>
+                          </div>
+                          <ul className="text-xs text-blue-700 space-y-1">
+                            {note.ai_insights.slice(0, 2).map((insight: string, index: number) => (
+                              <li key={index} className="flex items-start gap-1">
+                                <span className="text-blue-400 mt-1">•</span>
+                                <span>{insight}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       )}
                       
                       <div className="flex justify-between items-center">
                         <p className="text-xs text-gray-500">
                           {new Date(note.created_at).toLocaleDateString()}
+                          {note.last_ai_analysis && (
+                            <span className="ml-2 text-purple-600">• AI Analyzed</span>
+                          )}
                         </p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleAIAction("analyze", note.id)}
-                          className="h-6 px-2 text-xs"
-                        >
-                          <Brain className="mr-1 h-3 w-3" />
-                          Re-analyze
-                        </Button>
                       </div>
                     </CardContent>
                   </Card>
