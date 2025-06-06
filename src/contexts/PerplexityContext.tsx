@@ -10,8 +10,8 @@ export type SearchResult = {
   country: string;
   description: string;
   // Enhanced fee structure with categories
-  feeCategory?: string; // "Budget-friendly", "Mid-range", "Premium", "Luxury", "Contact University"
-  feeRange?: string; // Estimated range instead of exact amount
+  feeCategory?: string; // "Budget-friendly", "Mid-range", "Premium", "Luxury", "Verify with University"
+  feeRange?: string; // Estimated range with disclaimers
   tuition?: string; // For backward compatibility
   deadline?: string;
   applicationDeadline?: string;
@@ -40,7 +40,8 @@ export type SearchResult = {
   dataQuality?: {
     confidence?: string; // "High", "Good", "Moderate", "Low"
     lastUpdated?: string;
-    sourceType?: string; // "Official website", "Educational directory", "Third party"
+    sourceType?: string; // "Official website", "Educational directory", "Multiple sources"
+    accuracyNote?: string;
   };
   confidenceScore?: number;
   ranking?: string;
@@ -55,17 +56,24 @@ export type SearchResult = {
   careerOutcomes?: string;
   researchOpportunities?: string;
   applicationProcess?: string;
+  accuracyDisclaimer?: string;
 };
 
 type SearchMetadata = {
   query: string;
+  originalQuery?: string;
   resultCount: number;
+  requestedCount?: number;
+  totalFound?: number;
   model?: string;
   fallback?: boolean;
   dataQuality?: string;
   searchQuality?: number;
   accuracy?: string;
   feeAccuracyNote?: string;
+  disclaimer?: string;
+  validationLevel?: string;
+  suggestion?: string;
 };
 
 type PerplexityContextType = {
@@ -193,29 +201,28 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data && data.searchResults && Array.isArray(data.searchResults)) {
-        // Enhanced data processing with fee category validation
+        // Enhanced data processing with improved disclaimer handling
         const enhancedResults = data.searchResults.map((result: SearchResult) => {
           const parsedData = parseStructuredData(result.description);
           
-          // Ensure fee category is set
+          // Enhanced fee category handling
           if (!result.feeCategory && result.tuition) {
-            // Try to categorize based on existing tuition data
             const tuitionStr = result.tuition.toLowerCase();
             if (tuitionStr.includes('budget') || tuitionStr.includes('affordable')) {
               result.feeCategory = 'Budget-friendly';
             } else if (tuitionStr.includes('premium') || tuitionStr.includes('expensive')) {
               result.feeCategory = 'Premium';
             } else {
-              result.feeCategory = 'Contact University';
+              result.feeCategory = 'Verify with University';
             }
           }
           
           return {
             ...result,
             ...parsedData,
-            // Preserve structured data from API over parsed data
-            feeCategory: result.feeCategory || 'Contact University',
-            feeRange: result.feeRange || parsedData.feeRange || 'Contact university for fees',
+            // Enhanced fee handling with clear disclaimers
+            feeCategory: result.feeCategory || 'Verify with University',
+            feeRange: result.feeRange || parsedData.feeRange || 'Contact university for current fees',
             tuition: result.feeCategory ? `${result.feeCategory} - ${result.feeRange || 'Verify with university'}` : result.tuition,
             deadline: result.deadline || parsedData.deadline,
             duration: result.duration || parsedData.duration,
@@ -229,40 +236,59 @@ export const PerplexityProvider = ({ children }: { children: ReactNode }) => {
             dataQuality: {
               confidence: result.dataQuality?.confidence || 'Moderate',
               lastUpdated: result.dataQuality?.lastUpdated || 'Unknown',
-              sourceType: result.dataQuality?.sourceType || 'Educational directory',
+              sourceType: result.dataQuality?.sourceType || 'Multiple sources',
+              accuracyNote: 'Fee estimates require verification with university',
               ...result.dataQuality
             },
             fees: {
-              category: result.feeCategory || 'Contact University',
+              category: result.feeCategory || 'Verify with University',
               estimatedRange: result.feeRange || 'Contact university',
-              note: 'Always verify current fees with university',
+              note: 'IMPORTANT: All fee information should be verified directly with the university',
               ...result.fees
-            }
+            },
+            accuracyDisclaimer: result.accuracyDisclaimer || 'Always verify program details and fees with the university before applying'
           };
         });
         
         setSearchResults(enhancedResults);
         
-        // Store enhanced search metadata
+        // Enhanced search metadata with validation info
         const metadata: SearchMetadata = {
-          query: query,
+          query: data.searchMetadata?.query || query,
+          originalQuery: query,
           resultCount: enhancedResults.length,
-          feeAccuracyNote: 'Fee information shown as categories - always verify with universities',
+          requestedCount: resultCount,
+          totalFound: data.searchMetadata?.totalFound,
+          disclaimer: 'Fee information is estimated and should be verified with universities',
+          validationLevel: data.searchMetadata?.validationLevel || 'standard',
           ...data.searchMetadata
         };
         setSearchMetadata(metadata);
 
-        // Show success message with fee accuracy note
-        toast.success(`Found ${enhancedResults.length} programs with fee categories - verify details with universities`);
+        // Enhanced success message with transparency
+        const validationMessage = metadata.validationLevel === 'relaxed' ? 
+          ' (relaxed validation applied for better results)' : '';
+        
+        toast.success(`Found ${enhancedResults.length} programs${validationMessage} - verify fees with universities`);
+        
+        // Show additional info if fewer results than requested
+        if (enhancedResults.length < resultCount && enhancedResults.length > 0) {
+          toast.info(`Found ${enhancedResults.length} of ${resultCount} requested programs. Try a broader search for more results.`);
+        }
         
       } else if (data && data.error) {
-        throw new Error(data.error);
+        // Handle specific error cases with user-friendly messages
+        if (data.suggestion) {
+          toast.error(`${data.error} ${data.suggestion}`);
+        } else {
+          throw new Error(data.error);
+        }
       } else {
         throw new Error('Invalid response format');
       }
     } catch (error) {
       console.error("Search error:", error);
-      toast.error(error instanceof Error ? error.message : 'Failed to search programs. Please try again.');
+      toast.error(error instanceof Error ? error.message : 'Failed to search programs. Please try again with different keywords.');
       setSearchResults([]);
       setSearchMetadata(undefined);
     } finally {

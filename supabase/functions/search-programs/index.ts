@@ -45,9 +45,9 @@ serve(async (req) => {
     console.log('Original query:', query)
     console.log('Processed query:', processedQuery)
 
-    // Simplified prompt focused on accuracy
-    const enhancedPrompt = createDynamicPrompt(processedQuery, resultCount)
-    console.log('Using enhanced prompt for accurate data retrieval')
+    // Enhanced prompt with focus on volume over perfect accuracy
+    const enhancedPrompt = createDynamicPrompt(processedQuery, resultCount * 2) // Request more to account for filtering
+    console.log('Requesting extra programs to account for validation filtering')
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -60,15 +60,15 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a university program researcher. Find real, current university programs with accurate program names, universities, and tuition information. Focus on providing exact program titles as they appear on official university websites.'
+            content: 'You are a university program researcher. Find real, current university programs with program names, universities, and fee information. Prioritize finding the requested number of programs over perfect fee accuracy. Always include fee disclaimers that users should verify with universities.'
           },
           {
             role: 'user',
             content: enhancedPrompt
           }
         ],
-        max_tokens: 6000,
-        temperature: 0.1,
+        max_tokens: 8000,
+        temperature: 0.2,
         top_p: 0.9,
         return_citations: true,
         search_recency_filter: "month"
@@ -110,30 +110,54 @@ serve(async (req) => {
       if (parsedResults.programs && Array.isArray(parsedResults.programs)) {
         console.log('Initial programs found:', parsedResults.programs.length)
         
-        // Simplified validation - only filter out obviously invalid data
-        const validatedResults = parsedResults.programs
+        // Relaxed validation with fallback logic
+        let validatedResults = parsedResults.programs
           .filter((result, index) => {
-            const isValid = validateProgramData(result, query)
+            const isValid = validateProgramData(result, query, true) // Pass relaxed flag
             if (!isValid) {
               console.log(`Program ${index + 1} failed validation:`, result.programName)
             }
             return isValid
           })
           .map((result: any) => sanitizeAndEnhanceProgramData(result))
-          .slice(0, resultCount)
 
-        console.log('Programs after validation:', validatedResults.length)
+        console.log('Programs after initial validation:', validatedResults.length)
 
-        // Return results even if count is low
+        // Fallback: If we don't have enough results, try super relaxed validation
+        if (validatedResults.length < Math.max(3, resultCount / 2)) {
+          console.log('Low result count detected, applying relaxed validation')
+          
+          validatedResults = parsedResults.programs
+            .filter((result, index) => {
+              const isValid = validateProgramData(result, query, false, true) // Super relaxed flag
+              if (!isValid) {
+                console.log(`Program ${index + 1} failed super relaxed validation:`, result.programName)
+              }
+              return isValid
+            })
+            .map((result: any) => sanitizeAndEnhanceProgramData(result))
+          
+          console.log('Programs after relaxed validation:', validatedResults.length)
+        }
+
+        // Ensure we return the requested number of results
+        const finalResults = validatedResults.slice(0, resultCount)
+        console.log('Final results count:', finalResults.length)
+
         return new Response(
           JSON.stringify({ 
-            searchResults: validatedResults,
+            searchResults: finalResults,
             citations: data.citations || [],
             searchMetadata: {
               query: processedQuery,
-              resultCount: validatedResults.length,
+              originalQuery: query,
+              resultCount: finalResults.length,
+              requestedCount: resultCount,
+              totalFound: parsedResults.programs.length,
               model: data.model || 'llama-3.1-sonar-large-128k-online',
-              simplified: true
+              dataQuality: 'mixed-accuracy',
+              disclaimer: 'All fee information should be verified directly with universities. Results prioritize program discovery over fee accuracy.',
+              validationLevel: validatedResults.length < resultCount ? 'relaxed' : 'standard'
             }
           }),
           { 
@@ -152,8 +176,10 @@ serve(async (req) => {
           error: 'Unable to parse search results. Please try a different search query.',
           searchMetadata: {
             query: processedQuery,
+            originalQuery: query,
             resultCount: 0,
-            parseError: parseError.message
+            parseError: parseError.message,
+            suggestion: 'Try using more specific keywords or a different search term'
           }
         }),
         { 

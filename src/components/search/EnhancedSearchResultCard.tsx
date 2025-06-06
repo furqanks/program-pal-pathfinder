@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,8 @@ import {
   TrendingUp,
   AlertTriangle,
   Shield,
-  Info
+  Info,
+  ExternalLink
 } from "lucide-react";
 import { SearchResult } from "@/contexts/PerplexityContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
@@ -48,7 +48,7 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
         deadline: result.deadline || '',
         statusTagId: 'status-considering',
         customTagIds: [],
-        notes: `Added from search results.\n\nFee Category: ${result.feeCategory || 'Not specified'}\nData Confidence: ${result.dataQuality?.confidence || 'Unknown'}\n\nProgram Details:\n${result.description}\n\n${
+        notes: `Added from search results.\n\nFee Category: ${result.feeCategory || 'Not specified'}\nData Confidence: ${result.dataQuality?.confidence || 'Unknown'}\n\nIMPORTANT: ${result.accuracyDisclaimer}\n\nProgram Details:\n${result.description}\n\n${
           result.requirements ? `Requirements: ${result.requirements}\n` : ''
         }${
           result.duration ? `Duration: ${result.duration}\n` : ''
@@ -58,7 +58,7 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           result.scholarships ? `Scholarships: ${result.scholarships}\n` : ''
         }${
           result.careerOutcomes ? `Career Outcomes: ${result.careerOutcomes}\n` : ''
-        }\nVerify all details with university before applying.`,
+        }\nALWAYS verify all details directly with the university before applying.`,
       });
       toast.success(`${result.programName} added to your shortlist!`);
     } catch (error) {
@@ -72,6 +72,15 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
     const searchQuery = `"${result.programName}" "${result.university}" ${result.country}`
     const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`
     window.open(googleUrl, '_blank')
+  };
+
+  const handleVisitWebsite = () => {
+    const url = result.feesPageUrl || result.website;
+    if (url) {
+      window.open(url, '_blank');
+    } else {
+      toast.info("No website URL available for this program");
+    }
   };
 
   // Helper function to format application deadlines nicely
@@ -175,7 +184,7 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Data Quality and Fee Category Indicators */}
+        {/* Enhanced Data Quality Indicators */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="flex items-center gap-1">
@@ -188,10 +197,12 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
             </Badge>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Badge variant={confidenceBadge.variant} className={`flex items-center gap-1 ${confidenceBadge.color}`}>
-              <ConfidenceIcon className="h-3 w-3" />
-              {confidenceBadge.text}
-            </Badge>
+            {result.dataQuality?.confidence && (
+              <Badge variant="outline" className="flex items-center gap-1 text-amber-600 bg-amber-50">
+                <Info className="h-3 w-3" />
+                {result.dataQuality.confidence} Confidence
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -213,14 +224,14 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           </div>
         )}
 
-        {/* Enhanced Fee Information with Category */}
+        {/* Enhanced Fee Information with Prominent Disclaimers */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm">
             <DollarSign className="h-4 w-4 text-green-600" />
             <div>
-              <div className="font-medium">Tuition Category</div>
-              <Badge className={feeBadge.color} variant={feeBadge.variant}>
-                {feeBadge.text}
+              <div className="font-medium">Fee Category</div>
+              <Badge className="bg-blue-50 text-blue-600" variant="outline">
+                {result.feeCategory || 'Verify with University'}
               </Badge>
             </div>
           </div>
@@ -231,9 +242,10 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
             </div>
           )}
           
-          <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border-l-4 border-amber-200">
-            <AlertTriangle className="h-3 w-3 inline mr-1" />
-            Fee estimates may vary - always verify current fees directly with the university
+          {/* Prominent Verification Warning */}
+          <div className="text-xs text-amber-800 bg-amber-50 p-3 rounded border-l-4 border-amber-400">
+            <AlertTriangle className="h-4 w-4 inline mr-2" />
+            <strong>Important:</strong> Fee information is estimated and may vary significantly. Always verify current fees, scholarships, and requirements directly with the university before applying.
           </div>
         </div>
 
@@ -328,17 +340,38 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           </div>
         )}
 
-        {/* Action Button - Only Google Search */}
-        <div className="pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={handleGoogleSearch}
-          >
-            <Search className="h-4 w-4 mr-2" />
-            Search Program Online
-          </Button>
+        {/* Enhanced Action Buttons */}
+        <div className="pt-2 space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={handleGoogleSearch}
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Google Search
+            </Button>
+            
+            {(result.website || result.feesPageUrl) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={handleVisitWebsite}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Visit Website
+              </Button>
+            )}
+          </div>
+          
+          {/* Data Source Information */}
+          {result.dataQuality?.sourceType && (
+            <div className="text-xs text-muted-foreground text-center pt-2 border-t">
+              Source: {result.dataQuality.sourceType} | Last updated: {result.dataQuality.lastUpdated || 'Unknown'}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -1,7 +1,6 @@
+// Relaxed data validation with fallback options
 
-// Enhanced data validation for fee categories and confidence indicators
-
-export function validateProgramData(result: any, originalQuery: string): boolean {
+export function validateProgramData(result: any, originalQuery: string, relaxed: boolean = false, superRelaxed: boolean = false): boolean {
   // Basic required fields check
   if (!result.programName || !result.university || !result.degreeType) {
     return false
@@ -11,69 +10,137 @@ export function validateProgramData(result: any, originalQuery: string): boolean
   const university = result.university.toLowerCase()
   const query = originalQuery.toLowerCase()
   
-  // Validate fee category
+  // Super relaxed mode - minimal validation
+  if (superRelaxed) {
+    console.log('Using super relaxed validation for:', result.programName)
+    
+    // Only filter out obviously fake data
+    const fakeIndicators = [
+      'example', 'placeholder', 'sample', 'insert', 'your program here',
+      'program name', 'university name', 'degree type'
+    ]
+    
+    for (const indicator of fakeIndicators) {
+      if (programName.includes(indicator) || university.includes(indicator)) {
+        console.log(`Filtered obvious fake data: ${result.programName}`)
+        return false
+      }
+    }
+    
+    // Basic length checks
+    if (programName.length < 3 || university.length < 3) {
+      return false
+    }
+    
+    return true
+  }
+  
+  // Relaxed validation mode
+  if (relaxed) {
+    console.log('Using relaxed validation for:', result.programName)
+    
+    // Remove strict fee category validation
+    const validFeeCategories = ['budget-friendly', 'mid-range', 'premium', 'luxury', 'contact university', 'verify with university', 'see university website']
+    const feeCategory = (result.feeCategory || '').toLowerCase()
+    
+    // Allow more flexible fee categories
+    if (feeCategory && !validFeeCategories.some(cat => feeCategory.includes(cat))) {
+      // Don't filter out, just log
+      console.log(`Unusual fee category (keeping): ${result.feeCategory}`)
+    }
+    
+    // Remove fee range validation entirely in relaxed mode
+    console.log('Skipping fee range validation in relaxed mode')
+    
+    // Keep budget constraint matching but make it less strict
+    const isBudgetSearch = ['budget', 'affordable', 'cheap', 'low cost'].some(term => 
+      query.includes(term)
+    )
+    
+    if (isBudgetSearch) {
+      // Only filter out obviously luxury programs
+      const luxuryIndicators = ['luxury', 'premium', 'exclusive', 'elite']
+      const hasLuxuryIndicator = result.description && luxuryIndicators.some(indicator => 
+        result.description.toLowerCase().includes(indicator)
+      )
+      
+      if (hasLuxuryIndicator && !result.scholarships) {
+        console.log(`Filtered luxury program for budget search: ${result.programName}`)
+        return false
+      }
+    }
+    
+    // More flexible generic data filtering
+    const genericIndicators = [
+      'program name', 'degree program', 'university name', 'example university',
+      'placeholder', 'sample program', 'insert program name'
+    ]
+    
+    for (const indicator of genericIndicators) {
+      if (programName.includes(indicator) || university.includes(indicator)) {
+        console.log(`Filtered generic data: ${result.programName}`)
+        return false
+      }
+    }
+
+    // Basic length checks
+    if (programName.length < 5 || university.length < 3) {
+      console.log(`Program name or university too short: ${result.programName}`)
+      return false
+    }
+
+    return true
+  }
+  
+  // Standard validation (original logic but less strict)
   const validFeeCategories = ['budget-friendly', 'mid-range', 'premium', 'luxury', 'contact university']
   const feeCategory = (result.feeCategory || '').toLowerCase()
   
-  if (!validFeeCategories.includes(feeCategory)) {
-    console.log(`Invalid fee category: ${result.feeCategory}`)
+  if (feeCategory && !validFeeCategories.includes(feeCategory)) {
+    console.log(`Invalid fee category (standard): ${result.feeCategory}`)
     return false
   }
   
-  // Enhanced fee range validation - check for realistic ranges
+  // Relaxed fee range validation - only check for obviously wrong data
   if (result.feeRange) {
     const feeRange = result.feeRange.toLowerCase()
     
-    // Check for unrealistic fee ranges that don't match the category
-    if (feeCategory === 'budget-friendly') {
-      // Budget-friendly should not have ranges starting above £15,000
-      if (feeRange.includes('£20,000') || feeRange.includes('£25,000') || feeRange.includes('£30,000')) {
-        console.log(`Fee range ${result.feeRange} doesn't match budget-friendly category`)
-        return false
-      }
-    }
-    
-    if (feeCategory === 'mid-range') {
-      // Mid-range should be between £10,000-£25,000 typically
-      if (feeRange.includes('£5,000') || feeRange.includes('£35,000') || feeRange.includes('£40,000')) {
-        console.log(`Fee range ${result.feeRange} doesn't match mid-range category`)
-        return false
-      }
+    // Only filter out completely unrealistic ranges
+    if (feeRange.includes('£100,000') || feeRange.includes('$500,000') || feeRange.includes('€200,000')) {
+      console.log(`Unrealistic fee range filtered: ${result.feeRange}`)
+      return false
     }
   }
   
-  // Check for budget constraints matching
+  // Relaxed budget matching
   const isBudgetSearch = ['budget', 'affordable', 'cheap', 'low cost'].some(term => 
     query.includes(term)
   )
   
-  // For budget searches, prioritize budget-friendly and mid-range categories
   if (isBudgetSearch) {
-    const expensiveCategories = ['premium', 'luxury']
+    const expensiveCategories = ['luxury']
     if (expensiveCategories.includes(feeCategory)) {
-      // Only allow if there's specific scholarship mention
       const hasFinancialAid = result.scholarships && 
         (result.scholarships.toLowerCase().includes('full funding') || 
          result.scholarships.toLowerCase().includes('scholarship') ||
          result.scholarships.toLowerCase().includes('financial aid'))
       
       if (!hasFinancialAid) {
-        console.log(`Filtered out expensive program for budget search: ${result.programName}`)
+        console.log(`Filtered expensive program for budget search: ${result.programName}`)
         return false
       }
     }
   }
   
-  // Validate confidence level
-  const validConfidenceLevels = ['high', 'good', 'moderate', 'low']
+  // Relaxed confidence validation
+  const validConfidenceLevels = ['high', 'good', 'moderate', 'low', 'estimated', 'approximate']
   const confidence = (result.dataQuality?.confidence || '').toLowerCase()
   
-  if (confidence && !validConfidenceLevels.includes(confidence)) {
-    console.log(`Invalid confidence level: ${result.dataQuality?.confidence}`)
-    return false
+  if (confidence && !validConfidenceLevels.some(level => confidence.includes(level))) {
+    console.log(`Unusual confidence level (keeping): ${result.dataQuality?.confidence}`)
   }
   
-  // Filter out obviously generic or placeholder data
+  // Filter out obviously generic data
   const genericIndicators = [
     'program name', 'degree program', 'university name', 'example university',
     'placeholder', 'sample program', 'tbd', 'tba', 'insert program name'
@@ -96,35 +163,53 @@ export function validateProgramData(result: any, originalQuery: string): boolean
 }
 
 export function sanitizeAndEnhanceProgramData(result: any): any {
-  // Ensure fee category is properly formatted
-  const feeCategory = result.feeCategory || 'Contact University'
+  // Enhanced fee category handling with more flexibility
+  let feeCategory = result.feeCategory || 'Verify with University'
   
-  // Generate confidence score based on data quality
-  let confidenceScore = 50 // default
+  // Normalize fee category
+  const lowerFeeCategory = feeCategory.toLowerCase()
+  if (lowerFeeCategory.includes('budget') || lowerFeeCategory.includes('affordable')) {
+    feeCategory = 'Budget-friendly'
+  } else if (lowerFeeCategory.includes('mid') || lowerFeeCategory.includes('moderate')) {
+    feeCategory = 'Mid-range'
+  } else if (lowerFeeCategory.includes('premium') || lowerFeeCategory.includes('high')) {
+    feeCategory = 'Premium'
+  } else if (lowerFeeCategory.includes('luxury') || lowerFeeCategory.includes('exclusive')) {
+    feeCategory = 'Luxury'
+  } else {
+    feeCategory = 'Verify with University'
+  }
+  
+  // Enhanced confidence scoring
+  let confidenceScore = 40 // Lower default to reflect mixed accuracy approach
   const confidence = (result.dataQuality?.confidence || '').toLowerCase()
   
   switch (confidence) {
-    case 'high': confidenceScore = 85; break
-    case 'good': confidenceScore = 70; break
-    case 'moderate': confidenceScore = 55; break
-    case 'low': confidenceScore = 35; break
-    default: confidenceScore = 50
+    case 'high': confidenceScore = 75; break // Reduced from 85
+    case 'good': confidenceScore = 60; break // Reduced from 70
+    case 'moderate': confidenceScore = 45; break // Reduced from 55
+    case 'low': confidenceScore = 30; break // Reduced from 35
+    default: confidenceScore = 40 // Reduced from 50
   }
 
-  // Validate and clean fee page URLs
+  // Enhanced URL validation with more flexibility
   let cleanFeesPageUrl = null
   if (result.feesPageUrl && typeof result.feesPageUrl === 'string') {
-    // Only include URLs that look valid and complete
     if (result.feesPageUrl.startsWith('http') && result.feesPageUrl.includes('.')) {
       cleanFeesPageUrl = result.feesPageUrl
     }
   }
 
-  // If main fees page URL is invalid, try the general website
   if (!cleanFeesPageUrl && result.website && typeof result.website === 'string') {
     if (result.website.startsWith('http') && result.website.includes('.')) {
       cleanFeesPageUrl = result.website
     }
+  }
+
+  // Enhanced fee range with disclaimers
+  let feeRangeWithDisclaimer = result.feeRange || 'Contact university for current fees'
+  if (result.feeRange) {
+    feeRangeWithDisclaimer = `${result.feeRange} (verify with university)`
   }
 
   return {
@@ -134,17 +219,17 @@ export function sanitizeAndEnhanceProgramData(result: any): any {
     country: result.country || 'Country not specified',
     description: result.description || 'Program details available on university website.',
     feeCategory: feeCategory,
-    feeRange: result.feeRange || 'Contact university for current fees',
-    tuition: `${feeCategory} - ${result.feeRange || 'Verify with university'}`,
+    feeRange: feeRangeWithDisclaimer,
+    tuition: `${feeCategory} - ${feeRangeWithDisclaimer}`,
     deadline: result.deadline || 'Check university website for deadlines',
     duration: result.duration || 'Duration varies',
     requirements: result.requirements || 'Check university for requirements',
     fees: {
       category: feeCategory,
-      estimatedRange: result.fees?.estimatedRange || result.feeRange || 'Contact university',
+      estimatedRange: feeRangeWithDisclaimer,
       international: result.fees?.estimatedRange || 'Contact university',
       domestic: result.fees?.estimatedRange || 'Contact university',
-      note: 'Always verify current fees with university'
+      note: 'IMPORTANT: All fee information is estimated. Always verify current fees directly with the university before applying.'
     },
     details: {
       format: result.details?.format || 'Check with university',
@@ -155,13 +240,15 @@ export function sanitizeAndEnhanceProgramData(result: any): any {
     dataQuality: {
       confidence: result.dataQuality?.confidence || 'Moderate',
       lastUpdated: result.dataQuality?.lastUpdated || 'Unknown',
-      sourceType: result.dataQuality?.sourceType || 'Educational directory'
+      sourceType: result.dataQuality?.sourceType || 'Educational directory',
+      accuracyNote: 'Fee estimates may vary significantly from actual costs'
     },
     confidenceScore: confidenceScore,
     ranking: result.ranking || 'University ranking available on request',
     scholarships: result.scholarships || 'Contact university for funding opportunities',
     careers: result.careers || 'Career guidance available',
     website: result.website || 'Visit university website for details',
-    feesPageUrl: cleanFeesPageUrl // Only include if valid, otherwise null
+    feesPageUrl: cleanFeesPageUrl,
+    accuracyDisclaimer: 'This information is for initial research only. Always verify all details directly with the university.'
   }
 }
