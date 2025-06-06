@@ -1,6 +1,5 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StickyNote, Plus, Search, Sparkles, Brain, Tag, BookOpen, Wand2, Trash2, Edit2, BarChart3 } from "lucide-react";
+import { StickyNote, Plus, Search, Sparkles, Brain, Tag, BookOpen, Wand2, Trash2, Edit2, BarChart3, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +14,8 @@ import { useProgramContext } from "@/contexts/ProgramContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import InsightsDashboard from "@/components/notes/InsightsDashboard";
+import NotesTimeline from "@/components/notes/NotesTimeline";
+import EnhancedInsights from "@/components/notes/EnhancedInsights";
 
 const Notes = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -327,14 +328,18 @@ const Notes = () => {
 
         {/* Notes Tabs */}
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-white/70 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-4 bg-white/70 backdrop-blur-sm">
             <TabsTrigger value="general" className="flex items-center gap-2">
               <StickyNote className="h-4 w-4" />
-              General Notes ({filteredGeneralNotes.length})
+              General ({filteredGeneralNotes.length})
             </TabsTrigger>
             <TabsTrigger value="programs" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
-              Program Notes ({filteredProgramNotes.length})
+              Programs ({filteredProgramNotes.length})
+            </TabsTrigger>
+            <TabsTrigger value="timeline" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Timeline
             </TabsTrigger>
             <TabsTrigger value="insights" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -596,6 +601,13 @@ const Notes = () => {
             ) : (
               <EmptyState type="programs" />
             )}
+          </TabsContent>
+
+          <TabsContent value="timeline" className="mt-6">
+            <div className="space-y-6">
+              <NotesTimeline />
+              <EnhancedInsights />
+            </div>
           </TabsContent>
 
           <TabsContent value="insights" className="mt-6">

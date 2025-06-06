@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { getAnalysisPrompt, getTimelinePrompt, getInsightPrompt } from '@/utils/aiPrompts';
 
 export interface AINote {
   id: string;
@@ -66,7 +67,7 @@ const AINotesContext = createContext<AINotesContextType | undefined>(undefined);
 export const useAINotesContext = () => {
   const context = useContext(AINotesContext);
   if (!context) {
-    throw new Error('useAINotesContext must be used within an AINotesProvider');
+    throw new Error('use AINotesContext must be used within an AINotesProvider');
   }
   return context;
 };
@@ -115,7 +116,7 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       if (insightsError) throw insightsError;
       setInsights(insightsData || []);
 
-      // Fetch reminders - fixed the query by removing nullsLast
+      // Fetch reminders
       const { data: remindersData, error: remindersError } = await supabase
         .from('smart_reminders')
         .select('*')
@@ -210,8 +211,21 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No session');
 
+      // Notify user with casual message
+      toast.info('Analyzing your note... ✨ Gimme a sec!');
+      
+      const noteToAnalyze = notes.find(note => note.id === noteId);
+      if (!noteToAnalyze) throw new Error('Note not found');
+      
+      // Generate prompt with context of other notes
+      const analysisPrompt = getAnalysisPrompt(noteToAnalyze, notes, []);
+      
       const { data, error } = await supabase.functions.invoke('analyze-notes', {
-        body: { noteId, action: 'analyze_single' },
+        body: { 
+          noteId, 
+          action: 'analyze_single',
+          customPrompt: analysisPrompt
+        },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         }
@@ -232,11 +246,11 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
         ));
       }
 
-      toast.success('Note analyzed successfully');
+      toast.success('Note analyzed successfully! 🧠✨');
 
     } catch (error) {
       console.error('Error analyzing note:', error);
-      toast.error('Failed to analyze note');
+      toast.error('Oops! Analysis failed. Try again?');
     }
   };
 
@@ -245,10 +259,18 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No session');
 
-      toast.info('Analyzing all notes... This may take a moment.');
+      toast.info('Analyzing all notes... This might take a minute! ⏳');
+
+      // Generate prompts with enhanced context
+      const insightsPrompt = getInsightPrompt(notes, []);
+      const timelinePrompt = getTimelinePrompt(notes, []);
 
       const { data, error } = await supabase.functions.invoke('analyze-notes', {
-        body: { action: 'analyze_all' },
+        body: { 
+          action: 'analyze_all',
+          insightsPrompt, 
+          timelinePrompt
+        },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         }
@@ -258,11 +280,11 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       // Refresh all data
       await fetchAllData();
-      toast.success('Comprehensive analysis completed!');
+      toast.success('All done! Your notes are now super-charged with insights! 💪');
 
     } catch (error) {
       console.error('Error analyzing all notes:', error);
-      toast.error('Failed to analyze notes');
+      toast.error('Failed to analyze notes. Please try again later!');
     }
   };
 
@@ -276,7 +298,7 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
 
       setReminders(reminders.filter(reminder => reminder.id !== id));
-      toast.success('Reminder completed');
+      toast.success('Reminder completed! 🎉');
 
     } catch (error) {
       console.error('Error completing reminder:', error);
