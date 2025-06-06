@@ -25,8 +25,9 @@ const ApplicationStatusCard = ({ program, onViewDetails }: ApplicationStatusCard
   const totalTasks = program.tasks.length;
   const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
   
-  // Calculate days until deadline
-  const daysUntilDeadline = program.deadline && isValid(parseISO(program.deadline)) 
+  // Calculate days until deadline - with proper validation
+  const isValidDeadline = program.deadline && isValid(parseISO(program.deadline));
+  const daysUntilDeadline = isValidDeadline 
     ? differenceInDays(parseISO(program.deadline), new Date())
     : null;
   
@@ -86,8 +87,8 @@ const ApplicationStatusCard = ({ program, onViewDetails }: ApplicationStatusCard
       </CardHeader>
       
       <CardContent className={cn("space-y-4", isMobile ? "px-4" : "")}>
-        {/* Deadline Info */}
-        {program.deadline && (
+        {/* Deadline Info - with proper date validation */}
+        {isValidDeadline && (
           <div className={cn(
             "flex items-center gap-2",
             isMobile ? "text-xs" : "text-sm"
