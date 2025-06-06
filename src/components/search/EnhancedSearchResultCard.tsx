@@ -69,7 +69,7 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
   };
 
   const handleGoogleSearch = () => {
-    const searchQuery = `"${result.programName}" "${result.university}" ${result.country} admissions fees 2025`
+    const searchQuery = `"${result.programName}" "${result.university}" ${result.country}`
     const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`
     window.open(googleUrl, '_blank')
   };
@@ -337,7 +337,7 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
             onClick={handleGoogleSearch}
           >
             <Search className="h-4 w-4 mr-2" />
-            Search for Current Fees & Details
+            Search Program Online
           </Button>
         </div>
       </CardContent>
