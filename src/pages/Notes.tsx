@@ -19,7 +19,7 @@ const Notes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentNote, setCurrentNote] = useState("");
   const [noteTitle, setNoteTitle] = useState("");
-  const [selectedProgramId, setSelectedProgramId] = useState<string>("");
+  const [selectedProgramId, setSelectedProgramId] = useState<string>("no-program");
   const [editingNote, setEditingNote] = useState<any>(null);
   const isMobile = useIsMobile();
 
@@ -47,12 +47,12 @@ const Notes = () => {
     }
     
     const title = noteTitle.trim() || "Untitled Note";
-    const contextType = selectedProgramId ? "application" : "general";
+    const contextType = selectedProgramId !== "no-program" ? "application" : "general";
     
     await addNote({
       title,
       content: currentNote.trim(),
-      program_id: selectedProgramId || undefined,
+      program_id: selectedProgramId !== "no-program" ? selectedProgramId : undefined,
       tags: [],
       context_type: contextType,
       ai_summary: undefined,
@@ -61,7 +61,7 @@ const Notes = () => {
     
     setCurrentNote("");
     setNoteTitle("");
-    setSelectedProgramId("");
+    setSelectedProgramId("no-program");
   };
 
   const handleAIAction = async (action: string, noteId?: string) => {
@@ -88,7 +88,7 @@ const Notes = () => {
     setEditingNote(note);
     setNoteTitle(note.title);
     setCurrentNote(note.content);
-    setSelectedProgramId(note.program_id || "");
+    setSelectedProgramId(note.program_id || "no-program");
   };
 
   const handleUpdateNote = async () => {
@@ -100,14 +100,14 @@ const Notes = () => {
     await updateNote(editingNote.id, {
       title: noteTitle.trim() || "Untitled Note",
       content: currentNote.trim(),
-      program_id: selectedProgramId || undefined,
+      program_id: selectedProgramId !== "no-program" ? selectedProgramId : undefined,
       updated_at: new Date().toISOString()
     });
     
     setEditingNote(null);
     setCurrentNote("");
     setNoteTitle("");
-    setSelectedProgramId("");
+    setSelectedProgramId("no-program");
   };
 
   const handleDeleteNote = async (noteId: string) => {
@@ -188,7 +188,7 @@ const Notes = () => {
                 <SelectValue placeholder="Link to a program (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No Program</SelectItem>
+                <SelectItem value="no-program">No Program</SelectItem>
                 {programs.map(program => (
                   <SelectItem key={program.id} value={program.id}>
                     {program.programName} - {program.university}
@@ -218,7 +218,7 @@ const Notes = () => {
                     setEditingNote(null);
                     setCurrentNote("");
                     setNoteTitle("");
-                    setSelectedProgramId("");
+                    setSelectedProgramId("no-program");
                   }}
                 >
                   Cancel
