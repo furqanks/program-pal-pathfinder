@@ -9,6 +9,107 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_insights: {
+        Row: {
+          confidence_score: number | null
+          content: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          insight_type: string
+          is_active: boolean | null
+          related_notes: string[] | null
+          related_programs: string[] | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          content: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          insight_type: string
+          is_active?: boolean | null
+          related_notes?: string[] | null
+          related_programs?: string[] | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          content?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          insight_type?: string
+          is_active?: boolean | null
+          related_notes?: string[] | null
+          related_programs?: string[] | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_notes: {
+        Row: {
+          ai_categories: Json | null
+          ai_insights: Json | null
+          ai_summary: string | null
+          content: string
+          context_type: string | null
+          created_at: string
+          id: string
+          last_ai_analysis: string | null
+          priority_score: number | null
+          program_id: string | null
+          tags: Json | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_categories?: Json | null
+          ai_insights?: Json | null
+          ai_summary?: string | null
+          content: string
+          context_type?: string | null
+          created_at?: string
+          id?: string
+          last_ai_analysis?: string | null
+          priority_score?: number | null
+          program_id?: string | null
+          tags?: Json | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_categories?: Json | null
+          ai_insights?: Json | null
+          ai_summary?: string | null
+          content?: string
+          context_type?: string | null
+          created_at?: string
+          id?: string
+          last_ai_analysis?: string | null
+          priority_score?: number | null
+          program_id?: string | null
+          tags?: Json | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_notes_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs_saved"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       programs_saved: {
         Row: {
           country: string
@@ -56,6 +157,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      smart_reminders: {
+        Row: {
+          ai_generated: boolean | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          is_completed: boolean | null
+          priority: number | null
+          program_id: string | null
+          reminder_type: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          priority?: number | null
+          program_id?: string | null
+          reminder_type: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          ai_generated?: boolean | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          priority?: number | null
+          program_id?: string | null
+          reminder_type?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smart_reminders_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs_saved"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_documents: {
         Row: {

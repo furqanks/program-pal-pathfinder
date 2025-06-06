@@ -15,6 +15,7 @@ import { TagProvider } from "./contexts/TagContext";
 import { ProgramProvider } from "./contexts/ProgramContext";
 import { PerplexityProvider } from "./contexts/PerplexityContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AINotesProvider } from "./contexts/AINotesContext";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 
@@ -66,13 +67,15 @@ const App = () => {
         <AuthProvider>
           <ProgramProvider>
             <TagProvider>
-              <PerplexityProvider>
-                <BrowserRouter>
-                  <Toaster />
-                  <Sonner />
-                  <AppRoutes />
-                </BrowserRouter>
-              </PerplexityProvider>
+              <AINotesProvider>
+                <PerplexityProvider>
+                  <BrowserRouter>
+                    <Toaster />
+                    <Sonner />
+                    <AppRoutes />
+                  </BrowserRouter>
+                </PerplexityProvider>
+              </AINotesProvider>
             </TagProvider>
           </ProgramProvider>
         </AuthProvider>
