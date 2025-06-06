@@ -35,17 +35,24 @@ ${budgetConsiderations}
 
 ACCURACY REQUIREMENTS:
 1. Use EXACT program names from official university websites
-2. Provide fee RANGES/CATEGORIES instead of exact amounts
+2. Provide REALISTIC fee ranges based on actual university data
 3. Include confidence indicators for data quality
-4. Provide official university fees page URLs as sources
-5. All program information must be verifiable
+4. Only provide working university website URLs as sources
+5. All program information must be verifiable and current
 
-FEE CATEGORIES (assign ONE per program):
-- "Budget-friendly": Under £15,000/year or equivalent
-- "Mid-range": £15,000-£30,000/year or equivalent  
-- "Premium": £30,000-£50,000/year or equivalent
-- "Luxury": Above £50,000/year or equivalent
+FEE CATEGORIES (assign ONE per program based on ACTUAL fees):
+- "Budget-friendly": Under £12,000/year or equivalent
+- "Mid-range": £12,000-£20,000/year or equivalent  
+- "Premium": £20,000-£35,000/year or equivalent
+- "Luxury": Above £35,000/year or equivalent
 - "Contact University": When fees are not publicly available
+
+IMPORTANT FEE GUIDELINES:
+- Base fee categories on ACTUAL published university fees
+- UK domestic fees are typically lower than international fees
+- Research actual university fee pages before categorizing
+- If unsure about exact fees, use "Contact University" category
+- Fee ranges should reflect realistic current prices (2024-2026)
 
 CONFIDENCE LEVELS:
 - "High": Information directly from official university sources
@@ -63,13 +70,13 @@ Return exactly ${resultCount} programs in this JSON format:
       "country": "Country name",
       "description": "Program overview from official source",
       "feeCategory": "Budget-friendly/Mid-range/Premium/Luxury/Contact University",
-      "feeRange": "Estimated range in local currency",
+      "feeRange": "Realistic range based on actual fees (e.g., £10,000-£15,000)",
       "deadline": "Application deadline",
       "duration": "Program duration",
       "requirements": "Admission requirements",
       "fees": {
         "category": "Same as feeCategory",
-        "estimatedRange": "Estimated range with currency",
+        "estimatedRange": "Realistic range with currency",
         "note": "Always verify with university"
       },
       "details": {
@@ -86,12 +93,16 @@ Return exactly ${resultCount} programs in this JSON format:
       "ranking": "University ranking information",
       "scholarships": "Available scholarships and funding",
       "careers": "Career prospects",
-      "website": "Official program webpage URL",
-      "feesPageUrl": "Direct link to university fees page"
+      "website": "Official program webpage URL - ONLY if working",
+      "feesPageUrl": "ONLY include if you can verify the URL works"
     }
   ]
 }
 
-CRITICAL: Always include the feesPageUrl field with direct links to official university fees pages. Return ONLY the JSON object.
+CRITICAL: 
+- Only include feesPageUrl if you can verify it leads to a working fees page
+- Base fee ranges on actual published university fees, not estimates
+- If you cannot find reliable fee information, use "Contact University" category
+Return ONLY the JSON object.
 `;
 }

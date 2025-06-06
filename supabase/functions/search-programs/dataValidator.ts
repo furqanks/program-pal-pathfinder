@@ -20,6 +20,28 @@ export function validateProgramData(result: any, originalQuery: string): boolean
     return false
   }
   
+  // Enhanced fee range validation - check for realistic ranges
+  if (result.feeRange) {
+    const feeRange = result.feeRange.toLowerCase()
+    
+    // Check for unrealistic fee ranges that don't match the category
+    if (feeCategory === 'budget-friendly') {
+      // Budget-friendly should not have ranges starting above £15,000
+      if (feeRange.includes('£20,000') || feeRange.includes('£25,000') || feeRange.includes('£30,000')) {
+        console.log(`Fee range ${result.feeRange} doesn't match budget-friendly category`)
+        return false
+      }
+    }
+    
+    if (feeCategory === 'mid-range') {
+      // Mid-range should be between £10,000-£25,000 typically
+      if (feeRange.includes('£5,000') || feeRange.includes('£35,000') || feeRange.includes('£40,000')) {
+        console.log(`Fee range ${result.feeRange} doesn't match mid-range category`)
+        return false
+      }
+    }
+  }
+  
   // Check for budget constraints matching
   const isBudgetSearch = ['budget', 'affordable', 'cheap', 'low cost'].some(term => 
     query.includes(term)
@@ -89,6 +111,22 @@ export function sanitizeAndEnhanceProgramData(result: any): any {
     default: confidenceScore = 50
   }
 
+  // Validate and clean fee page URLs
+  let cleanFeesPageUrl = null
+  if (result.feesPageUrl && typeof result.feesPageUrl === 'string') {
+    // Only include URLs that look valid and complete
+    if (result.feesPageUrl.startsWith('http') && result.feesPageUrl.includes('.')) {
+      cleanFeesPageUrl = result.feesPageUrl
+    }
+  }
+
+  // If main fees page URL is invalid, try the general website
+  if (!cleanFeesPageUrl && result.website && typeof result.website === 'string') {
+    if (result.website.startsWith('http') && result.website.includes('.')) {
+      cleanFeesPageUrl = result.website
+    }
+  }
+
   return {
     programName: result.programName || 'Program name not specified',
     university: result.university || 'University name not specified',
@@ -124,6 +162,6 @@ export function sanitizeAndEnhanceProgramData(result: any): any {
     scholarships: result.scholarships || 'Contact university for funding opportunities',
     careers: result.careers || 'Career guidance available',
     website: result.website || 'Visit university website for details',
-    feesPageUrl: result.feesPageUrl || result.website || 'Contact university for fees information'
+    feesPageUrl: cleanFeesPageUrl // Only include if valid, otherwise null
   }
 }

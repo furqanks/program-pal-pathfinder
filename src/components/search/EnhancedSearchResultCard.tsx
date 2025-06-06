@@ -70,15 +70,13 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
   };
 
   const handleGoogleSearch = () => {
-    const searchQuery = `"${result.programName}" "${result.university}" ${result.country} admissions 2025`
+    const searchQuery = `"${result.programName}" "${result.university}" ${result.country} admissions fees 2025`
     const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`
     window.open(googleUrl, '_blank')
   };
 
-  const handleVisitFeesPage = () => {
-    if (result.feesPageUrl) {
-      window.open(result.feesPageUrl, '_blank')
-    } else if (result.website) {
+  const handleVisitWebsite = () => {
+    if (result.website) {
       window.open(result.website, '_blank')
     }
   };
@@ -224,35 +222,14 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
 
         {/* Enhanced Fee Information with Category */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm">
-              <DollarSign className="h-4 w-4 text-green-600" />
-              <div>
-                <div className="font-medium">Tuition Category</div>
-                <Badge className={feeBadge.color} variant={feeBadge.variant}>
-                  {feeBadge.text}
-                </Badge>
-              </div>
+          <div className="flex items-center gap-2 text-sm">
+            <DollarSign className="h-4 w-4 text-green-600" />
+            <div>
+              <div className="font-medium">Tuition Category</div>
+              <Badge className={feeBadge.color} variant={feeBadge.variant}>
+                {feeBadge.text}
+              </Badge>
             </div>
-            {result.feesPageUrl && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleVisitFeesPage}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Visit official fees page</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
           </div>
           
           {result.feeRange && (
@@ -263,7 +240,7 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           
           <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border-l-4 border-amber-200">
             <AlertTriangle className="h-3 w-3 inline mr-1" />
-            Always verify current fees with the university before applying
+            Fee estimates may vary - always verify current fees directly with the university
           </div>
         </div>
 
@@ -367,18 +344,18 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
             onClick={handleGoogleSearch}
           >
             <Search className="h-4 w-4 mr-2" />
-            Verify on Google
+            Search for Current Fees
           </Button>
           
-          {result.feesPageUrl && (
+          {result.website && (
             <Button
               variant="outline"
               size="sm"
               className="w-full"
-              onClick={handleVisitFeesPage}
+              onClick={handleVisitWebsite}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
-              Official Fees Page
+              Visit University Website
             </Button>
           )}
         </div>
