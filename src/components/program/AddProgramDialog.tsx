@@ -39,8 +39,10 @@ interface AddProgramDialogProps {
 const AddProgramDialog = ({ open, onOpenChange }: AddProgramDialogProps) => {
   const { addProgram, isLocalMode } = useProgramContext();
   const { tags } = useTagContext();
-  const statusTags = tags.filter((tag) => tag.type === "status");
-  const customTags = tags.filter((tag) => tag.type === "custom");
+  
+  // Filter tags and ensure they have valid IDs
+  const statusTags = tags.filter((tag) => tag.type === "status" && tag.id && tag.id.trim() !== "");
+  const customTags = tags.filter((tag) => tag.type === "custom" && tag.id && tag.id.trim() !== "");
 
   const [formData, setFormData] = useState({
     programName: "",

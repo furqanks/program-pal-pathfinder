@@ -32,24 +32,28 @@ const TagSelector = ({
 }: TagSelectorProps) => {
   const [open, setOpen] = useState(false);
 
+  // Filter out tags with empty or invalid IDs
+  const validTags = availableTags.filter(tag => tag.id && tag.id.trim() !== "");
+  const validSelectedTagIds = selectedTagIds.filter(id => id && id.trim() !== "");
+
   const toggleTag = (tagId: string) => {
-    if (selectedTagIds.includes(tagId)) {
-      onChange(selectedTagIds.filter((id) => id !== tagId));
+    if (validSelectedTagIds.includes(tagId)) {
+      onChange(validSelectedTagIds.filter((id) => id !== tagId));
     } else {
-      onChange([...selectedTagIds, tagId]);
+      onChange([...validSelectedTagIds, tagId]);
     }
   };
 
   const removeTag = (tagId: string) => {
-    onChange(selectedTagIds.filter((id) => id !== tagId));
+    onChange(validSelectedTagIds.filter((id) => id !== tagId));
   };
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1 min-h-[1.75rem]">
-        {selectedTagIds.length > 0 ? (
-          selectedTagIds.map((tagId) => {
-            const tag = availableTags.find((t) => t.id === tagId);
+        {validSelectedTagIds.length > 0 ? (
+          validSelectedTagIds.map((tagId) => {
+            const tag = validTags.find((t) => t.id === tagId);
             if (!tag) return null;
             return (
               <Badge key={tag.id} variant="outline" className="px-2 py-1">
@@ -87,7 +91,7 @@ const TagSelector = ({
             <CommandList>
               <CommandEmpty>No tags found.</CommandEmpty>
               <CommandGroup>
-                {availableTags.map((tag) => (
+                {validTags.map((tag) => (
                   <CommandItem
                     key={tag.id}
                     onSelect={() => toggleTag(tag.id)}
@@ -96,12 +100,12 @@ const TagSelector = ({
                     <div
                       className={cn(
                         "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border",
-                        selectedTagIds.includes(tag.id)
+                        validSelectedTagIds.includes(tag.id)
                           ? "border-primary bg-primary text-primary-foreground"
                           : "border-border"
                       )}
                     >
-                      {selectedTagIds.includes(tag.id) && (
+                      {validSelectedTagIds.includes(tag.id) && (
                         <Check className="h-3 w-3" />
                       )}
                     </div>

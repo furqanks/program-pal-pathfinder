@@ -26,8 +26,10 @@ const EditProgramForm = ({ program, onClose }: EditProgramFormProps) => {
   const { updateProgram } = useProgramContext();
   const { tags } = useTagContext();
   const isMobile = useIsMobile();
-  const statusTags = tags.filter((tag) => tag.type === "status");
-  const customTags = tags.filter((tag) => tag.type === "custom");
+  
+  // Filter tags and ensure they have valid IDs
+  const statusTags = tags.filter((tag) => tag.type === "status" && tag.id && tag.id.trim() !== "");
+  const customTags = tags.filter((tag) => tag.type === "custom" && tag.id && tag.id.trim() !== "");
 
   const [formData, setFormData] = useState({
     programName: program.programName,

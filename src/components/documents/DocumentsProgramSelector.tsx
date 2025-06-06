@@ -22,6 +22,9 @@ const DocumentsProgramSelector = ({
 }: DocumentsProgramSelectorProps) => {
   const { programs } = useProgramContext();
   
+  // Filter programs to ensure they have valid IDs
+  const validPrograms = programs.filter(program => program.id && program.id.trim() !== "");
+  
   return (
     <Select 
       value={selectedProgramId || "no-program"} 
@@ -34,7 +37,7 @@ const DocumentsProgramSelector = ({
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="no-program">No program link</SelectItem>
-        {programs.map(program => (
+        {validPrograms.map(program => (
           <SelectItem key={program.id} value={program.id}>
             {program.programName}
           </SelectItem>
