@@ -18,7 +18,6 @@ import {
   Languages,
   Building,
   TrendingUp,
-  ExternalLink,
   AlertTriangle,
   Shield,
   Info
@@ -73,12 +72,6 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
     const searchQuery = `"${result.programName}" "${result.university}" ${result.country} admissions fees 2025`
     const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`
     window.open(googleUrl, '_blank')
-  };
-
-  const handleVisitWebsite = () => {
-    if (result.website) {
-      window.open(result.website, '_blank')
-    }
   };
 
   // Helper function to format application deadlines nicely
@@ -335,8 +328,8 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="pt-2 space-y-2">
+        {/* Action Button - Only Google Search */}
+        <div className="pt-2">
           <Button
             variant="outline"
             size="sm"
@@ -344,20 +337,8 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
             onClick={handleGoogleSearch}
           >
             <Search className="h-4 w-4 mr-2" />
-            Search for Current Fees
+            Search for Current Fees & Details
           </Button>
-          
-          {result.website && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={handleVisitWebsite}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Visit University Website
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>
