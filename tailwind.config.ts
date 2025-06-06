@@ -62,6 +62,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Gen Z Color Palette
+				'gen-z': {
+					electric: 'hsl(var(--gen-z-electric))',
+					'neon-pink': 'hsl(var(--gen-z-neon-pink))',
+					'cyber-yellow': 'hsl(var(--gen-z-cyber-yellow))',
+					mint: 'hsl(var(--gen-z-mint))',
+					coral: 'hsl(var(--gen-z-coral))',
+					lavender: 'hsl(var(--gen-z-lavender))',
+					sage: 'hsl(var(--gen-z-sage))',
+					sunset: 'hsl(var(--gen-z-sunset))'
 				}
 			},
 			borderRadius: {
@@ -93,6 +104,20 @@ export default {
 				'scale-out': {
 					from: { transform: 'scale(1)', opacity: '1' },
 					to: { transform: 'scale(0.95)', opacity: '0' }
+				},
+				'neon-pulse': {
+					'0%, 100%': { 
+						boxShadow: '0 0 20px hsl(var(--gen-z-electric) / 0.5)',
+						transform: 'scale(1)'
+					},
+					'50%': { 
+						boxShadow: '0 0 40px hsl(var(--gen-z-electric) / 0.8)',
+						transform: 'scale(1.02)'
+					}
+				},
+				'rainbow-shift': {
+					'0%': { filter: 'hue-rotate(0deg)' },
+					'100%': { filter: 'hue-rotate(360deg)' }
 				}
 			},
 			animation: {
@@ -103,7 +128,19 @@ export default {
 				'scale-in': 'scale-in 0.2s ease-out',
 				'scale-out': 'scale-out 0.2s ease-out',
 				'enter': 'fade-in 0.3s ease-out, scale-in 0.2s ease-out',
-				'exit': 'fade-out 0.3s ease-out, scale-out 0.2s ease-out'
+				'exit': 'fade-out 0.3s ease-out, scale-out 0.2s ease-out',
+				'neon-pulse': 'neon-pulse 2s ease-in-out infinite',
+				'rainbow-shift': 'rainbow-shift 3s linear infinite'
+			},
+			fontFamily: {
+				'display': ['Inter', 'system-ui', 'sans-serif'],
+				'heading': ['Inter', 'system-ui', 'sans-serif']
+			},
+			backgroundImage: {
+				'gen-z-electric': 'linear-gradient(135deg, hsl(var(--gen-z-electric)), hsl(var(--gen-z-neon-pink)))',
+				'gen-z-sunset': 'linear-gradient(135deg, hsl(var(--gen-z-sunset)), hsl(var(--gen-z-cyber-yellow)))',
+				'gen-z-mint': 'linear-gradient(135deg, hsl(var(--gen-z-mint)), hsl(var(--gen-z-sage)))',
+				'gen-z-lavender': 'linear-gradient(135deg, hsl(var(--gen-z-lavender)), hsl(var(--gen-z-electric)))'
 			}
 		}
 	},
