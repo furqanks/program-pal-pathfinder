@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -43,16 +42,6 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 240 6% 90%;
     --sidebar-ring: 215 90% 25%;
-
-    /* Gen Z Color Palette */
-    --gen-z-electric: 260 100% 70%;
-    --gen-z-neon-pink: 330 100% 75%;
-    --gen-z-cyber-yellow: 52 100% 68%;
-    --gen-z-mint: 160 84% 39%;
-    --gen-z-coral: 15 100% 70%;
-    --gen-z-lavender: 280 50% 80%;
-    --gen-z-sage: 120 20% 70%;
-    --gen-z-sunset: 25 95% 65%;
   }
 
   .dark {
@@ -92,16 +81,6 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 240 4% 16%;
     --sidebar-ring: 215 90% 35%;
-
-    /* Gen Z Colors for Dark Mode */
-    --gen-z-electric: 260 80% 60%;
-    --gen-z-neon-pink: 330 80% 65%;
-    --gen-z-cyber-yellow: 52 90% 58%;
-    --gen-z-mint: 160 60% 50%;
-    --gen-z-coral: 15 80% 60%;
-    --gen-z-lavender: 280 40% 70%;
-    --gen-z-sage: 120 30% 60%;
-    --gen-z-sunset: 25 85% 55%;
   }
 }
 
@@ -128,67 +107,6 @@
     textarea {
       @apply p-3;
     }
-  }
-}
-
-@layer utilities {
-  /* Gen Z Color Classes */
-  .bg-gen-z-electric { background-color: hsl(var(--gen-z-electric)); }
-  .text-gen-z-electric { color: hsl(var(--gen-z-electric)); }
-  .border-gen-z-electric { border-color: hsl(var(--gen-z-electric)); }
-  
-  .bg-gen-z-neon-pink { background-color: hsl(var(--gen-z-neon-pink)); }
-  .text-gen-z-neon-pink { color: hsl(var(--gen-z-neon-pink)); }
-  .border-gen-z-neon-pink { border-color: hsl(var(--gen-z-neon-pink)); }
-  
-  .bg-gen-z-cyber-yellow { background-color: hsl(var(--gen-z-cyber-yellow)); }
-  .text-gen-z-cyber-yellow { color: hsl(var(--gen-z-cyber-yellow)); }
-  .border-gen-z-cyber-yellow { border-color: hsl(var(--gen-z-cyber-yellow)); }
-  
-  .bg-gen-z-mint { background-color: hsl(var(--gen-z-mint)); }
-  .text-gen-z-mint { color: hsl(var(--gen-z-mint)); }
-  .border-gen-z-mint { border-color: hsl(var(--gen-z-mint)); }
-  
-  .bg-gen-z-coral { background-color: hsl(var(--gen-z-coral)); }
-  .text-gen-z-coral { color: hsl(var(--gen-z-coral)); }
-  .border-gen-z-coral { border-color: hsl(var(--gen-z-coral)); }
-  
-  .bg-gen-z-lavender { background-color: hsl(var(--gen-z-lavender)); }
-  .text-gen-z-lavender { color: hsl(var(--gen-z-lavender)); }
-  .border-gen-z-lavender { border-color: hsl(var(--gen-z-lavender)); }
-  
-  .bg-gen-z-sage { background-color: hsl(var(--gen-z-sage)); }
-  .text-gen-z-sage { color: hsl(var(--gen-z-sage)); }
-  .border-gen-z-sage { border-color: hsl(var(--gen-z-sage)); }
-  
-  .bg-gen-z-sunset { background-color: hsl(var(--gen-z-sunset)); }
-  .text-gen-z-sunset { color: hsl(var(--gen-z-sunset)); }
-  .border-gen-z-sunset { border-color: hsl(var(--gen-z-sunset)); }
-
-  /* Gen Z Gradients */
-  .gen-z-gradient-electric {
-    background: linear-gradient(135deg, hsl(var(--gen-z-electric)), hsl(var(--gen-z-neon-pink)));
-  }
-  
-  .gen-z-gradient-sunset {
-    background: linear-gradient(135deg, hsl(var(--gen-z-sunset)), hsl(var(--gen-z-cyber-yellow)));
-  }
-  
-  .gen-z-gradient-mint {
-    background: linear-gradient(135deg, hsl(var(--gen-z-mint)), hsl(var(--gen-z-sage)));
-  }
-  
-  .gen-z-gradient-lavender {
-    background: linear-gradient(135deg, hsl(var(--gen-z-lavender)), hsl(var(--gen-z-electric)));
-  }
-
-  /* Neon Effects */
-  .neon-glow {
-    box-shadow: 0 0 20px hsl(var(--gen-z-electric) / 0.5);
-  }
-  
-  .neon-pink-glow {
-    box-shadow: 0 0 20px hsl(var(--gen-z-neon-pink) / 0.5);
   }
 }
 
