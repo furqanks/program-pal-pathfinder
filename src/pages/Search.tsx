@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Search as SearchIcon, X, Info, ExternalLink } from "lucide-react";
 import { usePerplexityContext } from "@/contexts/PerplexityContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import EnhancedSearchResultCard from "@/components/search/EnhancedSearchResultCard";
 
 const Search = () => {
   const { searchPrograms, searchResults, isLoading, clearResults, searchMetadata, citations, rawContent } = usePerplexityContext();
@@ -25,81 +25,6 @@ const Search = () => {
     setQuery("");
     clearResults();
   };
-
-  // Simple search result card component
-  const SearchResultCard = ({ result, index }: { result: any; index: number }) => (
-    <Card className="h-full hover:shadow-lg transition-shadow duration-300">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold line-clamp-2 mb-2">
-          {result.programName}
-        </CardTitle>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="font-medium">{result.university}</span>
-          {result.country && (
-            <>
-              <span>•</span>
-              <span>{result.country}</span>
-            </>
-          )}
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
-        <div className="flex flex-wrap gap-2">
-          {result.degreeType && (
-            <Badge variant="secondary">{result.degreeType}</Badge>
-          )}
-          {result.duration && (
-            <Badge variant="outline">{result.duration}</Badge>
-          )}
-        </div>
-
-        {result.tuition && (
-          <div className="text-sm">
-            <span className="font-medium">Tuition:</span> {result.tuition}
-          </div>
-        )}
-
-        {result.deadline && (
-          <div className="text-sm">
-            <span className="font-medium">Deadline:</span> {result.deadline}
-          </div>
-        )}
-
-        {result.requirements && (
-          <div className="text-sm">
-            <span className="font-medium">Requirements:</span> {result.requirements}
-          </div>
-        )}
-
-        <p className="text-sm text-muted-foreground line-clamp-3">
-          {result.description}
-        </p>
-
-        <div className="flex gap-2 pt-2">
-          {result.website && (
-            <Button variant="outline" size="sm" asChild>
-              <a href={result.website} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Visit University
-              </a>
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const searchQuery = `"${result.programName}" "${result.university}"`
-              window.open(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`, '_blank')
-            }}
-          >
-            <SearchIcon className="h-4 w-4 mr-2" />
-            Google Search
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   return (
     <div className="space-y-6">
@@ -199,39 +124,6 @@ const Search = () => {
         </CardContent>
       </Card>
 
-      {/* Citations */}
-      {citations.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ExternalLink className="h-5 w-5" />
-              Sources & Citations ({citations.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {citations.map((citation, index) => (
-                <div key={index} className="border rounded p-3 hover:bg-muted/50">
-                  <a 
-                    href={citation.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-blue-600 hover:underline line-clamp-2"
-                  >
-                    {citation.title || citation.url}
-                  </a>
-                  {citation.text && (
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                      {citation.text}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Results */}
       {searchResults.length > 0 && (
         <div className="space-y-4">
@@ -244,7 +136,7 @@ const Search = () => {
           {searchMetadata?.hasStructuredData ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {searchResults.map((result, index) => (
-                <SearchResultCard key={index} result={result} index={index} />
+                <EnhancedSearchResultCard key={index} result={result} />
               ))}
             </div>
           ) : (
@@ -262,13 +154,51 @@ const Search = () => {
                   <p className="text-xs text-muted-foreground">
                     <strong>Note:</strong> These results are provided directly from Perplexity AI. 
                     Please verify all program details, fees, and requirements directly with the universities 
-                    using the source links above.
+                    using the source links below.
                   </p>
                 </div>
               </CardContent>
             </Card>
           )}
         </div>
+      )}
+
+      {/* Citations - Only show if there are actual citations with content */}
+      {citations.length > 0 && citations.some(citation => citation.title || citation.text) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ExternalLink className="h-5 w-5" />
+              Sources & Citations ({citations.filter(citation => citation.title || citation.text).length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {citations
+                .filter(citation => citation.title || citation.text)
+                .map((citation, index) => (
+                  <div key={index} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                    <a 
+                      href={citation.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-primary hover:underline line-clamp-2 block mb-2"
+                    >
+                      {citation.title || citation.url}
+                    </a>
+                    {citation.text && (
+                      <p className="text-xs text-muted-foreground line-clamp-3">
+                        {citation.text}
+                      </p>
+                    )}
+                    <div className="text-xs text-muted-foreground mt-2 truncate">
+                      {citation.url}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Loading State */}
