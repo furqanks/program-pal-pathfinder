@@ -1,101 +1,150 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StickyNote, Plus, Search, Sparkles, Brain, Tag, BookOpen, Wand2 } from "lucide-react";
+import { StickyNote, Plus, Search, Sparkles, Brain, Tag, BookOpen, Wand2, Trash2, Edit2, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useAINotesContext } from "@/contexts/AINotesContext";
+import { useProgramContext } from "@/contexts/ProgramContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import InsightsDashboard from "@/components/notes/InsightsDashboard";
 
 const Notes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentNote, setCurrentNote] = useState("");
   const [noteTitle, setNoteTitle] = useState("");
+  const [selectedProgramId, setSelectedProgramId] = useState<string>("");
+  const [editingNote, setEditingNote] = useState<any>(null);
   const isMobile = useIsMobile();
 
-  // Sample notes data with pastel color themes
-  const sampleNotes = [
-    {
-      id: 1,
-      title: "Stanford Application Strategy",
-      content: "Focus on AI research experience and leadership in coding club. Highlight the machine learning project that won the regional competition...",
-      createdAt: "2025-01-15",
-      tags: ["Stanford", "CS", "Research"],
-      color: "bg-blue-50 border-blue-200",
-      tagColor: "bg-blue-100 text-blue-800",
-      type: "application"
-    },
-    {
-      id: 2,
-      title: "Personal Statement Ideas",
-      content: "The impact of technology on education and my passion for making CS accessible to underrepresented communities...",
-      createdAt: "2025-01-14",
-      tags: ["Personal Statement", "Essays"],
-      color: "bg-purple-50 border-purple-200",
-      tagColor: "bg-purple-100 text-purple-800",
-      type: "general"
-    },
-    {
-      id: 3,
-      title: "MIT Interview Preparation",
-      content: "Key points: robotics project, leadership experience, passion for innovation. Practice questions about technical challenges...",
-      createdAt: "2025-01-13",
-      tags: ["MIT", "Interview", "Preparation"],
-      color: "bg-green-50 border-green-200",
-      tagColor: "bg-green-100 text-green-800",
-      type: "application"
-    },
-    {
-      id: 4,
-      title: "Research Ideas",
-      content: "Exploring the intersection of AI and healthcare. Potential research directions for graduate school applications...",
-      createdAt: "2025-01-12",
-      tags: ["Research", "AI", "Healthcare"],
-      color: "bg-rose-50 border-rose-200",
-      tagColor: "bg-rose-100 text-rose-800",
-      type: "program"
-    }
-  ];
+  const { notes, addNote, updateNote, deleteNote, analyzeNote, analyzeAllNotes, loading } = useAINotesContext();
+  const { programs } = useProgramContext();
 
-  const filteredGeneralNotes = sampleNotes.filter(note =>
-    note.type === "general" &&
+  const filteredGeneralNotes = notes.filter(note =>
+    note.context_type === "general" &&
     (note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
      note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
+     note.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase())))
   );
 
-  const filteredProgramNotes = sampleNotes.filter(note =>
-    (note.type === "application" || note.type === "program") &&
+  const filteredProgramNotes = notes.filter(note =>
+    (note.context_type === "application" || note.context_type === "academic" || note.program_id) &&
     (note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
      note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
+     note.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase())))
   );
 
-  const handleCreateNote = () => {
+  const handleCreateNote = async () => {
     if (!currentNote.trim()) {
       toast.error("Please write something first!");
       return;
     }
     
-    toast.success("Note created successfully!");
-    // Here you would integrate with your notes context/database
+    const title = noteTitle.trim() || "Untitled Note";
+    const contextType = selectedProgramId ? "application" : "general";
+    
+    await addNote({
+      title,
+      content: currentNote.trim(),
+      program_id: selectedProgramId || undefined,
+      tags: [],
+      context_type: contextType,
+      ai_summary: undefined,
+      last_ai_analysis: undefined
+    });
+    
     setCurrentNote("");
     setNoteTitle("");
+    setSelectedProgramId("");
   };
 
-  const handleAIAction = (action: string) => {
-    if (!currentNote.trim()) {
+  const handleAIAction = async (action: string, noteId?: string) => {
+    if (!currentNote.trim() && !noteId) {
       toast.error("Please write a note first to use AI features!");
       return;
     }
     
-    toast.info(`AI ${action} feature coming soon!`);
-    // Here you would integrate with your AI analysis functions
+    if (action === "analyze_all") {
+      await analyzeAllNotes();
+      return;
+    }
+    
+    if (noteId) {
+      await analyzeNote(noteId);
+    } else {
+      // For current note, save it first then analyze
+      await handleCreateNote();
+      // The newly created note will be analyzed automatically
+    }
   };
+
+  const handleEditNote = (note: any) => {
+    setEditingNote(note);
+    setNoteTitle(note.title);
+    setCurrentNote(note.content);
+    setSelectedProgramId(note.program_id || "");
+  };
+
+  const handleUpdateNote = async () => {
+    if (!editingNote || !currentNote.trim()) {
+      toast.error("Please write something first!");
+      return;
+    }
+    
+    await updateNote(editingNote.id, {
+      title: noteTitle.trim() || "Untitled Note",
+      content: currentNote.trim(),
+      program_id: selectedProgramId || undefined,
+      updated_at: new Date().toISOString()
+    });
+    
+    setEditingNote(null);
+    setCurrentNote("");
+    setNoteTitle("");
+    setSelectedProgramId("");
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    await deleteNote(noteId);
+  };
+
+  const getProgramName = (programId: string) => {
+    const program = programs.find(p => p.id === programId);
+    return program ? `${program.programName} - ${program.university}` : "Unknown Program";
+  };
+
+  const getInsightColor = (categories: string[]) => {
+    if (categories.includes("academic")) return "bg-blue-50 border-blue-200";
+    if (categories.includes("financial")) return "bg-green-50 border-green-200";
+    if (categories.includes("application")) return "bg-purple-50 border-purple-200";
+    if (categories.includes("research")) return "bg-rose-50 border-rose-200";
+    return "bg-gray-50 border-gray-200";
+  };
+
+  const getTagColor = (categories: string[]) => {
+    if (categories.includes("academic")) return "bg-blue-100 text-blue-800";
+    if (categories.includes("financial")) return "bg-green-100 text-green-800";
+    if (categories.includes("application")) return "bg-purple-100 text-purple-800";
+    if (categories.includes("research")) return "bg-rose-100 text-rose-800";
+    return "bg-gray-100 text-gray-800";
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your notes...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
@@ -115,7 +164,7 @@ const Notes = () => {
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2 text-blue-700">
               <StickyNote className="h-6 w-6" />
-              Quick Note
+              {editingNote ? "Edit Note" : "Quick Note"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -133,19 +182,54 @@ const Notes = () => {
               className="border-blue-200 focus:border-blue-400 resize-none"
             />
             
-            {/* AI Action Buttons */}
+            {/* Program Selection */}
+            <Select value={selectedProgramId} onValueChange={setSelectedProgramId}>
+              <SelectTrigger className="border-blue-200 focus:border-blue-400">
+                <SelectValue placeholder="Link to a program (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No Program</SelectItem>
+                {programs.map(program => (
+                  <SelectItem key={program.id} value={program.id}>
+                    {program.programName} - {program.university}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Action Buttons */}
             <div className={cn(
               "flex gap-2 pt-4",
               isMobile ? "flex-col" : "flex-row flex-wrap"
             )}>
-              <Button onClick={handleCreateNote} className="bg-blue-600 hover:bg-blue-700">
+              <Button 
+                onClick={editingNote ? handleUpdateNote : handleCreateNote} 
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={!currentNote.trim()}
+              >
                 <Plus className="mr-2 h-4 w-4" />
-                Save Note
+                {editingNote ? "Update Note" : "Save Note"}
               </Button>
+              
+              {editingNote && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setEditingNote(null);
+                    setCurrentNote("");
+                    setNoteTitle("");
+                    setSelectedProgramId("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              )}
+              
               <Button 
                 variant="outline" 
                 onClick={() => handleAIAction("summarize")}
                 className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                disabled={!currentNote.trim()}
               >
                 <Sparkles className="mr-2 h-4 w-4" />
                 Summarize
@@ -154,6 +238,7 @@ const Notes = () => {
                 variant="outline" 
                 onClick={() => handleAIAction("analyze")}
                 className="border-green-200 text-green-700 hover:bg-green-50"
+                disabled={!currentNote.trim()}
               >
                 <Brain className="mr-2 h-4 w-4" />
                 Analyze
@@ -162,17 +247,19 @@ const Notes = () => {
                 variant="outline" 
                 onClick={() => handleAIAction("enhance")}
                 className="border-rose-200 text-rose-700 hover:bg-rose-50"
+                disabled={!currentNote.trim()}
               >
                 <Wand2 className="mr-2 h-4 w-4" />
                 Enhance
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => handleAIAction("tag")}
+                onClick={() => handleAIAction("analyze_all")}
                 className="border-orange-200 text-orange-700 hover:bg-orange-50"
+                disabled={notes.length === 0}
               >
                 <Tag className="mr-2 h-4 w-4" />
-                Auto-Tag
+                Analyze All Notes
               </Button>
             </div>
           </CardContent>
@@ -195,7 +282,7 @@ const Notes = () => {
 
         {/* Notes Tabs */}
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-white/70 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-3 bg-white/70 backdrop-blur-sm">
             <TabsTrigger value="general" className="flex items-center gap-2">
               <StickyNote className="h-4 w-4" />
               General Notes ({filteredGeneralNotes.length})
@@ -203,6 +290,10 @@ const Notes = () => {
             <TabsTrigger value="programs" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               Program Notes ({filteredProgramNotes.length})
+            </TabsTrigger>
+            <TabsTrigger value="insights" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              AI Insights
             </TabsTrigger>
           </TabsList>
 
@@ -212,31 +303,74 @@ const Notes = () => {
                 {filteredGeneralNotes.map((note) => (
                   <Card key={note.id} className={cn(
                     "hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105",
-                    note.color
+                    getInsightColor(note.ai_categories || [])
                   )}>
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg line-clamp-2 text-gray-800">
-                        {note.title}
-                      </CardTitle>
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-lg line-clamp-2 text-gray-800">
+                          {note.title}
+                        </CardTitle>
+                        <div className="flex gap-1 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditNote(note)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteNote(note.id)}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <p className="text-gray-600 text-sm line-clamp-3 mb-4">
-                        {note.content}
+                        {note.ai_summary || note.content}
                       </p>
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {note.tags.map((tag, index) => (
-                          <Badge
-                            key={index}
-                            className={cn("text-xs", note.tagColor)}
-                            variant="secondary"
-                          >
-                            {tag}
+                      
+                      {note.ai_categories && note.ai_categories.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {note.ai_categories.map((category: string, index: number) => (
+                            <Badge
+                              key={index}
+                              className={cn("text-xs", getTagColor(note.ai_categories || []))}
+                              variant="secondary"
+                            >
+                              {category}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {note.priority_score > 0 && (
+                        <div className="mb-3">
+                          <Badge variant="outline" className="text-xs">
+                            Priority: {note.priority_score}/10
                           </Badge>
-                        ))}
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-between items-center">
+                        <p className="text-xs text-gray-500">
+                          {new Date(note.created_at).toLocaleDateString()}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleAIAction("analyze", note.id)}
+                          className="h-6 px-2 text-xs"
+                        >
+                          <Brain className="mr-1 h-3 w-3" />
+                          Re-analyze
+                        </Button>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        {new Date(note.createdAt).toLocaleDateString()}
-                      </p>
                     </CardContent>
                   </Card>
                 ))}
@@ -252,31 +386,80 @@ const Notes = () => {
                 {filteredProgramNotes.map((note) => (
                   <Card key={note.id} className={cn(
                     "hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105",
-                    note.color
+                    getInsightColor(note.ai_categories || [])
                   )}>
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg line-clamp-2 text-gray-800">
-                        {note.title}
-                      </CardTitle>
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-lg line-clamp-2 text-gray-800">
+                          {note.title}
+                        </CardTitle>
+                        <div className="flex gap-1 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditNote(note)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteNote(note.id)}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <p className="text-gray-600 text-sm line-clamp-3 mb-4">
-                        {note.content}
+                        {note.ai_summary || note.content}
                       </p>
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {note.tags.map((tag, index) => (
-                          <Badge
-                            key={index}
-                            className={cn("text-xs", note.tagColor)}
-                            variant="secondary"
-                          >
-                            {tag}
+                      
+                      {note.program_id && (
+                        <p className="text-xs text-blue-600 font-medium mb-2">
+                          📚 {getProgramName(note.program_id)}
+                        </p>
+                      )}
+                      
+                      {note.ai_categories && note.ai_categories.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {note.ai_categories.map((category: string, index: number) => (
+                            <Badge
+                              key={index}
+                              className={cn("text-xs", getTagColor(note.ai_categories || []))}
+                              variant="secondary"
+                            >
+                              {category}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {note.priority_score > 0 && (
+                        <div className="mb-3">
+                          <Badge variant="outline" className="text-xs">
+                            Priority: {note.priority_score}/10
                           </Badge>
-                        ))}
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-between items-center">
+                        <p className="text-xs text-gray-500">
+                          {new Date(note.created_at).toLocaleDateString()}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleAIAction("analyze", note.id)}
+                          className="h-6 px-2 text-xs"
+                        >
+                          <Brain className="mr-1 h-3 w-3" />
+                          Re-analyze
+                        </Button>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        {new Date(note.createdAt).toLocaleDateString()}
-                      </p>
                     </CardContent>
                   </Card>
                 ))}
@@ -284,6 +467,10 @@ const Notes = () => {
             ) : (
               <EmptyState type="programs" />
             )}
+          </TabsContent>
+
+          <TabsContent value="insights" className="mt-6">
+            <InsightsDashboard />
           </TabsContent>
         </Tabs>
       </div>
