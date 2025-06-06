@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -116,12 +115,12 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       if (insightsError) throw insightsError;
       setInsights(insightsData || []);
 
-      // Fetch reminders
+      // Fetch reminders - fixed the query by removing nullsLast
       const { data: remindersData, error: remindersError } = await supabase
         .from('smart_reminders')
         .select('*')
         .eq('is_completed', false)
-        .order('due_date', { ascending: true, nullsLast: true });
+        .order('due_date', { ascending: true });
 
       if (remindersError) throw remindersError;
       setReminders(remindersData || []);
