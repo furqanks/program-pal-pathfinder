@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Search from "./pages/Search";
 import USSearch from "./pages/USSearch";
 import Documents from "./pages/Documents";
+import Notes from "./pages/Notes";
 import Insights from "./pages/Insights";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
@@ -52,6 +53,7 @@ const AppRoutes = () => {
         <Route path="search" element={<Search />} />
         <Route path="us-search" element={<USSearch />} />
         <Route path="documents" element={<Documents />} />
+        <Route path="notes" element={<Notes />} />
         <Route path="insights" element={<Insights />} />
         <Route path="*" element={<NotFound />} />
       </Route>
