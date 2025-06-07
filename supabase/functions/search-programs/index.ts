@@ -36,21 +36,24 @@ serve(async (req) => {
       )
     }
 
-    // Simple, natural prompt that lets Perplexity do its thing
-    const prompt = `Find ${resultCount} university programs matching: "${query}"
+    // Simplified prompt that emphasizes accuracy over categorization
+    const prompt = `Find ${resultCount} real university programs matching: "${query}"
 
 Use only official university websites and accredited educational institutions as sources. For each program, provide:
-- Program name
-- University name  
+- Exact program name from university website
+- Full university name  
 - Country/location
 - Degree type (Bachelor's, Master's, PhD, etc.)
-- Tuition fees (be specific about currency and whether for domestic/international students)
+- EXACT tuition fees with currency (be specific about domestic vs international rates)
 - Application deadline
 - Duration
 - Key admission requirements
 - Brief program description
+- Direct university program page URL if available
 
-Include direct links to official university program pages where possible. Prioritize accuracy and use current information from official sources.`
+CRITICAL: Report fees EXACTLY as found on university websites. Do not categorize or estimate fees - provide the actual amounts stated by universities. If fees vary by student status, specify this clearly.
+
+Focus on accuracy over neat categorization. Provide real, verifiable information from official sources.`
 
     console.log('Sending query to Perplexity:', query)
 
@@ -65,7 +68,7 @@ Include direct links to official university program pages where possible. Priori
         messages: [
           {
             role: 'system',
-            content: 'You are a university program researcher. Provide accurate, current information from official university sources. Always include source links for verification.'
+            content: 'You are a university program researcher. Provide accurate, current information from official university sources with exact fees and requirements. Do not categorize or estimate - report exactly what universities state.'
           },
           {
             role: 'user',
@@ -108,7 +111,7 @@ Include direct links to official university program pages where possible. Priori
     const content = data.choices[0].message.content
     console.log('Raw response length:', content.length)
 
-    // Try to parse as JSON first (in case Perplexity returns structured data)
+    // Try to parse structured data first
     let parsedPrograms = []
     
     try {
@@ -125,30 +128,30 @@ Include direct links to official university program pages where possible. Priori
       console.log('Not structured JSON, will parse as text')
     }
 
-    // If we got structured data, use it; otherwise parse the text response
     let searchResults = []
     
     if (parsedPrograms.length > 0) {
       console.log('Using structured data:', parsedPrograms.length, 'programs')
+      // Minimal processing - preserve original data accuracy
       searchResults = parsedPrograms.map((program: any) => ({
         programName: program.programName || program.program || 'Program name not specified',
         university: program.university || program.institution || 'University not specified',
         degreeType: program.degreeType || program.degree || 'Degree type not specified',
         country: program.country || program.location || 'Location not specified',
         description: program.description || 'Program details available on university website',
-        tuition: program.tuition || program.fees || program.feeRange || 'Contact university for fees',
-        deadline: program.deadline || program.applicationDeadline || 'Check university website',
-        duration: program.duration || 'Duration varies',
-        requirements: program.requirements || program.admissionRequirements || 'Check university requirements',
+        tuition: program.tuition || program.fees || program.feeRange || 'Contact university for current fees',
+        deadline: program.deadline || program.applicationDeadline || 'Check university website for deadlines',
+        duration: program.duration || 'Duration varies - check with university',
+        requirements: program.requirements || program.admissionRequirements || 'Check university for specific requirements',
         website: program.website || program.link || null,
         fees: {
-          range: program.tuition || program.fees || program.feeRange || 'Contact university for fees',
-          note: 'Verify current fees with university'
+          range: program.tuition || program.fees || program.feeRange || 'Contact university for current fees',
+          note: 'Always verify current fees directly with the university'
         }
-      }))
+      })).slice(0, resultCount)
     } else {
-      // Parse text response into a simple format
-      console.log('Parsing text response')
+      // Text response - no filtering or processing
+      console.log('Using text response without processing')
       searchResults = [{
         programName: 'University Program Search Results',
         university: 'Multiple Universities',
@@ -169,7 +172,7 @@ Include direct links to official university program pages where possible. Priori
 
     return new Response(
       JSON.stringify({ 
-        searchResults: searchResults.slice(0, resultCount),
+        searchResults: searchResults,
         citations: data.citations || [],
         rawContent: content,
         searchMetadata: {
@@ -178,7 +181,7 @@ Include direct links to official university program pages where possible. Priori
           requestedCount: resultCount,
           model: data.model || 'llama-3.1-sonar-large-128k-online',
           hasStructuredData: parsedPrograms.length > 0,
-          disclaimer: 'All information sourced from Perplexity AI. Verify details directly with universities.'
+          disclaimer: 'All information sourced from Perplexity AI. Always verify details directly with universities.'
         }
       }),
       { 

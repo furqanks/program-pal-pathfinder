@@ -12,7 +12,8 @@ import {
   GraduationCap, 
   Plus,
   ExternalLink,
-  Target
+  Target,
+  AlertTriangle
 } from "lucide-react";
 import { SearchResult } from "@/contexts/PerplexityContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
@@ -55,7 +56,7 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
   };
 
   const handleGoogleSearch = () => {
-    const searchQuery = `"${result.programName}" "${result.university}" ${result.country}`
+    const searchQuery = `"${result.programName}" "${result.university}" ${result.country} official website`
     const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`
     window.open(googleUrl, '_blank')
   };
@@ -64,13 +65,16 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
     if (result.website) {
       window.open(result.website, '_blank');
     } else {
-      toast.info("No website URL available for this program");
+      // Fallback to Google search for university website
+      const searchQuery = `"${result.university}" official website`
+      const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`
+      window.open(googleUrl, '_blank');
     }
   };
 
   // Helper function to format application deadlines nicely
   const formatDeadline = (deadline: string) => {
-    if (!deadline) return 'Not specified';
+    if (!deadline) return 'Check university website';
     
     if (deadline.toLowerCase().includes('rolling')) {
       return 'Rolling Admissions';
@@ -141,22 +145,27 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           </div>
         </div>
 
-        {/* Fee Information */}
+        {/* Fee Information - Display exactly as provided */}
         {(result.tuition || result.fees?.range) && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm">
-              <DollarSign className="h-4 w-4 text-green-600" />
-              <div>
+          <div className="space-y-3">
+            <div className="flex items-start gap-2 text-sm">
+              <DollarSign className="h-4 w-4 text-green-600 mt-0.5" />
+              <div className="flex-1">
                 <div className="font-medium">Tuition Fees</div>
                 <div className="text-muted-foreground">
-                  {result.tuition || result.fees?.range || 'Contact university for fees'}
+                  {result.tuition || result.fees?.range || 'Contact university for current fees'}
                 </div>
               </div>
             </div>
             
             {/* Verification Warning */}
-            <div className="text-xs text-amber-800 bg-amber-50 p-2 rounded border-l-4 border-amber-400">
-              <strong>Important:</strong> Fee information may vary. Always verify current fees and available scholarships directly with the university.
+            <div className="text-xs text-amber-800 bg-amber-50 dark:bg-amber-950/30 p-3 rounded border border-amber-200 dark:border-amber-800">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong>Important:</strong> Fee information may vary by student status (domestic/international), academic year, and other factors. Always verify current fees and available financial aid directly with the university.
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -164,18 +173,18 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
         {/* Key Details Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {result.deadline && (
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-red-600" />
+            <div className="flex items-start gap-2 text-sm">
+              <Calendar className="h-4 w-4 text-red-600 mt-0.5" />
               <div>
-                <div className="font-medium">Deadline</div>
+                <div className="font-medium">Application Deadline</div>
                 <div className="text-muted-foreground">{formatDeadline(result.deadline)}</div>
               </div>
             </div>
           )}
 
           {result.duration && (
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 text-blue-600" />
+            <div className="flex items-start gap-2 text-sm">
+              <Clock className="h-4 w-4 text-blue-600 mt-0.5" />
               <div>
                 <div className="font-medium">Duration</div>
                 <div className="text-muted-foreground">{result.duration}</div>
@@ -189,9 +198,9 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Target className="h-4 w-4 text-orange-600" />
-              <span className="font-medium text-sm">Requirements</span>
+              <span className="font-medium text-sm">Entry Requirements</span>
             </div>
-            <p className="text-sm text-muted-foreground pl-6">
+            <p className="text-sm text-muted-foreground pl-6 leading-relaxed">
               {result.requirements}
             </p>
           </div>
@@ -200,14 +209,14 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
         {/* Description */}
         <div className="space-y-2">
           <Separator />
-          <p className="text-sm text-muted-foreground line-clamp-4">
+          <p className="text-sm text-muted-foreground line-clamp-4 leading-relaxed">
             {result.description}
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="pt-2 space-y-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="pt-2 space-y-3">
+          <div className="grid grid-cols-2 gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -218,22 +227,20 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
               Google Search
             </Button>
             
-            {result.website && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={handleVisitWebsite}
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Visit Website
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={handleVisitWebsite}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Visit Website
+            </Button>
           </div>
           
           {/* Data Source Information */}
           <div className="text-xs text-muted-foreground text-center pt-2 border-t">
-            Data sourced from Perplexity AI • Always verify details with the university
+            Data sourced via Perplexity AI • Always verify details with the university
           </div>
         </div>
       </CardContent>

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -73,7 +74,7 @@ const Search = () => {
       <div>
         <h1 className="text-3xl font-bold tracking-tight mb-2">AI Program Search</h1>
         <p className="text-muted-foreground">
-          Search for university programs worldwide with information from official sources
+          Search for university programs worldwide with accurate information from official sources
         </p>
       </div>
 
@@ -89,7 +90,7 @@ const Search = () => {
           <form onSubmit={handleSearch} className="space-y-4">
             <div className="flex gap-2">
               <Input
-                placeholder="e.g., Computer Science Masters in UK, MBA programs with scholarships..."
+                placeholder="e.g., Clinical Psychology Masters in UK, MBA programs with scholarships..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="flex-1"
@@ -114,7 +115,7 @@ const Search = () => {
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2 items-center justify-between">
+            <div className="flex flex-wrap gap-4 items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Results:</span>
                 <Select value={resultCount.toString()} onValueChange={(value) => setResultCount(parseInt(value))}>
@@ -142,10 +143,10 @@ const Search = () => {
                         Be specific for better results:
                       </p>
                       <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
-                        <li>Program field: "Computer Science", "Psychology"</li>
+                        <li>Program field: "Clinical Psychology", "Computer Science"</li>
                         <li>Degree level: "Bachelor's", "Master's", "PhD"</li>
                         <li>Location: "UK", "Canada", "Europe"</li>
-                        <li>Special requirements: "no GMAT", "scholarships available"</li>
+                        <li>Special requirements: "budget-friendly", "scholarships available"</li>
                       </ul>
                     </div>
                   </PopoverContent>
@@ -153,11 +154,15 @@ const Search = () => {
               </div>
 
               {searchMetadata && (
-                <div className="text-xs text-muted-foreground">
-                  <span>Powered by Perplexity AI • </span>
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <span>Powered by Perplexity AI</span>
                   {citations.length > 0 && (
-                    <span>{citations.length} sources • </span>
+                    <>
+                      <span>•</span>
+                      <span>{citations.length} sources</span>
+                    </>
                   )}
+                  <span>•</span>
                   <span>Always verify with universities</span>
                 </div>
               )}
@@ -171,7 +176,7 @@ const Search = () => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">
-              Search Results ({searchResults.length} programs)
+              Search Results ({searchResults.length} programs found)
             </h2>
           </div>
 
@@ -190,8 +195,8 @@ const Search = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-4 rounded-lg border">
-                  <div className="formatted-content space-y-3">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-6 rounded-lg border">
+                  <div className="formatted-content space-y-4">
                     {formatRawContent(rawContent)}
                   </div>
                 </div>
@@ -226,7 +231,7 @@ const Search = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {citations
                 .filter(citation => citation.title || citation.text)
                 .map((citation, index) => (
@@ -240,11 +245,11 @@ const Search = () => {
                       {citation.title || citation.url}
                     </a>
                     {citation.text && (
-                      <p className="text-xs text-muted-foreground line-clamp-3">
+                      <p className="text-xs text-muted-foreground line-clamp-3 mb-2">
                         {citation.text}
                       </p>
                     )}
-                    <div className="text-xs text-muted-foreground mt-2 truncate">
+                    <div className="text-xs text-muted-foreground truncate">
                       {citation.url}
                     </div>
                   </div>
@@ -260,7 +265,7 @@ const Search = () => {
           <CardContent className="py-12 text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
             <p className="text-muted-foreground">
-              Searching official university sources...
+              Searching official university sources for accurate information...
             </p>
           </CardContent>
         </Card>
@@ -273,13 +278,13 @@ const Search = () => {
             <SearchIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-medium mb-2">Search University Programs</h3>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Enter keywords to search for university programs worldwide. Results come from official university sources.
+              Enter keywords to search for university programs worldwide. Get accurate results from official university sources.
             </p>
             <div className="space-y-2 text-sm text-muted-foreground">
               <p><strong>Example searches:</strong></p>
-              <p>"Computer Science Masters in Canada"</p>
-              <p>"MBA programs with GMAT waiver"</p>
-              <p>"PhD Psychology programs with funding"</p>
+              <p>"Clinical Psychology Masters in UK"</p>
+              <p>"Budget-friendly MBA programs Canada"</p>
+              <p>"PhD Computer Science with funding"</p>
             </div>
           </CardContent>
         </Card>
