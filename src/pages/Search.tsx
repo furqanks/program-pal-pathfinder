@@ -88,34 +88,36 @@ const Search = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSearch} className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 placeholder="e.g., Clinical Psychology Masters in UK, MBA programs with scholarships..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="flex-1"
               />
-              <Button type="submit" disabled={isLoading || !query.trim()}>
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <SearchIcon className="h-4 w-4 mr-2" />
-                )}
-                Search
-              </Button>
-              {(searchResults.length > 0 || query) && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleClearSearch}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Clear
+              <div className="flex gap-2">
+                <Button type="submit" disabled={isLoading || !query.trim()} className="min-w-[100px]">
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <SearchIcon className="h-4 w-4 mr-2" />
+                  )}
+                  Search
                 </Button>
-              )}
+                {(searchResults.length > 0 || query) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleClearSearch}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Results:</span>
                 <Select value={resultCount.toString()} onValueChange={(value) => setResultCount(parseInt(value))}>
@@ -154,7 +156,7 @@ const Search = () => {
               </div>
 
               {searchMetadata && (
-                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-2">
                   <span>Powered by Perplexity AI</span>
                   {citations.length > 0 && (
                     <>
@@ -181,7 +183,7 @@ const Search = () => {
           </div>
 
           {searchMetadata?.hasStructuredData ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {searchResults.map((result, index) => (
                 <EnhancedSearchResultCard key={index} result={result} />
               ))}

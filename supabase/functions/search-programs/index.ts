@@ -36,24 +36,25 @@ serve(async (req) => {
       )
     }
 
-    // Simplified prompt that emphasizes accuracy over categorization
+    // Direct prompt focusing only on accuracy - no fee categorization
     const prompt = `Find ${resultCount} real university programs matching: "${query}"
 
-Use only official university websites and accredited educational institutions as sources. For each program, provide:
-- Exact program name from university website
-- Full university name  
-- Country/location
+Search only official university websites and accredited educational institutions. For each program, provide:
+
+- Exact program name from official sources
+- Full university name
+- Country/location  
 - Degree type (Bachelor's, Master's, PhD, etc.)
-- EXACT tuition fees with currency (be specific about domestic vs international rates)
+- EXACT tuition fees as stated by the university (specify currency and student status)
 - Application deadline
 - Duration
 - Key admission requirements
 - Brief program description
-- Direct university program page URL if available
+- Direct university program page URL
 
-CRITICAL: Report fees EXACTLY as found on university websites. Do not categorize or estimate fees - provide the actual amounts stated by universities. If fees vary by student status, specify this clearly.
+CRITICAL: Report fees EXACTLY as found on university websites. Do not estimate, categorize, or modify fee amounts. If fees vary by student status (domestic/international), provide both. If fees are unknown, state "Contact university for current fees".
 
-Focus on accuracy over neat categorization. Provide real, verifiable information from official sources.`
+Return information exactly as universities present it. Focus on accuracy over categorization.`
 
     console.log('Sending query to Perplexity:', query)
 
@@ -68,7 +69,7 @@ Focus on accuracy over neat categorization. Provide real, verifiable information
         messages: [
           {
             role: 'system',
-            content: 'You are a university program researcher. Provide accurate, current information from official university sources with exact fees and requirements. Do not categorize or estimate - report exactly what universities state.'
+            content: 'You are a university program researcher. Provide accurate, current information from official university sources. Report exact fees and requirements as stated by universities. Do not categorize or estimate fees.'
           },
           {
             role: 'user',
@@ -111,7 +112,7 @@ Focus on accuracy over neat categorization. Provide real, verifiable information
     const content = data.choices[0].message.content
     console.log('Raw response length:', content.length)
 
-    // Try to parse structured data first
+    // Parse response for structured data
     let parsedPrograms = []
     
     try {
@@ -125,38 +126,38 @@ Focus on accuracy over neat categorization. Provide real, verifiable information
         }
       }
     } catch (e) {
-      console.log('Not structured JSON, will parse as text')
+      console.log('No structured JSON found, using text response')
     }
 
     let searchResults = []
     
     if (parsedPrograms.length > 0) {
       console.log('Using structured data:', parsedPrograms.length, 'programs')
-      // Minimal processing - preserve original data accuracy
+      // Direct mapping without any fee processing or validation
       searchResults = parsedPrograms.map((program: any) => ({
         programName: program.programName || program.program || 'Program name not specified',
-        university: program.university || program.institution || 'University not specified',
+        university: program.university || program.institution || 'University not specified', 
         degreeType: program.degreeType || program.degree || 'Degree type not specified',
         country: program.country || program.location || 'Location not specified',
         description: program.description || 'Program details available on university website',
         tuition: program.tuition || program.fees || program.feeRange || 'Contact university for current fees',
         deadline: program.deadline || program.applicationDeadline || 'Check university website for deadlines',
-        duration: program.duration || 'Duration varies - check with university',
-        requirements: program.requirements || program.admissionRequirements || 'Check university for specific requirements',
+        duration: program.duration || 'Duration varies',
+        requirements: program.requirements || program.admissionRequirements || 'Check university for requirements',
         website: program.website || program.link || null,
         fees: {
           range: program.tuition || program.fees || program.feeRange || 'Contact university for current fees',
-          note: 'Always verify current fees directly with the university'
+          note: 'Verify current fees directly with the university'
         }
       })).slice(0, resultCount)
     } else {
-      // Text response - no filtering or processing
-      console.log('Using text response without processing')
+      // Text response fallback
+      console.log('Using text response')
       searchResults = [{
         programName: 'University Program Search Results',
         university: 'Multiple Universities',
         degreeType: 'Various',
-        country: 'Multiple Countries',
+        country: 'Multiple Countries', 
         description: content,
         tuition: 'See detailed information below',
         deadline: 'Varies by program',

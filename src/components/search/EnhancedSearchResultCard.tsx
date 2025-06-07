@@ -65,14 +65,12 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
     if (result.website) {
       window.open(result.website, '_blank');
     } else {
-      // Fallback to Google search for university website
       const searchQuery = `"${result.university}" official website`
       const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`
       window.open(googleUrl, '_blank');
     }
   };
 
-  // Helper function to format application deadlines nicely
   const formatDeadline = (deadline: string) => {
     if (!deadline) return 'Check university website';
     
@@ -97,16 +95,16 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
   };
 
   return (
-    <Card className="h-full hover:shadow-lg transition-shadow duration-300">
-      <CardHeader className="pb-3">
+    <Card className="h-full hover:shadow-lg transition-shadow duration-300 border">
+      <CardHeader className="pb-4">
         <div className="flex justify-between items-start gap-3">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <CardTitle className="text-lg font-semibold line-clamp-2 mb-2">
               {result.programName}
             </CardTitle>
             <CardDescription className="flex items-center gap-2 text-sm font-medium">
-              <GraduationCap className="h-4 w-4" />
-              {result.university}
+              <GraduationCap className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">{result.university}</span>
             </CardDescription>
           </div>
           <TooltipProvider>
@@ -132,27 +130,25 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
 
       <CardContent className="space-y-4">
         {/* Basic Program Information */}
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <GraduationCap className="h-3 w-3" />
-              {result.degreeType}
-            </Badge>
-            <Badge variant="outline" className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              {result.country}
-            </Badge>
-          </div>
+        <div className="flex items-center justify-start flex-wrap gap-2">
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <GraduationCap className="h-3 w-3" />
+            {result.degreeType}
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1">
+            <MapPin className="h-3 w-3" />
+            {result.country}
+          </Badge>
         </div>
 
-        {/* Fee Information - Display exactly as provided */}
+        {/* Fee Information - Display exactly as provided without any categorization */}
         {(result.tuition || result.fees?.range) && (
           <div className="space-y-3">
             <div className="flex items-start gap-2 text-sm">
-              <DollarSign className="h-4 w-4 text-green-600 mt-0.5" />
-              <div className="flex-1">
+              <DollarSign className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
                 <div className="font-medium">Tuition Fees</div>
-                <div className="text-muted-foreground">
+                <div className="text-muted-foreground break-words">
                   {result.tuition || result.fees?.range || 'Contact university for current fees'}
                 </div>
               </div>
@@ -171,11 +167,11 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
         )}
 
         {/* Key Details Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           {result.deadline && (
             <div className="flex items-start gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-red-600 mt-0.5" />
-              <div>
+              <Calendar className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
                 <div className="font-medium">Application Deadline</div>
                 <div className="text-muted-foreground">{formatDeadline(result.deadline)}</div>
               </div>
@@ -184,8 +180,8 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
 
           {result.duration && (
             <div className="flex items-start gap-2 text-sm">
-              <Clock className="h-4 w-4 text-blue-600 mt-0.5" />
-              <div>
+              <Clock className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
                 <div className="font-medium">Duration</div>
                 <div className="text-muted-foreground">{result.duration}</div>
               </div>
@@ -197,7 +193,7 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
         {result.requirements && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-orange-600" />
+              <Target className="h-4 w-4 text-orange-600 flex-shrink-0" />
               <span className="font-medium text-sm">Entry Requirements</span>
             </div>
             <p className="text-sm text-muted-foreground pl-6 leading-relaxed">
@@ -207,12 +203,14 @@ const EnhancedSearchResultCard = ({ result }: EnhancedSearchResultCardProps) => 
         )}
 
         {/* Description */}
-        <div className="space-y-2">
-          <Separator />
-          <p className="text-sm text-muted-foreground line-clamp-4 leading-relaxed">
-            {result.description}
-          </p>
-        </div>
+        {result.description && (
+          <div className="space-y-2">
+            <Separator />
+            <p className="text-sm text-muted-foreground line-clamp-4 leading-relaxed">
+              {result.description}
+            </p>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="pt-2 space-y-3">
