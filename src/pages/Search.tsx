@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,6 +23,49 @@ const Search = () => {
   const handleClearSearch = () => {
     setQuery("");
     clearResults();
+  };
+
+  // Helper function to format raw content for better display
+  const formatRawContent = (content: string) => {
+    if (!content) return "";
+    
+    // Split content into sections and format
+    return content
+      .split('\n\n')
+      .map(section => section.trim())
+      .filter(section => section.length > 0)
+      .map((section, index) => {
+        // Check if section is a heading (starts with ## or has **bold** patterns)
+        if (section.startsWith('##') || section.includes('**')) {
+          return (
+            <div key={index} className="mb-4">
+              <div 
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: section
+                    .replace(/##\s*(.*)/g, '<h3 class="text-lg font-semibold text-foreground mb-2 mt-4">$1</h3>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-medium text-foreground">$1</strong>')
+                    .replace(/\n/g, '<br />')
+                }}
+              />
+            </div>
+          );
+        }
+        
+        // Regular paragraph content
+        return (
+          <div key={index} className="mb-3">
+            <p 
+              className="text-sm text-muted-foreground leading-relaxed"
+              dangerouslySetInnerHTML={{
+                __html: section
+                  .replace(/\*\*(.*?)\*\*/g, '<strong class="font-medium text-foreground">$1</strong>')
+                  .replace(/\n/g, '<br />')
+              }}
+            />
+          </div>
+        );
+      });
   };
 
   return (
@@ -142,20 +184,31 @@ const Search = () => {
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Program Search Results</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <SearchIcon className="h-5 w-5" />
+                  Program Search Results
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="prose max-w-none">
-                  <div className="whitespace-pre-wrap text-sm">
-                    {rawContent}
+              <CardContent className="space-y-4">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-4 rounded-lg border">
+                  <div className="formatted-content space-y-3">
+                    {formatRawContent(rawContent)}
                   </div>
                 </div>
-                <div className="mt-4 p-3 bg-muted rounded-lg">
-                  <p className="text-xs text-muted-foreground">
-                    <strong>Note:</strong> These results are provided directly from Perplexity AI. 
-                    Please verify all program details, fees, and requirements directly with the universities 
-                    using the source links below.
-                  </p>
+                
+                <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-start gap-3">
+                    <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        Important Verification Notice
+                      </p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                        These results are provided directly from Perplexity AI and may not reflect the most current information. 
+                        <strong className="font-medium"> Always verify all program details, fees, deadlines, and requirements directly with the universities</strong> using the source links below before making any application decisions.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
