@@ -36,27 +36,48 @@ serve(async (req) => {
       )
     }
 
-    // Direct prompt focusing only on accuracy - no fee categorization
-    const prompt = `Find ${resultCount} real university programs matching: "${query}"
+    // Enhanced prompt for comprehensive report-style results
+    const prompt = `Create a comprehensive university program search report for: "${query}"
 
-Search only official university websites and accredited educational institutions. For each program, provide:
+Structure your response as a detailed research report covering:
 
-- Exact program name from official sources
-- Full university name
-- Country/location  
-- Degree type (Bachelor's, Master's, PhD, etc.)
-- EXACT tuition fees as stated by the university (specify currency and student status)
-- Application deadline
-- Duration
-- Key admission requirements
-- Brief program description
-- Direct university program page URL
+## Program Overview
+Provide a summary of the search criteria and what types of programs match this query.
 
-CRITICAL: Report fees EXACTLY as found on university websites. Do not estimate, categorize, or modify fee amounts. If fees vary by student status (domestic/international), provide both. If fees are unknown, state "Contact university for current fees".
+## Available Programs
+List specific programs found, organized by country/region. For each program include:
+- **Program Name**: Full official program title
+- **University**: Complete university name  
+- **Location**: Country and city
+- **Degree Level**: Bachelor's, Master's, PhD, etc.
+- **Duration**: Program length
+- **Tuition Fees**: Exact fees as stated by universities (specify currency and student status)
+- **Application Deadline**: Current deadline information
+- **Entry Requirements**: Key admission requirements
+- **Program Highlights**: Brief description of unique features
 
-Return information exactly as universities present it. Focus on accuracy over categorization.`
+## Key Insights
+- Common fee ranges across programs
+- Popular locations for this field
+- Typical admission requirements
+- Notable program features or specializations
 
-    console.log('Sending query to Perplexity:', query)
+## Application Considerations
+- Important deadlines to note
+- Documentation typically required
+- Tips for international students (if relevant)
+
+CRITICAL INSTRUCTIONS:
+- Only include real, currently offered programs from accredited universities
+- Report fees exactly as found on official university websites
+- Include direct links to program pages when possible: [Program Name](URL)
+- If exact information is unavailable, clearly state "Contact university for current details"
+- Focus on official university sources only
+- Prioritize accuracy over quantity
+
+Format links as: [Program Title](university-program-url) for easy access to official pages.`
+
+    console.log('Sending comprehensive search query to Perplexity:', query)
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -69,7 +90,7 @@ Return information exactly as universities present it. Focus on accuracy over ca
         messages: [
           {
             role: 'system',
-            content: 'You are a university program researcher. Provide accurate, current information from official university sources. Report exact fees and requirements as stated by universities. Do not categorize or estimate fees.'
+            content: 'You are a university program research specialist. Create comprehensive, accurate reports from official university sources. Always verify information from university websites and provide direct links when possible. Format responses as structured reports with clear sections and actionable information.'
           },
           {
             role: 'user',
@@ -97,7 +118,7 @@ Return information exactly as universities present it. Focus on accuracy over ca
     }
 
     const data = await response.json()
-    console.log('Perplexity response received')
+    console.log('Perplexity response received for comprehensive search')
 
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       return new Response(
@@ -110,66 +131,25 @@ Return information exactly as universities present it. Focus on accuracy over ca
     }
 
     const content = data.choices[0].message.content
-    console.log('Raw response length:', content.length)
+    console.log('Report content length:', content.length)
 
-    // Parse response for structured data
-    let parsedPrograms = []
-    
-    try {
-      const jsonMatch = content.match(/\{[\s\S]*\}|\[[\s\S]*\]/)
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0])
-        if (parsed.programs && Array.isArray(parsed.programs)) {
-          parsedPrograms = parsed.programs
-        } else if (Array.isArray(parsed)) {
-          parsedPrograms = parsed
-        }
+    // Create a single comprehensive result for report display
+    const searchResults = [{
+      programName: 'University Program Search Report',
+      university: 'Comprehensive Analysis',
+      degreeType: 'Multiple Programs',
+      country: 'Global Search Results', 
+      description: content,
+      tuition: 'Varies by program - see report details',
+      deadline: 'Multiple deadlines - see report details',
+      duration: 'Varies by program type',
+      requirements: 'Varies by program - see report details',
+      website: null,
+      fees: {
+        range: 'See detailed analysis in report',
+        note: 'All fees require verification with universities'
       }
-    } catch (e) {
-      console.log('No structured JSON found, using text response')
-    }
-
-    let searchResults = []
-    
-    if (parsedPrograms.length > 0) {
-      console.log('Using structured data:', parsedPrograms.length, 'programs')
-      // Direct mapping without any fee processing or validation
-      searchResults = parsedPrograms.map((program: any) => ({
-        programName: program.programName || program.program || 'Program name not specified',
-        university: program.university || program.institution || 'University not specified', 
-        degreeType: program.degreeType || program.degree || 'Degree type not specified',
-        country: program.country || program.location || 'Location not specified',
-        description: program.description || 'Program details available on university website',
-        tuition: program.tuition || program.fees || program.feeRange || 'Contact university for current fees',
-        deadline: program.deadline || program.applicationDeadline || 'Check university website for deadlines',
-        duration: program.duration || 'Duration varies',
-        requirements: program.requirements || program.admissionRequirements || 'Check university for requirements',
-        website: program.website || program.link || null,
-        fees: {
-          range: program.tuition || program.fees || program.feeRange || 'Contact university for current fees',
-          note: 'Verify current fees directly with the university'
-        }
-      })).slice(0, resultCount)
-    } else {
-      // Text response fallback
-      console.log('Using text response')
-      searchResults = [{
-        programName: 'University Program Search Results',
-        university: 'Multiple Universities',
-        degreeType: 'Various',
-        country: 'Multiple Countries', 
-        description: content,
-        tuition: 'See detailed information below',
-        deadline: 'Varies by program',
-        duration: 'Varies by program',
-        requirements: 'Varies by program',
-        website: null,
-        fees: {
-          range: 'See program details',
-          note: 'Verify all information with universities'
-        }
-      }]
-    }
+    }]
 
     return new Response(
       JSON.stringify({ 
@@ -178,11 +158,12 @@ Return information exactly as universities present it. Focus on accuracy over ca
         rawContent: content,
         searchMetadata: {
           query: query,
-          resultCount: searchResults.length,
+          resultCount: 1,
           requestedCount: resultCount,
           model: data.model || 'llama-3.1-sonar-large-128k-online',
-          hasStructuredData: parsedPrograms.length > 0,
-          disclaimer: 'All information sourced from Perplexity AI. Always verify details directly with universities.'
+          hasStructuredData: false,
+          reportFormat: true,
+          disclaimer: 'Comprehensive search report generated by Perplexity AI. Always verify all details directly with universities.'
         }
       }),
       { 
