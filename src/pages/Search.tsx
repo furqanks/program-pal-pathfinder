@@ -12,12 +12,14 @@ import SearchReportView from "@/components/search/SearchReportView";
 const Search = () => {
   const { searchPrograms, searchResults, isLoading, clearResults, searchMetadata, citations, rawContent } = usePerplexityContext();
   const [customQuery, setCustomQuery] = useState("");
+  const [customField, setCustomField] = useState("");
   const [selectedAnswers, setSelectedAnswers] = useState({
     field: "",
     level: "",
     location: "",
     budget: "",
-    format: ""
+    format: "",
+    intake: ""
   });
 
   const questions = [
@@ -76,6 +78,16 @@ const Search = () => {
         "Online/Distance learning",
         "Any format"
       ]
+    },
+    {
+      id: "intake",
+      question: "Preferred intake/start date?",
+      options: [
+        "September 2025",
+        "January 2026",
+        "September 2026",
+        "Any intake"
+      ]
     }
   ];
 
@@ -91,7 +103,10 @@ const Search = () => {
     
     if (selectedAnswers.field && selectedAnswers.field !== "Other/Custom Field") {
       parts.push(selectedAnswers.field);
+    } else if (selectedAnswers.field === "Other/Custom Field" && customField.trim()) {
+      parts.push(customField.trim());
     }
+    
     if (selectedAnswers.level && selectedAnswers.level !== "Any Level") {
       parts.push(selectedAnswers.level);
     }
@@ -105,6 +120,9 @@ const Search = () => {
     }
     if (selectedAnswers.format && selectedAnswers.format !== "Any format") {
       parts.push(selectedAnswers.format.toLowerCase());
+    }
+    if (selectedAnswers.intake && selectedAnswers.intake !== "Any intake") {
+      parts.push(selectedAnswers.intake);
     }
 
     return parts.join(" ");
@@ -126,12 +144,14 @@ const Search = () => {
 
   const handleClearSearch = () => {
     setCustomQuery("");
+    setCustomField("");
     setSelectedAnswers({
       field: "",
       level: "",
       location: "",
       budget: "",
-      format: ""
+      format: "",
+      intake: ""
     });
     clearResults();
   };
@@ -176,6 +196,18 @@ const Search = () => {
                   </Button>
                 ))}
               </div>
+              
+              {/* Custom field input for "Other/Custom Field" */}
+              {question.id === "field" && selectedAnswers.field === "Other/Custom Field" && (
+                <div className="mt-3">
+                  <Input
+                    placeholder="Please specify your field of interest..."
+                    value={customField}
+                    onChange={(e) => setCustomField(e.target.value)}
+                    className="max-w-md"
+                  />
+                </div>
+              )}
             </div>
           ))}
 
