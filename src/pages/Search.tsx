@@ -223,37 +223,52 @@ const Search = () => {
         </div>
       )}
 
-      {/* Citations - Only show if there are actual citations with content */}
-      {citations.length > 0 && citations.some(citation => citation.title || citation.text) && (
+      {/* Citations - Enhanced to ensure all links are clickable */}
+      {citations.length > 0 && citations.some(citation => citation.title || citation.text || citation.url) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ExternalLink className="h-5 w-5" />
-              Sources & Citations ({citations.filter(citation => citation.title || citation.text).length})
+              Sources & Citations ({citations.filter(citation => citation.title || citation.text || citation.url).length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {citations
-                .filter(citation => citation.title || citation.text)
+                .filter(citation => citation.title || citation.text || citation.url)
                 .map((citation, index) => (
                   <div key={index} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                    <a 
-                      href={citation.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm font-medium text-primary hover:underline line-clamp-2 block mb-2"
-                    >
-                      {citation.title || citation.url}
-                    </a>
+                    {/* Make the title/url clickable */}
+                    {citation.url && (
+                      <a 
+                        href={citation.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm font-medium text-primary hover:text-primary/80 hover:underline line-clamp-2 block mb-2 cursor-pointer"
+                      >
+                        {citation.title || citation.url}
+                        <ExternalLink className="h-3 w-3 inline ml-1" />
+                      </a>
+                    )}
+                    
+                    {/* Text content */}
                     {citation.text && (
                       <p className="text-xs text-muted-foreground line-clamp-3 mb-2">
                         {citation.text}
                       </p>
                     )}
-                    <div className="text-xs text-muted-foreground truncate">
-                      {citation.url}
-                    </div>
+                    
+                    {/* Clickable URL at the bottom */}
+                    {citation.url && (
+                      <a 
+                        href={citation.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:text-primary/80 hover:underline truncate block cursor-pointer"
+                      >
+                        {citation.url}
+                      </a>
+                    )}
                   </div>
                 ))}
             </div>
