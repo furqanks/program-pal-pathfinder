@@ -36,25 +36,24 @@ serve(async (req) => {
       )
     }
 
-    // Direct prompt focusing only on accuracy - no fee categorization
-    const prompt = `Find ${resultCount} real university programs matching: "${query}"
+    // Simplified prompt - only instructs to use official university websites
+    const prompt = `Find ${resultCount} university programs matching: "${query}"
 
-Search only official university websites and accredited educational institutions. For each program, provide:
+Use only official university websites as sources.
 
-- Exact program name from official sources
-- Full university name
-- Country/location  
-- Degree type (Bachelor's, Master's, PhD, etc.)
-- EXACT tuition fees as stated by the university (specify currency and student status)
+For each program, provide:
+- Program name
+- University name  
+- Country/location
+- Degree type
+- Tuition fees (as stated by university)
 - Application deadline
 - Duration
-- Key admission requirements
-- Brief program description
-- Direct university program page URL
+- Admission requirements
+- Program description
+- University program page URL
 
-CRITICAL: Report fees EXACTLY as found on university websites. Do not estimate, categorize, or modify fee amounts. If fees vary by student status (domestic/international), provide both. If fees are unknown, state "Contact university for current fees".
-
-Return information exactly as universities present it. Focus on accuracy over categorization.`
+Report all information exactly as found on official university websites.`
 
     console.log('Sending query to Perplexity:', query)
 
@@ -69,7 +68,7 @@ Return information exactly as universities present it. Focus on accuracy over ca
         messages: [
           {
             role: 'system',
-            content: 'You are a university program researcher. Provide accurate, current information from official university sources. Report exact fees and requirements as stated by universities. Do not categorize or estimate fees.'
+            content: 'You are a university program researcher. Use only official university websites as sources.'
           },
           {
             role: 'user',
@@ -133,7 +132,6 @@ Return information exactly as universities present it. Focus on accuracy over ca
     
     if (parsedPrograms.length > 0) {
       console.log('Using structured data:', parsedPrograms.length, 'programs')
-      // Direct mapping without any fee processing or validation
       searchResults = parsedPrograms.map((program: any) => ({
         programName: program.programName || program.program || 'Program name not specified',
         university: program.university || program.institution || 'University not specified', 
@@ -151,7 +149,6 @@ Return information exactly as universities present it. Focus on accuracy over ca
         }
       })).slice(0, resultCount)
     } else {
-      // Text response fallback
       console.log('Using text response')
       searchResults = [{
         programName: 'University Program Search Results',
@@ -182,7 +179,7 @@ Return information exactly as universities present it. Focus on accuracy over ca
           requestedCount: resultCount,
           model: data.model || 'llama-3.1-sonar-large-128k-online',
           hasStructuredData: parsedPrograms.length > 0,
-          disclaimer: 'All information sourced from Perplexity AI. Always verify details directly with universities.'
+          disclaimer: 'All information sourced from official university websites via Perplexity AI.'
         }
       }),
       { 
