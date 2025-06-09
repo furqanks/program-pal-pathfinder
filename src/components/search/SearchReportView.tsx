@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Search as SearchIcon, 
@@ -22,7 +21,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
   const parseContentWithStructure = (content: string) => {
     if (!content) return [];
 
-    // Split content into meaningful sections
+    // Split content into meaningful sections with better text handling
     const sections = content.split('\n\n').filter(section => section.trim().length > 0);
     
     return sections.map((section, index) => {
@@ -55,12 +54,14 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
         );
       }
 
-      // Check for section headers - improve styling
-      const isHeader = trimmedSection.startsWith('##') || 
-                     (trimmedSection.includes('**') && trimmedSection.length < 150) ||
-                     trimmedSection.match(/^[A-Z][^.!?]*:?\s*$/);
+      // Check for major section headers - improve styling
+      const isMajorHeader = trimmedSection.startsWith('##') || 
+                           (trimmedSection.includes('**') && 
+                            trimmedSection.length < 150 && 
+                            !trimmedSection.includes('\n') &&
+                            trimmedSection.match(/^\*\*[^*]+\*\*:?\s*$/));
       
-      if (isHeader) {
+      if (isMajorHeader) {
         return (
           <SectionHeader
             key={index}
@@ -70,40 +71,10 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
         );
       }
 
-      // Check for list-like content and format as bullet points
-      const isList = trimmedSection.includes('•') || 
-                    trimmedSection.split('\n').length > 2 ||
-                    trimmedSection.match(/^\d+\./m) ||
-                    trimmedSection.match(/^-\s/m);
-
-      if (isList && trimmedSection.length > 100) {
-        const lines = trimmedSection.split('\n').filter(line => line.trim());
-        return (
-          <div key={index} className="mb-6">
-            <ul className="space-y-3 list-disc list-inside">
-              {lines.map((line, lineIndex) => {
-                const cleanLine = line.replace(/^[•\-\d\.]\s*/, '').trim();
-                if (!cleanLine) return null;
-                
-                return (
-                  <li key={lineIndex} className="text-sm text-foreground leading-relaxed">
-                    <FormattedText text={cleanLine} />
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        );
-      }
-
-      // Format regular paragraphs
+      // Enhanced text content formatting - let FormattedText handle the complexity
       return (
         <div key={index} className="mb-6">
-          <div className="prose prose-sm max-w-none">
-            <p className="text-sm text-foreground leading-relaxed">
-              <FormattedText text={trimmedSection} />
-            </p>
-          </div>
+          <FormattedText text={trimmedSection} />
         </div>
       );
     });
@@ -150,7 +121,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
       {/* Main Report Content */}
       <Card>
         <CardContent className="pt-6">
-          <div className="space-y-6">
+          <div className="space-y-4">
             {parseContentWithStructure(rawContent)}
           </div>
         </CardContent>
