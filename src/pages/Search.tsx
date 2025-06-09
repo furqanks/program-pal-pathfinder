@@ -299,7 +299,7 @@ const Search = () => {
 
               {searchMetadata && (
                 <div className="text-xs text-muted-foreground flex items-center gap-2">
-                  <span>Powered by AI Research</span>
+                  <span>Powered by Perplexity AI</span>
                   {citations.length > 0 && (
                     <>
                       <span>•</span>
