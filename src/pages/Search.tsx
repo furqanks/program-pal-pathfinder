@@ -3,302 +3,160 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Search as SearchIcon, X, Info, ArrowRight, GraduationCap, MapPin, DollarSign } from "lucide-react";
+import { Loader2, Search as SearchIcon, X, Info, ExternalLink } from "lucide-react";
 import { usePerplexityContext } from "@/contexts/PerplexityContext";
-import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import SearchReportView from "@/components/search/SearchReportView";
+import EnhancedSearchResultCard from "@/components/search/EnhancedSearchResultCard";
 
 const Search = () => {
   const { searchPrograms, searchResults, isLoading, clearResults, searchMetadata, citations, rawContent } = usePerplexityContext();
-  const [customQuery, setCustomQuery] = useState("");
-  const [customField, setCustomField] = useState("");
-  const [selectedAnswers, setSelectedAnswers] = useState({
-    field: "",
-    level: "",
-    location: "",
-    budget: "",
-    format: "",
-    intake: ""
-  });
+  const [query, setQuery] = useState("");
+  const [resultCount, setResultCount] = useState<number>(8);
 
-  const questions = [
-    {
-      id: "field",
-      question: "What field are you interested in?",
-      options: [
-        "Computer Science & Technology",
-        "Business & Management", 
-        "Engineering",
-        "Medicine & Health Sciences",
-        "Psychology",
-        "Data Science & Analytics",
-        "Other/Custom Field"
-      ]
-    },
-    {
-      id: "level",
-      question: "What degree level?",
-      options: [
-        "Bachelor's",
-        "Master's",
-        "PhD/Doctorate",
-        "MBA",
-        "Any Level"
-      ]
-    },
-    {
-      id: "location",
-      question: "Where would you like to study?",
-      options: [
-        "United Kingdom",
-        "United States",
-        "Canada", 
-        "Australia",
-        "Europe",
-        "Anywhere"
-      ]
-    },
-    {
-      id: "budget",
-      question: "What's your budget preference?",
-      options: [
-        "Budget-friendly (looking for affordable options)",
-        "Mid-range",
-        "No budget constraints",
-        "Scholarships & funding opportunities"
-      ]
-    },
-    {
-      id: "format",
-      question: "Study format preference?",
-      options: [
-        "Full-time on-campus",
-        "Part-time",
-        "Online/Distance learning",
-        "Any format"
-      ]
-    },
-    {
-      id: "intake",
-      question: "Preferred intake/start date?",
-      options: [
-        "September 2025",
-        "January 2026",
-        "September 2026",
-        "Any intake"
-      ]
-    }
-  ];
-
-  const handleAnswerSelect = (questionId: string, answer: string) => {
-    setSelectedAnswers(prev => ({
-      ...prev,
-      [questionId]: answer
-    }));
-  };
-
-  const buildQueryFromAnswers = () => {
-    const parts = [];
-    
-    if (selectedAnswers.field && selectedAnswers.field !== "Other/Custom Field") {
-      parts.push(selectedAnswers.field);
-    } else if (selectedAnswers.field === "Other/Custom Field" && customField.trim()) {
-      parts.push(customField.trim());
-    }
-    
-    if (selectedAnswers.level && selectedAnswers.level !== "Any Level") {
-      parts.push(selectedAnswers.level);
-    }
-    if (selectedAnswers.location && selectedAnswers.location !== "Anywhere") {
-      parts.push(`in ${selectedAnswers.location}`);
-    }
-    if (selectedAnswers.budget === "Budget-friendly (looking for affordable options)") {
-      parts.push("budget-friendly affordable");
-    } else if (selectedAnswers.budget === "Scholarships & funding opportunities") {
-      parts.push("with scholarships funding available");
-    }
-    if (selectedAnswers.format && selectedAnswers.format !== "Any format") {
-      parts.push(selectedAnswers.format.toLowerCase());
-    }
-    if (selectedAnswers.intake && selectedAnswers.intake !== "Any intake") {
-      parts.push(selectedAnswers.intake);
-    }
-
-    return parts.join(" ");
-  };
-
-  const handleGuidedSearch = async () => {
-    const query = buildQueryFromAnswers();
-    if (query.trim()) {
-      await searchPrograms(query.trim(), 8);
-    }
-  };
-
-  const handleCustomSearch = async (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (customQuery.trim()) {
-      await searchPrograms(customQuery.trim(), 8);
+    if (query.trim()) {
+      await searchPrograms(query.trim(), resultCount);
     }
   };
 
   const handleClearSearch = () => {
-    setCustomQuery("");
-    setCustomField("");
-    setSelectedAnswers({
-      field: "",
-      level: "",
-      location: "",
-      budget: "",
-      format: "",
-      intake: ""
-    });
+    setQuery("");
     clearResults();
   };
 
-  const hasAnswers = Object.values(selectedAnswers).some(answer => answer);
-  const generatedQuery = buildQueryFromAnswers();
+  // Helper function to format raw content for better display
+  const formatRawContent = (content: string) => {
+    if (!content) return "";
+    
+    // Split content into sections and format
+    return content
+      .split('\n\n')
+      .map(section => section.trim())
+      .filter(section => section.length > 0)
+      .map((section, index) => {
+        // Check if section is a heading (starts with ## or has **bold** patterns)
+        if (section.startsWith('##') || section.includes('**')) {
+          return (
+            <div key={index} className="mb-4">
+              <div 
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: section
+                    .replace(/##\s*(.*)/g, '<h3 class="text-lg font-semibold text-foreground mb-2 mt-4">$1</h3>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-medium text-foreground">$1</strong>')
+                    .replace(/\n/g, '<br />')
+                }}
+              />
+            </div>
+          );
+        }
+        
+        // Regular paragraph content
+        return (
+          <div key={index} className="mb-3">
+            <p 
+              className="text-sm text-muted-foreground leading-relaxed"
+              dangerouslySetInnerHTML={{
+                __html: section
+                  .replace(/\*\*(.*?)\*\*/g, '<strong class="font-medium text-foreground">$1</strong>')
+                  .replace(/\n/g, '<br />')
+              }}
+            />
+          </div>
+        );
+      });
+  };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-2">University Program Search</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">AI Program Search</h1>
         <p className="text-muted-foreground">
-          Find university programs worldwide with accurate information from official sources
+          Search for university programs worldwide with accurate information from official sources
         </p>
       </div>
 
-      {/* Guided Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <GraduationCap className="h-5 w-5" />
-            Find Your Perfect Program
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Answer a few questions to get personalized program recommendations
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {questions.map((question) => (
-            <div key={question.id} className="space-y-3">
-              <h4 className="font-medium text-foreground">{question.question}</h4>
-              <div className="flex flex-wrap gap-2">
-                {question.options.map((option) => (
-                  <Button
-                    key={option}
-                    variant={selectedAnswers[question.id as keyof typeof selectedAnswers] === option ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleAnswerSelect(question.id, option)}
-                    className="text-xs"
-                  >
-                    {option}
-                  </Button>
-                ))}
-              </div>
-              
-              {/* Custom field input for "Other/Custom Field" */}
-              {question.id === "field" && selectedAnswers.field === "Other/Custom Field" && (
-                <div className="mt-3">
-                  <Input
-                    placeholder="Please specify your field of interest..."
-                    value={customField}
-                    onChange={(e) => setCustomField(e.target.value)}
-                    className="max-w-md"
-                  />
-                </div>
-              )}
-            </div>
-          ))}
-
-          {/* Generated Query Preview */}
-          {generatedQuery && (
-            <div className="p-4 bg-muted/50 rounded-lg border">
-              <div className="flex items-start gap-3">
-                <SearchIcon className="h-4 w-4 mt-1 text-muted-foreground" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium mb-1">Search query:</p>
-                  <p className="text-sm text-muted-foreground italic">"{generatedQuery}"</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex gap-3">
-            <Button 
-              onClick={handleGuidedSearch} 
-              disabled={isLoading || !hasAnswers}
-              className="flex-1"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <ArrowRight className="h-4 w-4 mr-2" />
-              )}
-              Search Programs
-            </Button>
-            {(searchResults.length > 0 || hasAnswers) && (
-              <Button variant="outline" onClick={handleClearSearch}>
-                <X className="h-4 w-4 mr-2" />
-                Clear
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Custom Search Option */}
+      {/* Search Form */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <SearchIcon className="h-5 w-5" />
-            Custom Search
+            Search Programs
           </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Or describe your requirements in your own words
-          </p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCustomSearch} className="space-y-4">
-            <div className="flex gap-2">
+          <form onSubmit={handleSearch} className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
-                placeholder="e.g., Clinical Psychology Masters in UK with funding opportunities..."
-                value={customQuery}
-                onChange={(e) => setCustomQuery(e.target.value)}
+                placeholder="e.g., Clinical Psychology Masters in UK, MBA programs with scholarships..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
                 className="flex-1"
               />
-              <Button type="submit" disabled={isLoading || !customQuery.trim()}>
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <SearchIcon className="h-4 w-4" />
+              <div className="flex gap-2">
+                <Button type="submit" disabled={isLoading || !query.trim()} className="min-w-[100px]">
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <SearchIcon className="h-4 w-4 mr-2" />
+                  )}
+                  Search
+                </Button>
+                {(searchResults.length > 0 || query) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleClearSearch}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Clear
+                  </Button>
                 )}
-              </Button>
+              </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    <Info className="h-3 w-3 mr-1" />
-                    Search Tips
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Search Tips</h4>
-                    <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
-                      <li>Be specific: "Clinical Psychology Masters"</li>
-                      <li>Include location: "in UK", "Canada", "Europe"</li>
-                      <li>Mention budget: "budget-friendly", "scholarships"</li>
-                      <li>Add format: "online", "part-time", "2025 intake"</li>
-                    </ul>
-                  </div>
-                </PopoverContent>
-              </Popover>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Results:</span>
+                <Select value={resultCount.toString()} onValueChange={(value) => setResultCount(parseInt(value))}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue placeholder="Count" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="8">8</SelectItem>
+                    <SelectItem value="12">12</SelectItem>
+                    <SelectItem value="15">15</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Search Tips</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Be specific for better results:
+                      </p>
+                      <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
+                        <li>Program field: "Clinical Psychology", "Computer Science"</li>
+                        <li>Degree level: "Bachelor's", "Master's", "PhD"</li>
+                        <li>Location: "UK", "Canada", "Europe"</li>
+                        <li>Special requirements: "budget-friendly", "scholarships available"</li>
+                      </ul>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
 
               {searchMetadata && (
-                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-2">
                   <span>Powered by Perplexity AI</span>
                   {citations.length > 0 && (
                     <>
@@ -306,6 +164,8 @@ const Search = () => {
                       <span>{citations.length} sources</span>
                     </>
                   )}
+                  <span>•</span>
+                  <span>Always verify with universities</span>
                 </div>
               )}
             </div>
@@ -313,24 +173,92 @@ const Search = () => {
         </CardContent>
       </Card>
 
-      {/* Search Results - Always use report view */}
+      {/* Results */}
       {searchResults.length > 0 && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">
-              Search Results
+              Search Results ({searchResults.length} programs found)
             </h2>
-            <Badge variant="secondary">
-              {citations.length} sources referenced
-            </Badge>
           </div>
 
-          <SearchReportView 
-            rawContent={rawContent} 
-            query={searchMetadata?.query || customQuery || generatedQuery}
-            citations={citations}
-          />
+          {searchMetadata?.hasStructuredData ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {searchResults.map((result, index) => (
+                <EnhancedSearchResultCard key={index} result={result} />
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <SearchIcon className="h-5 w-5" />
+                  Program Search Results
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-6 rounded-lg border">
+                  <div className="formatted-content space-y-4">
+                    {formatRawContent(rawContent)}
+                  </div>
+                </div>
+                
+                <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-start gap-3">
+                    <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        Important Verification Notice
+                      </p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                        These results are provided directly from Perplexity AI and may not reflect the most current information. 
+                        <strong className="font-medium"> Always verify all program details, fees, deadlines, and requirements directly with the universities</strong> using the source links below before making any application decisions.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
+      )}
+
+      {/* Citations - Only show if there are actual citations with content */}
+      {citations.length > 0 && citations.some(citation => citation.title || citation.text) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ExternalLink className="h-5 w-5" />
+              Sources & Citations ({citations.filter(citation => citation.title || citation.text).length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {citations
+                .filter(citation => citation.title || citation.text)
+                .map((citation, index) => (
+                  <div key={index} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                    <a 
+                      href={citation.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-primary hover:underline line-clamp-2 block mb-2"
+                    >
+                      {citation.title || citation.url}
+                    </a>
+                    {citation.text && (
+                      <p className="text-xs text-muted-foreground line-clamp-3 mb-2">
+                        {citation.text}
+                      </p>
+                    )}
+                    <div className="text-xs text-muted-foreground truncate">
+                      {citation.url}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Loading State */}
@@ -346,36 +274,19 @@ const Search = () => {
       )}
 
       {/* Empty State */}
-      {!isLoading && searchResults.length === 0 && !hasAnswers && !customQuery && (
+      {!isLoading && searchResults.length === 0 && !query && (
         <Card>
           <CardContent className="py-12 text-center">
-            <div className="flex justify-center mb-4">
-              <div className="flex items-center gap-4">
-                <GraduationCap className="h-8 w-8 text-primary" />
-                <MapPin className="h-6 w-6 text-muted-foreground" />
-                <DollarSign className="h-6 w-6 text-muted-foreground" />
-              </div>
-            </div>
-            <h3 className="text-lg font-medium mb-2">Find Your Ideal University Program</h3>
+            <SearchIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-medium mb-2">Search University Programs</h3>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Answer the questions above or use custom search to discover programs that match your goals, budget, and preferences.
+              Enter keywords to search for university programs worldwide. Get accurate results from official university sources.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground max-w-2xl mx-auto">
-              <div className="text-center">
-                <GraduationCap className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p><strong>Comprehensive</strong></p>
-                <p>Programs from universities worldwide</p>
-              </div>
-              <div className="text-center">
-                <MapPin className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p><strong>Accurate</strong></p>
-                <p>Information from official sources</p>
-              </div>
-              <div className="text-center">
-                <DollarSign className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p><strong>Budget-Aware</strong></p>
-                <p>Find programs within your budget</p>
-              </div>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p><strong>Example searches:</strong></p>
+              <p>"Clinical Psychology Masters in UK"</p>
+              <p>"Budget-friendly MBA programs Canada"</p>
+              <p>"PhD Computer Science with funding"</p>
             </div>
           </CardContent>
         </Card>
