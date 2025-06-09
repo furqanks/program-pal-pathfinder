@@ -22,10 +22,12 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
   const parseContentWithStructure = (content: string) => {
     if (!content) return [];
 
-    // Pre-process content to normalize formatting
+    // Pre-process content to normalize formatting and remove excessive # symbols
     const normalizedContent = content
       .replace(/\n\s*\n\s*\n/g, '\n\n') // Normalize multiple line breaks
-      .replace(/^\s+|\s+$/g, ''); // Trim whitespace
+      .replace(/^\s+|\s+$/g, '') // Trim whitespace
+      .replace(/^#{4,}\s*/gm, '### ') // Convert excessive # to max 3
+      .replace(/^#{1}\s+(\d+\.)/gm, '# $1'); // Ensure single # for numbered items
 
     // Split content into meaningful sections
     const sections = normalizedContent.split(/\n\s*\n/).filter(section => section.trim().length > 0);
@@ -88,9 +90,9 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
         );
       }
 
-      // Enhanced content formatting - pass to FormattedText for processing
+      // Pass to FormattedText for enhanced content formatting
       return (
-        <div key={index} className="mb-6">
+        <div key={index}>
           <FormattedText text={trimmedSection} />
         </div>
       );

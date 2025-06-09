@@ -1,5 +1,7 @@
 
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, GraduationCap, MapPin, DollarSign, Calendar, Clock } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface FormattedTextProps {
   text: string;
@@ -15,39 +17,69 @@ export const FormattedText = ({ text }: FormattedTextProps) => {
     return blocks.map((block, blockIndex) => {
       const trimmedBlock = block.trim();
       
-      // Check for numbered program listings (e.g., "# 1. BSc (Hons) Computer Science")
+      // Enhanced program detection - look for numbered programs with # symbols
       const numberedProgramMatch = trimmedBlock.match(/^#\s*(\d+)\.\s*(.+?)(?:\s*-\s*(.+))?$/m);
       if (numberedProgramMatch) {
-        const [, number, title, details] = numberedProgramMatch;
+        const [, number, title, subtitle] = numberedProgramMatch;
         const restOfContent = trimmedBlock.replace(/^#\s*\d+\.\s*.+$/m, '').trim();
         
         return (
-          <div key={blockIndex} className="mb-8 p-6 bg-gradient-to-r from-primary/5 to-transparent border-l-4 border-l-primary rounded-r-lg">
-            <div className="flex items-start gap-3 mb-4">
-              <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 text-primary font-bold text-sm rounded-full flex-shrink-0">
-                {number}
-              </span>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-foreground mb-2">{title}</h3>
-                {details && <p className="text-sm text-muted-foreground">{details}</p>}
+          <Card key={blockIndex} className="mb-6 border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-transparent">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4 mb-4">
+                <Badge variant="outline" className="text-sm font-bold bg-primary/10 text-primary shrink-0">
+                  {number}
+                </Badge>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-foreground mb-2 leading-tight">
+                    {title.replace(/^#*\s*/, '')}
+                  </h3>
+                  {subtitle && (
+                    <p className="text-muted-foreground mb-3">{subtitle}</p>
+                  )}
+                </div>
               </div>
-            </div>
-            {restOfContent && (
-              <div className="ml-11">
-                {formatProgramDetails(restOfContent)}
-              </div>
-            )}
-          </div>
+              {restOfContent && (
+                <div className="space-y-4">
+                  {formatProgramDetails(restOfContent)}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         );
       }
 
-      // Check for main headings (## or ###)
+      // Look for simple numbered lists (1. Program Name)
+      const simpleNumberMatch = trimmedBlock.match(/^(\d+)\.\s*(.+)$/m);
+      if (simpleNumberMatch && !trimmedBlock.includes('\n')) {
+        const [, number, title] = simpleNumberMatch;
+        return (
+          <Card key={blockIndex} className="mb-4 border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-transparent">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <Badge variant="outline" className="text-sm font-bold bg-primary/10 text-primary shrink-0">
+                  {number}
+                </Badge>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {title.replace(/^#*\s*/, '')}
+                </h3>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      }
+
+      // Check for main section headings (## or ###) - remove # symbols
       if (trimmedBlock.match(/^#{2,3}\s+/)) {
         const headingText = trimmedBlock.replace(/^#{2,3}\s*/, '').replace(/\*\*/g, '');
         return (
-          <h2 key={blockIndex} className="text-2xl font-bold text-foreground mt-8 mb-6 first:mt-0">
-            {headingText}
-          </h2>
+          <div key={blockIndex} className="mt-8 mb-6 first:mt-0">
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-3">
+              <GraduationCap className="h-6 w-6 text-primary" />
+              {headingText}
+            </h2>
+            <div className="h-1 bg-gradient-to-r from-primary to-transparent rounded-full mt-2 mb-4"></div>
+          </div>
         );
       }
       
@@ -55,7 +87,8 @@ export const FormattedText = ({ text }: FormattedTextProps) => {
       if (trimmedBlock.match(/^\*\*[^*]+\*\*:?\s*$/) && trimmedBlock.length < 100) {
         const headingText = trimmedBlock.replace(/\*\*/g, '').replace(/:$/, '');
         return (
-          <h3 key={blockIndex} className="text-lg font-semibold text-foreground mt-6 mb-4 first:mt-0">
+          <h3 key={blockIndex} className="text-lg font-semibold text-foreground mt-6 mb-4 first:mt-0 flex items-center gap-2">
+            <div className="w-1 h-6 bg-primary rounded-full"></div>
             {headingText}
           </h3>
         );
@@ -78,32 +111,67 @@ export const FormattedText = ({ text }: FormattedTextProps) => {
       const line = lines[i].trim();
       if (!line) continue;
 
-      // Look for key-value pairs with colons or dashes
-      if (line.includes(':') || line.includes(' - ')) {
-        const parts = line.split(/:\s*|\s*-\s*/).filter(part => part.trim());
-        if (parts.length >= 2) {
-          const [label, ...valueParts] = parts;
-          const value = valueParts.join(' - ');
-          
+      // Look for key-value pairs with colons
+      if (line.includes(':')) {
+        const [label, ...valueParts] = line.split(':');
+        const value = valueParts.join(':').trim();
+        
+        if (label && value) {
+          const icon = getDetailIcon(label);
           details.push(
-            <div key={i} className="mb-3">
-              <span className="font-semibold text-foreground">{label}:</span>
-              <span className="ml-2 text-foreground">{formatInlineContent(value)}</span>
+            <div key={i} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+              {icon}
+              <div className="flex-1">
+                <span className="font-semibold text-foreground block mb-1">{label.trim()}</span>
+                <span className="text-muted-foreground text-sm">{formatInlineContent(value)}</span>
+              </div>
             </div>
           );
           continue;
         }
       }
       
-      // Handle continuation lines or descriptions
-      details.push(
-        <div key={i} className="mb-2 text-sm text-foreground leading-relaxed">
-          {formatInlineContent(line)}
-        </div>
-      );
+      // Handle bullet points or other content
+      if (line.startsWith('-') || line.startsWith('•')) {
+        details.push(
+          <div key={i} className="flex items-start gap-3 py-2">
+            <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0"></div>
+            <span className="text-foreground text-sm leading-relaxed">
+              {formatInlineContent(line.replace(/^[-•]\s*/, ''))}
+            </span>
+          </div>
+        );
+      } else {
+        // Regular text content
+        details.push(
+          <div key={i} className="py-1 text-sm text-foreground leading-relaxed">
+            {formatInlineContent(line)}
+          </div>
+        );
+      }
     }
     
     return details;
+  };
+
+  const getDetailIcon = (label: string) => {
+    const labelLower = label.toLowerCase();
+    if (labelLower.includes('university') || labelLower.includes('institution')) {
+      return <GraduationCap className="h-4 w-4 text-primary mt-0.5" />;
+    }
+    if (labelLower.includes('location') || labelLower.includes('country') || labelLower.includes('city')) {
+      return <MapPin className="h-4 w-4 text-blue-600 mt-0.5" />;
+    }
+    if (labelLower.includes('tuition') || labelLower.includes('fee') || labelLower.includes('cost')) {
+      return <DollarSign className="h-4 w-4 text-green-600 mt-0.5" />;
+    }
+    if (labelLower.includes('deadline') || labelLower.includes('date')) {
+      return <Calendar className="h-4 w-4 text-red-600 mt-0.5" />;
+    }
+    if (labelLower.includes('duration') || labelLower.includes('length')) {
+      return <Clock className="h-4 w-4 text-purple-600 mt-0.5" />;
+    }
+    return <div className="w-4 h-4 mt-0.5"></div>;
   };
   
   const formatInlineContent = (text: string) => {
@@ -171,7 +239,7 @@ export const FormattedText = ({ text }: FormattedTextProps) => {
   };
   
   return (
-    <div className="prose prose-sm max-w-none">
+    <div className="space-y-4">
       {processContent(text)}
     </div>
   );
