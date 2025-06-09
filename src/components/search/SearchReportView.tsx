@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,6 +56,12 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
   const { addProgram } = useProgramContext();
   const [addingPrograms, setAddingPrograms] = useState<Set<string>>(new Set());
 
+  // Helper function to validate if a partial program has required fields
+  const isValidProgram = (program: Partial<ParsedProgram>): program is ParsedProgram & { title: string; university: string } => {
+    return !!(program.title && program.title.trim().length > 0 && 
+              program.university && program.university.trim().length > 0);
+  };
+
   // Enhanced content parsing with multiple strategies
   const parseContent = (content: string): { programs: ParsedProgram[], sections: ParsedSection[] } => {
     if (!content) return { programs: [], sections: [] };
@@ -70,7 +75,6 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
     let currentSection = '';
     let currentSectionContent: string[] = [];
     let inProgramSection = false;
-    let currentProgram: Partial<ParsedProgram> = {};
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -99,11 +103,19 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
       if (inProgramSection) {
         const programData = extractProgramFromLine(line, lines, i);
         if (programData) {
-          programs.push({
+          // Create a complete program object with required fields
+          const completeProgram: Partial<ParsedProgram> = {
             id: `program-${programs.length + 1}`,
+            title: programData.title || 'Program Title Not Available',
+            university: programData.university || 'University Information Not Available',
             ...programData,
             highlighted: Math.random() > 0.6 // Random highlighting
-          });
+          };
+          
+          // Only add if it has the minimum required information
+          if (isValidProgram(completeProgram)) {
+            programs.push(completeProgram);
+          }
           continue;
         }
       }
