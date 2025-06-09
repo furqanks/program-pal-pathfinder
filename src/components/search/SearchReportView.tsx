@@ -42,17 +42,17 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
           <Card key={index} className="border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-transparent mb-6">
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
-                <Badge variant="outline" className="text-xs font-mono shrink-0 bg-primary/10">
+                <Badge variant="outline" className="text-xs font-normal shrink-0 bg-primary/10">
                   #{number}
                 </Badge>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-base text-foreground mb-3 leading-tight">
+                  <h3 className="font-normal text-base text-foreground mb-3 leading-relaxed">
                     {title}
                   </h3>
                   <Button
                     variant="default"
                     size="sm"
-                    className="text-xs"
+                    className="text-xs font-normal"
                     onClick={() => window.open(url, '_blank')}
                   >
                     <ExternalLink className="h-3 w-3 mr-2" />
@@ -69,8 +69,8 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
       const programDetailsMatch = trimmedSection.match(/University:\s*([^\n]+)|Program:\s*([^\n]+)|Tuition:\s*([^\n]+)|Deadline:\s*([^\n]+)|Duration:\s*([^\n]+)/);
       if (programDetailsMatch) {
         return (
-          <div key={index} className="bg-muted/30 p-4 rounded-lg border mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <div key={index} className="bg-muted/20 p-5 rounded-lg border mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               {trimmedSection.split('\n').map((line, lineIndex) => {
                 const [label, ...valueParts] = line.split(':');
                 const value = valueParts.join(':').trim();
@@ -86,11 +86,11 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
                 };
 
                 return (
-                  <div key={lineIndex} className="flex items-start gap-2">
+                  <div key={lineIndex} className="flex items-start gap-3">
                     {getIcon(label)}
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-foreground">{label.trim()}</div>
-                      <div className="text-sm text-muted-foreground break-words">{value}</div>
+                      <div className="font-normal text-sm text-foreground mb-1">{label.trim()}</div>
+                      <div className="text-sm text-muted-foreground break-words font-light">{value}</div>
                     </div>
                   </div>
                 );
@@ -100,7 +100,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
         );
       }
 
-      // Check for section headers - made less bold
+      // Check for section headers - lighter styling
       const isHeader = trimmedSection.startsWith('##') || 
                      (trimmedSection.includes('**') && trimmedSection.length < 150) ||
                      trimmedSection.match(/^[A-Z][^.!?]*:?\s*$/);
@@ -108,17 +108,17 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
       if (isHeader) {
         const cleanHeader = trimmedSection.replace(/^##\s*/, '').replace(/\*\*/g, '').replace(/:$/, '');
         return (
-          <div key={index} className="mb-6">
+          <div key={index} className="mb-8">
             <div className="flex items-center gap-3 mb-4">
               <FileText className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-medium text-foreground">{cleanHeader}</h2>
+              <h2 className="text-lg font-normal text-foreground">{cleanHeader}</h2>
             </div>
-            <Separator className="mb-4" />
+            <Separator className="mb-6" />
           </div>
         );
       }
 
-      // Format regular paragraphs with normal text styling
+      // Format regular paragraphs with lighter text styling
       const formatTextWithLinks = (text: string) => {
         // Parse inline URLs
         const urlRegex = /(https?:\/\/[^\s\)]+)/g;
@@ -132,7 +132,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
                 href={part}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline font-normal break-all inline-flex items-center gap-1"
+                className="text-primary hover:underline font-light break-all inline-flex items-center gap-1"
               >
                 {part.length > 50 ? `${part.substring(0, 50)}...` : part}
                 <ExternalLink className="h-3 w-3" />
@@ -140,13 +140,13 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
             );
           }
           
-          // Format text with bold markers - reduced emphasis
+          // Format text with bold markers - lighter emphasis
           return part
             .split(/(\*\*[^*]+\*\*)/)
             .map((textPart, textIndex) => {
               if (textPart.startsWith('**') && textPart.endsWith('**')) {
                 return (
-                  <span key={textIndex} className="font-medium text-foreground">
+                  <span key={textIndex} className="font-normal text-foreground">
                     {textPart.slice(2, -2)}
                   </span>
                 );
@@ -159,7 +159,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
       return (
         <div key={index} className="mb-6">
           <div className="prose prose-sm max-w-none">
-            <p className="text-sm text-foreground leading-relaxed font-normal">
+            <p className="text-sm text-foreground leading-relaxed font-light">
               {formatTextWithLinks(trimmedSection)}
             </p>
           </div>
@@ -185,14 +185,14 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
                   <SearchIcon className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-medium">University Program Search Report</h1>
-                  <p className="text-sm font-normal text-muted-foreground mt-1">
-                    Comprehensive analysis of: <span className="font-medium italic">"{query}"</span>
+                  <h1 className="text-xl font-normal">University Program Search Report</h1>
+                  <p className="text-sm font-light text-muted-foreground mt-1">
+                    Comprehensive analysis of: <span className="font-normal italic">"{query}"</span>
                   </p>
                 </div>
               </CardTitle>
               
-              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground font-light">
                 <div className="flex items-center gap-1">
                   <Globe className="h-3 w-3" />
                   <span>Sourced from official university websites</span>
@@ -212,7 +212,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
               variant="outline"
               size="sm"
               onClick={handleSearchGoogle}
-              className="shrink-0"
+              className="shrink-0 font-normal"
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Search Google
@@ -238,22 +238,22 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
               <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div className="space-y-3">
-              <h3 className="font-medium text-amber-800 dark:text-amber-200">
+              <h3 className="font-normal text-amber-800 dark:text-amber-200">
                 Verification Required
               </h3>
-              <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed font-normal">
+              <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed font-light">
                 This report provides AI-generated insights from official university sources. 
-                <span className="font-medium"> Always verify all program details, fees, deadlines, and requirements directly with the universities</span> before making application decisions. 
+                <span className="font-normal"> Always verify all program details, fees, deadlines, and requirements directly with the universities</span> before making application decisions. 
                 University information can change frequently, and admission requirements may vary by student status and academic year.
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
-                <Badge variant="outline" className="text-xs bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700">
+                <Badge variant="outline" className="text-xs font-light bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700">
                   Check Current Fees
                 </Badge>
-                <Badge variant="outline" className="text-xs bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700">
+                <Badge variant="outline" className="text-xs font-light bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700">
                   Verify Deadlines
                 </Badge>
-                <Badge variant="outline" className="text-xs bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700">
+                <Badge variant="outline" className="text-xs font-light bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700">
                   Confirm Requirements
                 </Badge>
               </div>
@@ -268,7 +268,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Sources & References ({citations.filter(citation => citation.title || citation.text).length})
+              <span className="font-normal">Sources & References ({citations.filter(citation => citation.title || citation.text).length})</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -281,16 +281,16 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
                       href={citation.url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-primary hover:underline line-clamp-2 block mb-2"
+                      className="text-sm font-normal text-primary hover:underline line-clamp-2 block mb-2"
                     >
                       {citation.title || citation.url}
                     </a>
                     {citation.text && (
-                      <p className="text-xs text-muted-foreground line-clamp-3 mb-3 font-normal">
+                      <p className="text-xs text-muted-foreground line-clamp-3 mb-3 font-light">
                         {citation.text}
                       </p>
                     )}
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground font-light">
                       <Globe className="h-3 w-3" />
                       <span className="truncate">{new URL(citation.url).hostname}</span>
                     </div>
