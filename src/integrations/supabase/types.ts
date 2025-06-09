@@ -56,49 +56,73 @@ export type Database = {
           ai_categories: Json | null
           ai_insights: Json | null
           ai_summary: string | null
+          attachments: Json | null
           content: string
           context_type: string | null
           created_at: string
+          folder_id: string | null
           id: string
+          is_archived: boolean | null
+          is_pinned: boolean | null
           last_ai_analysis: string | null
+          last_viewed_at: string | null
           priority_score: number | null
           program_id: string | null
+          rich_content: Json | null
+          shared_with: string[] | null
           tags: Json | null
           title: string
           updated_at: string
           user_id: string
+          view_count: number | null
         }
         Insert: {
           ai_categories?: Json | null
           ai_insights?: Json | null
           ai_summary?: string | null
+          attachments?: Json | null
           content: string
           context_type?: string | null
           created_at?: string
+          folder_id?: string | null
           id?: string
+          is_archived?: boolean | null
+          is_pinned?: boolean | null
           last_ai_analysis?: string | null
+          last_viewed_at?: string | null
           priority_score?: number | null
           program_id?: string | null
+          rich_content?: Json | null
+          shared_with?: string[] | null
           tags?: Json | null
           title: string
           updated_at?: string
           user_id: string
+          view_count?: number | null
         }
         Update: {
           ai_categories?: Json | null
           ai_insights?: Json | null
           ai_summary?: string | null
+          attachments?: Json | null
           content?: string
           context_type?: string | null
           created_at?: string
+          folder_id?: string | null
           id?: string
+          is_archived?: boolean | null
+          is_pinned?: boolean | null
           last_ai_analysis?: string | null
+          last_viewed_at?: string | null
           priority_score?: number | null
           program_id?: string | null
+          rich_content?: Json | null
+          shared_with?: string[] | null
           tags?: Json | null
           title?: string
           updated_at?: string
           user_id?: string
+          view_count?: number | null
         }
         Relationships: [
           {
@@ -108,7 +132,126 @@ export type Database = {
             referencedRelation: "programs_saved"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_note_folder"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "note_folders"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      note_collaborations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          invited_by: string | null
+          note_id: string
+          permission: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          note_id: string
+          permission: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          note_id?: string
+          permission?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_collaborations_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "ai_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      note_folders: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          parent_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "note_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      note_templates: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          template_content: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          template_content: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          template_content?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       programs_saved: {
         Row: {

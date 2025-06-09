@@ -16,9 +16,49 @@ export interface AINote {
   ai_insights: Record<string, any>;
   priority_score: number;
   context_type: string;
+  rich_content?: Record<string, any>;
+  attachments: any[];
+  is_archived: boolean;
+  is_pinned: boolean;
+  shared_with?: string[];
+  folder_id?: string;
+  last_viewed_at?: string;
+  view_count: number;
   created_at: string;
   updated_at: string;
   last_ai_analysis?: string;
+}
+
+export interface NoteFolder {
+  id: string;
+  user_id: string;
+  name: string;
+  color: string;
+  parent_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NoteTemplate {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string;
+  template_content: Record<string, any>;
+  is_public: boolean;
+  category: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NoteCollaboration {
+  id: string;
+  note_id: string;
+  user_id: string;
+  permission: 'read' | 'write' | 'admin';
+  invited_by?: string;
+  accepted_at?: string;
+  created_at: string;
 }
 
 export interface AIInsight {
@@ -51,11 +91,21 @@ export interface SmartReminder {
 
 interface AINotesContextType {
   notes: AINote[];
+  folders: NoteFolder[];
+  templates: NoteTemplate[];
+  collaborations: NoteCollaboration[];
   insights: AIInsight[];
   reminders: SmartReminder[];
-  addNote: (note: Omit<AINote, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'ai_categories' | 'ai_insights' | 'priority_score'>) => Promise<void>;
+  addNote: (note: Omit<AINote, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'ai_categories' | 'ai_insights' | 'priority_score' | 'attachments' | 'is_archived' | 'is_pinned' | 'view_count'>) => Promise<void>;
   updateNote: (id: string, updates: Partial<AINote>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
+  archiveNote: (id: string, archived: boolean) => Promise<void>;
+  pinNote: (id: string, pinned: boolean) => Promise<void>;
+  addFolder: (folder: Omit<NoteFolder, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateFolder: (id: string, updates: Partial<NoteFolder>) => Promise<void>;
+  deleteFolder: (id: string) => Promise<void>;
+  addTemplate: (template: Omit<NoteTemplate, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  deleteTemplate: (id: string) => Promise<void>;
   analyzeNote: (noteId: string) => Promise<void>;
   analyzeAllNotes: () => Promise<void>;
   completeReminder: (id: string) => Promise<void>;
@@ -74,6 +124,9 @@ export const useAINotesContext = () => {
 
 export const AINotesProvider = ({ children }: { children: ReactNode }) => {
   const [notes, setNotes] = useState<AINote[]>([]);
+  const [folders, setFolders] = useState<NoteFolder[]>([]);
+  const [templates, setTemplates] = useState<NoteTemplate[]>([]);
+  const [collaborations, setCollaborations] = useState<NoteCollaboration[]>([]);
   const [insights, setInsights] = useState<AIInsight[]>([]);
   const [reminders, setReminders] = useState<SmartReminder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +138,9 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       fetchAllData();
     } else {
       setNotes([]);
+      setFolders([]);
+      setTemplates([]);
+      setCollaborations([]);
       setInsights([]);
       setReminders([]);
       setLoading(false);
@@ -97,14 +153,42 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       
-      // Fetch notes
+      // Fetch notes (including shared ones)
       const { data: notesData, error: notesError } = await supabase
         .from('ai_notes')
         .select('*')
+        .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
 
       if (notesError) throw notesError;
       setNotes(notesData || []);
+
+      // Fetch folders
+      const { data: foldersData, error: foldersError } = await supabase
+        .from('note_folders')
+        .select('*')
+        .order('name');
+
+      if (foldersError) throw foldersError;
+      setFolders(foldersData || []);
+
+      // Fetch templates
+      const { data: templatesData, error: templatesError } = await supabase
+        .from('note_templates')
+        .select('*')
+        .order('name');
+
+      if (templatesError) throw templatesError;
+      setTemplates(templatesData || []);
+
+      // Fetch collaborations
+      const { data: collaborationsData, error: collaborationsError } = await supabase
+        .from('note_collaborations')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (collaborationsError) throw collaborationsError;
+      setCollaborations(collaborationsData || []);
 
       // Fetch insights
       const { data: insightsData, error: insightsError } = await supabase
@@ -134,7 +218,7 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addNote = async (noteData: Omit<AINote, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'ai_categories' | 'ai_insights' | 'priority_score'>) => {
+  const addNote = async (noteData: Omit<AINote, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'ai_categories' | 'ai_insights' | 'priority_score' | 'attachments' | 'is_archived' | 'is_pinned' | 'view_count'>) => {
     if (!user) return;
 
     try {
@@ -147,9 +231,15 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
           program_id: noteData.program_id,
           tags: noteData.tags,
           context_type: noteData.context_type,
+          rich_content: noteData.rich_content,
+          folder_id: noteData.folder_id,
           ai_categories: [],
           ai_insights: {},
-          priority_score: 0
+          priority_score: 0,
+          attachments: [],
+          is_archived: false,
+          is_pinned: false,
+          view_count: 0
         })
         .select()
         .single();
@@ -206,18 +296,130 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const archiveNote = async (id: string, archived: boolean) => {
+    await updateNote(id, { is_archived: archived });
+    toast.success(archived ? 'Note archived' : 'Note unarchived');
+  };
+
+  const pinNote = async (id: string, pinned: boolean) => {
+    await updateNote(id, { is_pinned: pinned });
+    toast.success(pinned ? 'Note pinned' : 'Note unpinned');
+  };
+
+  const addFolder = async (folderData: Omit<NoteFolder, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('note_folders')
+        .insert({
+          user_id: user.id,
+          ...folderData
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setFolders([...folders, data]);
+      toast.success('Folder created successfully');
+
+    } catch (error) {
+      console.error('Error adding folder:', error);
+      toast.error('Failed to create folder');
+    }
+  };
+
+  const updateFolder = async (id: string, updates: Partial<NoteFolder>) => {
+    try {
+      const { error } = await supabase
+        .from('note_folders')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setFolders(folders.map(folder => 
+        folder.id === id ? { ...folder, ...updates } : folder
+      ));
+      toast.success('Folder updated successfully');
+
+    } catch (error) {
+      console.error('Error updating folder:', error);
+      toast.error('Failed to update folder');
+    }
+  };
+
+  const deleteFolder = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('note_folders')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setFolders(folders.filter(folder => folder.id !== id));
+      toast.success('Folder deleted successfully');
+
+    } catch (error) {
+      console.error('Error deleting folder:', error);
+      toast.error('Failed to delete folder');
+    }
+  };
+
+  const addTemplate = async (templateData: Omit<NoteTemplate, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('note_templates')
+        .insert({
+          user_id: user.id,
+          ...templateData
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setTemplates([...templates, data]);
+      toast.success('Template created successfully');
+
+    } catch (error) {
+      console.error('Error adding template:', error);
+      toast.error('Failed to create template');
+    }
+  };
+
+  const deleteTemplate = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('note_templates')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setTemplates(templates.filter(template => template.id !== id));
+      toast.success('Template deleted successfully');
+
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      toast.error('Failed to delete template');
+    }
+  };
+
   const analyzeNote = async (noteId: string) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No session');
 
-      // Notify user with casual message
       toast.info('Analyzing your note... ✨ Gimme a sec!');
       
       const noteToAnalyze = notes.find(note => note.id === noteId);
       if (!noteToAnalyze) throw new Error('Note not found');
       
-      // Generate prompt with context of other notes
       const analysisPrompt = getAnalysisPrompt(noteToAnalyze, notes, []);
       
       const { data, error } = await supabase.functions.invoke('analyze-notes', {
@@ -233,7 +435,6 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      // Refresh the specific note
       const { data: updatedNote } = await supabase
         .from('ai_notes')
         .select('*')
@@ -261,7 +462,6 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       toast.info('Analyzing all notes... This might take a minute! ⏳');
 
-      // Generate prompts with enhanced context
       const insightsPrompt = getInsightPrompt(notes, []);
       const timelinePrompt = getTimelinePrompt(notes, []);
 
@@ -278,7 +478,6 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      // Refresh all data
       await fetchAllData();
       toast.success('All done! Your notes are now super-charged with insights! 💪');
 
@@ -309,11 +508,21 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AINotesContext.Provider value={{
       notes,
+      folders,
+      templates,
+      collaborations,
       insights,
       reminders,
       addNote,
       updateNote,
       deleteNote,
+      archiveNote,
+      pinNote,
+      addFolder,
+      updateFolder,
+      deleteFolder,
+      addTemplate,
+      deleteTemplate,
       analyzeNote,
       analyzeAllNotes,
       completeReminder,
