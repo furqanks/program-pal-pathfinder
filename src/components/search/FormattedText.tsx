@@ -6,21 +6,46 @@ interface FormattedTextProps {
 }
 
 export const FormattedText = ({ text }: FormattedTextProps) => {
-  // Enhanced content processing for better text structure
   const processContent = (content: string) => {
     if (!content || content.trim().length === 0) return null;
 
-    // Split content into logical blocks
+    // Split content into blocks and process each one
     const blocks = content.split(/\n\s*\n/).filter(block => block.trim().length > 0);
     
     return blocks.map((block, blockIndex) => {
       const trimmedBlock = block.trim();
       
+      // Check for numbered program listings (e.g., "# 1. BSc (Hons) Computer Science")
+      const numberedProgramMatch = trimmedBlock.match(/^#\s*(\d+)\.\s*(.+?)(?:\s*-\s*(.+))?$/m);
+      if (numberedProgramMatch) {
+        const [, number, title, details] = numberedProgramMatch;
+        const restOfContent = trimmedBlock.replace(/^#\s*\d+\.\s*.+$/m, '').trim();
+        
+        return (
+          <div key={blockIndex} className="mb-8 p-6 bg-gradient-to-r from-primary/5 to-transparent border-l-4 border-l-primary rounded-r-lg">
+            <div className="flex items-start gap-3 mb-4">
+              <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 text-primary font-bold text-sm rounded-full flex-shrink-0">
+                {number}
+              </span>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-foreground mb-2">{title}</h3>
+                {details && <p className="text-sm text-muted-foreground">{details}</p>}
+              </div>
+            </div>
+            {restOfContent && (
+              <div className="ml-11">
+                {formatProgramDetails(restOfContent)}
+              </div>
+            )}
+          </div>
+        );
+      }
+
       // Check for main headings (## or ###)
       if (trimmedBlock.match(/^#{2,3}\s+/)) {
         const headingText = trimmedBlock.replace(/^#{2,3}\s*/, '').replace(/\*\*/g, '');
         return (
-          <h2 key={blockIndex} className="text-xl font-bold text-foreground mt-8 mb-4 first:mt-0">
+          <h2 key={blockIndex} className="text-2xl font-bold text-foreground mt-8 mb-6 first:mt-0">
             {headingText}
           </h2>
         );
@@ -30,104 +55,57 @@ export const FormattedText = ({ text }: FormattedTextProps) => {
       if (trimmedBlock.match(/^\*\*[^*]+\*\*:?\s*$/) && trimmedBlock.length < 100) {
         const headingText = trimmedBlock.replace(/\*\*/g, '').replace(/:$/, '');
         return (
-          <h3 key={blockIndex} className="text-lg font-semibold text-foreground mt-6 mb-3 first:mt-0">
+          <h3 key={blockIndex} className="text-lg font-semibold text-foreground mt-6 mb-4 first:mt-0">
             {headingText}
           </h3>
         );
       }
       
-      // Check for numbered lists
-      const lines = trimmedBlock.split('\n');
-      const isNumberedList = lines.length > 1 && lines.every(line => 
-        line.trim().match(/^\d+\.\s/) || line.trim().length === 0
-      );
-      
-      if (isNumberedList) {
-        const listItems = lines.filter(line => line.trim().length > 0);
-        return (
-          <ol key={blockIndex} className="list-decimal list-inside space-y-2 mb-6 ml-4">
-            {listItems.map((item, itemIndex) => {
-              const cleanItem = item.replace(/^\d+\.\s*/, '').trim();
-              return (
-                <li key={itemIndex} className="text-sm text-foreground leading-relaxed">
-                  {formatInlineContent(cleanItem)}
-                </li>
-              );
-            })}
-          </ol>
-        );
-      }
-      
-      // Check for bullet lists
-      const isBulletList = lines.length > 1 && lines.some(line => 
-        line.trim().match(/^[•\-\*]\s/) && line.trim().length > 2
-      );
-      
-      if (isBulletList) {
-        const listItems = lines.filter(line => line.trim().match(/^[•\-\*]\s/));
-        return (
-          <ul key={blockIndex} className="list-disc list-inside space-y-2 mb-6 ml-4">
-            {listItems.map((item, itemIndex) => {
-              const cleanItem = item.replace(/^[•\-\*]\s*/, '').trim();
-              return (
-                <li key={itemIndex} className="text-sm text-foreground leading-relaxed">
-                  {formatInlineContent(cleanItem)}
-                </li>
-              );
-            })}
-          </ul>
-        );
-      }
-      
-      // Check for structured data (University:, Program:, etc.)
-      if (trimmedBlock.match(/^(University|Program|Tuition|Deadline|Duration|Requirements|Application|Contact):/i)) {
-        return (
-          <div key={blockIndex} className="bg-muted/30 border-l-4 border-l-primary p-4 mb-4 rounded-r-lg">
-            <div className="space-y-2 text-sm">
-              {lines.map((line, lineIndex) => {
-                if (!line.trim()) return null;
-                const [label, ...valueParts] = line.split(':');
-                const value = valueParts.join(':').trim();
-                
-                if (value) {
-                  return (
-                    <div key={lineIndex} className="flex flex-wrap gap-2">
-                      <span className="font-semibold text-foreground min-w-0">{label.trim()}:</span>
-                      <span className="text-foreground flex-1 min-w-0">{formatInlineContent(value)}</span>
-                    </div>
-                  );
-                }
-                
-                return (
-                  <div key={lineIndex} className="font-medium text-foreground">
-                    {formatInlineContent(line.trim())}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      }
-      
-      // Regular paragraph with enhanced formatting
+      // Regular paragraph content
       return (
-        <div key={blockIndex} className="mb-4">
-          {lines.map((line, lineIndex) => {
-            const trimmedLine = line.trim();
-            if (!trimmedLine) return null;
-            
-            return (
-              <p key={lineIndex} className="text-sm text-foreground leading-relaxed mb-2 last:mb-0">
-                {formatInlineContent(trimmedLine)}
-              </p>
-            );
-          })}
+        <div key={blockIndex} className="mb-6">
+          {formatInlineContent(trimmedBlock)}
         </div>
       );
     });
   };
+
+  const formatProgramDetails = (content: string) => {
+    const lines = content.split('\n').filter(line => line.trim());
+    const details = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      // Look for key-value pairs with colons or dashes
+      if (line.includes(':') || line.includes(' - ')) {
+        const parts = line.split(/:\s*|\s*-\s*/).filter(part => part.trim());
+        if (parts.length >= 2) {
+          const [label, ...valueParts] = parts;
+          const value = valueParts.join(' - ');
+          
+          details.push(
+            <div key={i} className="mb-3">
+              <span className="font-semibold text-foreground">{label}:</span>
+              <span className="ml-2 text-foreground">{formatInlineContent(value)}</span>
+            </div>
+          );
+          continue;
+        }
+      }
+      
+      // Handle continuation lines or descriptions
+      details.push(
+        <div key={i} className="mb-2 text-sm text-foreground leading-relaxed">
+          {formatInlineContent(line)}
+        </div>
+      );
+    }
+    
+    return details;
+  };
   
-  // Enhanced inline content formatting
   const formatInlineContent = (text: string) => {
     if (!text) return '';
     
@@ -145,7 +123,7 @@ export const FormattedText = ({ text }: FormattedTextProps) => {
             rel="noopener noreferrer"
             className="text-primary hover:underline font-medium inline-flex items-center gap-1"
           >
-            {part.length > 60 ? `${part.substring(0, 60)}...` : part}
+            {part.length > 50 ? `${part.substring(0, 50)}...` : part}
             <ExternalLink className="h-3 w-3" />
           </a>
         );
@@ -155,7 +133,6 @@ export const FormattedText = ({ text }: FormattedTextProps) => {
     });
   };
   
-  // Handle bold and italic formatting
   const formatTextStyles = (text: string, baseIndex: number) => {
     // Handle bold text (**text**)
     const boldRegex = /(\*\*[^*]+\*\*)/g;
@@ -175,7 +152,6 @@ export const FormattedText = ({ text }: FormattedTextProps) => {
     });
   };
   
-  // Handle italic text (*text*) - avoiding conflict with **bold**
   const formatItalicText = (text: string, baseKey: string) => {
     const italicRegex = /(\*(?!\*)[^*]+\*(?!\*))/g;
     const italicParts = text.split(italicRegex);
