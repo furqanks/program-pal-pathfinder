@@ -37,6 +37,34 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
     return matches.slice(0, 5); // Limit to first 5 matches
   };
 
+  // Helper function to safely get hostname from URL
+  const getUrlHostname = (urlString: string) => {
+    try {
+      // Add protocol if missing
+      let url = urlString;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+      return new URL(url).hostname;
+    } catch (error) {
+      console.log('Invalid URL format:', urlString);
+      return urlString; // Return original string if URL parsing fails
+    }
+  };
+
+  // Helper function to ensure URL has protocol
+  const ensureProtocol = (urlString: string) => {
+    try {
+      if (!urlString.startsWith('http://') && !urlString.startsWith('https://')) {
+        return 'https://' + urlString;
+      }
+      return urlString;
+    } catch (error) {
+      console.log('Error processing URL:', urlString);
+      return urlString;
+    }
+  };
+
   const feeHighlights = extractFeeInfo(rawContent);
 
   return (
@@ -125,12 +153,12 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
                     </div>
                     <div className="flex-1 min-w-0">
                       <a 
-                        href={citation.url} 
+                        href={ensureProtocol(citation.url)} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 hover:underline block mb-2"
                       >
-                        {citation.title || new URL(citation.url).hostname}
+                        {citation.title || getUrlHostname(citation.url)}
                       </a>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                         <Globe className="h-3 w-3" />
