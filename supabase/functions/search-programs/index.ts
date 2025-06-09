@@ -36,48 +36,18 @@ serve(async (req) => {
       )
     }
 
-    // Enhanced prompt for comprehensive report-style results
-    const prompt = `Create a comprehensive university program search report for: "${query}"
+    // Simplified prompt requesting only official university sources
+    const prompt = `Find university programs that match: "${query}"
 
-Structure your response as a detailed research report covering:
+CRITICAL REQUIREMENTS:
+- Use ONLY official university websites (.edu domains, .ac.uk domains, and official university sites)
+- Do not use third-party educational portals, ranking sites, or aggregators
+- All information must come directly from official university sources
+- Include direct links to official program pages when possible
 
-## Program Overview
-Provide a summary of the search criteria and what types of programs match this query.
+Provide comprehensive information about relevant programs including program names, universities, fees, deadlines, requirements, and other important details exactly as found on official university websites.`
 
-## Available Programs
-List specific programs found, organized by country/region. For each program include:
-- **Program Name**: Full official program title
-- **University**: Complete university name  
-- **Location**: Country and city
-- **Degree Level**: Bachelor's, Master's, PhD, etc.
-- **Duration**: Program length
-- **Tuition Fees**: Exact fees as stated by universities (specify currency and student status)
-- **Application Deadline**: Current deadline information
-- **Entry Requirements**: Key admission requirements
-- **Program Highlights**: Brief description of unique features
-
-## Key Insights
-- Common fee ranges across programs
-- Popular locations for this field
-- Typical admission requirements
-- Notable program features or specializations
-
-## Application Considerations
-- Important deadlines to note
-- Documentation typically required
-- Tips for international students (if relevant)
-
-CRITICAL INSTRUCTIONS:
-- Only include real, currently offered programs from accredited universities
-- Report fees exactly as found on official university websites
-- Include direct links to program pages when possible: [Program Name](URL)
-- If exact information is unavailable, clearly state "Contact university for current details"
-- Focus on official university sources only
-- Prioritize accuracy over quantity
-
-Format links as: [Program Title](university-program-url) for easy access to official pages.`
-
-    console.log('Sending comprehensive search query to Perplexity:', query)
+    console.log('Sending search query to Perplexity with official sources only:', query)
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -90,7 +60,7 @@ Format links as: [Program Title](university-program-url) for easy access to offi
         messages: [
           {
             role: 'system',
-            content: 'You are a university program research specialist. Create comprehensive, accurate reports from official university sources. Always verify information from university websites and provide direct links when possible. Format responses as structured reports with clear sections and actionable information.'
+            content: 'You are a university program research specialist. Use ONLY official university websites for information. Do not use third-party educational sites, ranking portals, or aggregators. All data must come from official university sources (.edu, .ac.uk, official university domains).'
           },
           {
             role: 'user',
@@ -118,7 +88,7 @@ Format links as: [Program Title](university-program-url) for easy access to offi
     }
 
     const data = await response.json()
-    console.log('Perplexity response received for comprehensive search')
+    console.log('Perplexity response received')
 
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       return new Response(
@@ -131,23 +101,23 @@ Format links as: [Program Title](university-program-url) for easy access to offi
     }
 
     const content = data.choices[0].message.content
-    console.log('Report content length:', content.length)
+    console.log('Content length:', content.length)
 
-    // Create a single comprehensive result for report display
+    // Return raw content exactly as received from Perplexity
     const searchResults = [{
-      programName: 'University Program Search Report',
-      university: 'Comprehensive Analysis',
-      degreeType: 'Multiple Programs',
-      country: 'Global Search Results', 
+      programName: 'University Program Search Results',
+      university: 'Multiple Universities',
+      degreeType: 'Various Programs',
+      country: 'Search Results', 
       description: content,
-      tuition: 'Varies by program - see report details',
-      deadline: 'Multiple deadlines - see report details',
-      duration: 'Varies by program type',
-      requirements: 'Varies by program - see report details',
+      tuition: 'See results below',
+      deadline: 'See results below',
+      duration: 'See results below',
+      requirements: 'See results below',
       website: null,
       fees: {
-        range: 'See detailed analysis in report',
-        note: 'All fees require verification with universities'
+        range: 'See detailed results below',
+        note: 'Information from official university sources'
       }
     }]
 
@@ -163,7 +133,7 @@ Format links as: [Program Title](university-program-url) for easy access to offi
           model: data.model || 'llama-3.1-sonar-large-128k-online',
           hasStructuredData: false,
           reportFormat: true,
-          disclaimer: 'Comprehensive search report generated by Perplexity AI. Always verify all details directly with universities.'
+          disclaimer: 'Results from official university sources only via Perplexity AI'
         }
       }),
       { 
