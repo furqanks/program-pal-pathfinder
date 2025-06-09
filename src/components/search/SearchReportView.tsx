@@ -18,8 +18,13 @@ import {
   ChevronRight,
   MapPin,
   Target,
-  Star
+  Star,
+  Plus,
+  CheckCircle
 } from "lucide-react";
+import { useProgramContext } from "@/contexts/ProgramContext";
+import { toast } from "sonner";
+import { useState } from "react";
 
 interface SearchReportViewProps {
   rawContent: string;
@@ -32,124 +37,236 @@ interface ParsedProgram {
   title: string;
   university: string;
   url?: string;
-  details: Array<{
-    label: string;
-    value: string;
-    icon: React.ReactNode;
-  }>;
+  location?: string;
+  tuition?: string;
+  deadline?: string;
+  duration?: string;
+  requirements?: string;
+  degreeType?: string;
   description?: string;
   highlighted?: boolean;
 }
 
+interface ParsedSection {
+  type: 'overview' | 'programs' | 'insights' | 'considerations' | 'other';
+  title: string;
+  content: string;
+}
+
 const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProps) => {
-  // Enhanced content parsing to extract structured program information
-  const parseContentIntoPrograms = (content: string): { programs: ParsedProgram[], sections: string[] } => {
+  const { addProgram } = useProgramContext();
+  const [addingPrograms, setAddingPrograms] = useState<Set<string>>(new Set());
+
+  // Enhanced content parsing with multiple strategies
+  const parseContent = (content: string): { programs: ParsedProgram[], sections: ParsedSection[] } => {
     if (!content) return { programs: [], sections: [] };
 
-    const lines = content.split('\n').filter(line => line.trim().length > 0);
     const programs: ParsedProgram[] = [];
-    const sections: string[] = [];
+    const sections: ParsedSection[] = [];
     
+    // Split content into lines and clean up
+    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    let currentSection = '';
+    let currentSectionContent: string[] = [];
+    let inProgramSection = false;
     let currentProgram: Partial<ParsedProgram> = {};
-    let programCounter = 1;
-    let collectingProgramDetails = false;
-
+    
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+      const line = lines[i];
       
-      // Check for program title with URL pattern
-      const programMatch = line.match(/^\[(\d+)\]:\s*\[([^\]]+)\]\s*\(([^)]+)\)/);
-      if (programMatch) {
-        // Save previous program if exists
-        if (currentProgram.title) {
-          programs.push({
-            id: `program-${programs.length + 1}`,
-            title: currentProgram.title,
-            university: currentProgram.university || 'University information not available',
-            url: currentProgram.url,
-            details: currentProgram.details || [],
-            description: currentProgram.description,
-            highlighted: Math.random() > 0.7 // Randomly highlight some programs
+      // Detect section headers (## or **bold**)
+      if (line.startsWith('##') || (line.includes('**') && line.length < 100)) {
+        // Save previous section
+        if (currentSection && currentSectionContent.length > 0) {
+          sections.push({
+            type: getSectionType(currentSection),
+            title: currentSection,
+            content: currentSectionContent.join('\n')
           });
         }
-
-        // Start new program
-        currentProgram = {
-          title: programMatch[2],
-          url: programMatch[3],
-          details: []
-        };
-        collectingProgramDetails = true;
-        continue;
-      }
-
-      // Check for program details (University:, Tuition:, etc.)
-      const detailMatch = line.match(/^([^:]+):\s*(.+)$/);
-      if (detailMatch && collectingProgramDetails) {
-        const [, label, value] = detailMatch;
         
-        const getDetailIcon = (label: string) => {
-          const lowerLabel = label.toLowerCase();
-          if (lowerLabel.includes('university') || lowerLabel.includes('college')) return <GraduationCap className="h-4 w-4 text-primary" />;
-          if (lowerLabel.includes('location') || lowerLabel.includes('country')) return <MapPin className="h-4 w-4 text-blue-600" />;
-          if (lowerLabel.includes('tuition') || lowerLabel.includes('fee') || lowerLabel.includes('cost')) return <DollarSign className="h-4 w-4 text-green-600" />;
-          if (lowerLabel.includes('deadline') || lowerLabel.includes('application')) return <Calendar className="h-4 w-4 text-red-600" />;
-          if (lowerLabel.includes('duration') || lowerLabel.includes('length')) return <Clock className="h-4 w-4 text-purple-600" />;
-          if (lowerLabel.includes('requirement') || lowerLabel.includes('criteria')) return <Target className="h-4 w-4 text-orange-600" />;
-          return <BookOpen className="h-4 w-4 text-muted-foreground" />;
-        };
-
-        currentProgram.details = currentProgram.details || [];
-        currentProgram.details.push({
-          label: label.trim(),
-          value: value.trim(),
-          icon: getDetailIcon(label)
-        });
-
-        // Extract university name if this is a university field
-        if (label.toLowerCase().includes('university') && !currentProgram.university) {
-          currentProgram.university = value.trim();
+        // Start new section
+        currentSection = line.replace(/^##\s*/, '').replace(/\*\*/g, '').replace(/:$/, '').trim();
+        currentSectionContent = [];
+        inProgramSection = currentSection.toLowerCase().includes('program') || 
+                          currentSection.toLowerCase().includes('available') ||
+                          currentSection.toLowerCase().includes('options');
+        continue;
+      }
+      
+      // Parse program information in program sections
+      if (inProgramSection) {
+        const programData = extractProgramFromLine(line, lines, i);
+        if (programData) {
+          programs.push({
+            id: `program-${programs.length + 1}`,
+            ...programData,
+            highlighted: Math.random() > 0.6 // Random highlighting
+          });
+          continue;
         }
-        continue;
       }
-
-      // Check for section headers
-      if (line.startsWith('##') || (line.includes('**') && line.length < 100)) {
-        collectingProgramDetails = false;
-        const cleanHeader = line.replace(/^##\s*/, '').replace(/\*\*/g, '').replace(/:$/, '');
-        sections.push(cleanHeader);
-        continue;
-      }
-
-      // Check for general content (description or other info)
-      if (line.length > 20 && !line.match(/^\[?\d+\]?:/) && collectingProgramDetails) {
-        currentProgram.description = (currentProgram.description || '') + ' ' + line;
-      } else if (!collectingProgramDetails && line.length > 20) {
-        sections.push(line);
+      
+      // Add to current section content
+      if (line.length > 0 && !line.match(/^\[?\d+\]?:/)) {
+        currentSectionContent.push(line);
       }
     }
-
-    // Don't forget the last program
-    if (currentProgram.title) {
-      programs.push({
-        id: `program-${programs.length + 1}`,
-        title: currentProgram.title,
-        university: currentProgram.university || 'University information not available',
-        url: currentProgram.url,
-        details: currentProgram.details || [],
-        description: currentProgram.description,
-        highlighted: Math.random() > 0.7
+    
+    // Don't forget the last section
+    if (currentSection && currentSectionContent.length > 0) {
+      sections.push({
+        type: getSectionType(currentSection),
+        title: currentSection,
+        content: currentSectionContent.join('\n')
       });
     }
-
+    
     return { programs, sections };
   };
 
-  const { programs, sections } = parseContentIntoPrograms(rawContent);
+  const extractProgramFromLine = (line: string, allLines: string[], index: number): Partial<ParsedProgram> | null => {
+    // Strategy 1: Look for markdown links with program titles
+    const linkMatch = line.match(/\[([^\]]+)\]\(([^)]+)\)/);
+    if (linkMatch && linkMatch[1].length > 10) {
+      const title = linkMatch[1];
+      const url = linkMatch[2];
+      
+      // Look ahead for additional details
+      const details = extractProgramDetails(allLines, index + 1);
+      
+      return {
+        title,
+        url,
+        university: extractUniversity(title, details),
+        ...details
+      };
+    }
+    
+    // Strategy 2: Look for numbered program entries
+    const numberedMatch = line.match(/^\d+\.\s*(.+?)(?:\s*-\s*(.+))?$/);
+    if (numberedMatch && numberedMatch[1].length > 10) {
+      const title = numberedMatch[1];
+      const subtitle = numberedMatch[2];
+      
+      const details = extractProgramDetails(allLines, index + 1);
+      
+      return {
+        title,
+        university: subtitle || extractUniversity(title, details),
+        ...details
+      };
+    }
+    
+    // Strategy 3: Look for bold program names
+    const boldMatch = line.match(/\*\*([^*]+)\*\*/);
+    if (boldMatch && boldMatch[1].length > 10 && !boldMatch[1].includes(':')) {
+      const title = boldMatch[1];
+      const details = extractProgramDetails(allLines, index + 1);
+      
+      return {
+        title,
+        university: extractUniversity(title, details),
+        ...details
+      };
+    }
+    
+    return null;
+  };
 
-  const handleSearchGoogle = () => {
-    const searchQuery = `${query} university programs official website`;
-    window.open(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
+  const extractProgramDetails = (lines: string[], startIndex: number): Partial<ParsedProgram> => {
+    const details: Partial<ParsedProgram> = {};
+    const lookAhead = 8; // Look at next few lines
+    
+    for (let i = startIndex; i < Math.min(startIndex + lookAhead, lines.length); i++) {
+      const line = lines[i];
+      
+      // Stop at next program or section
+      if (line.match(/^\d+\./) || line.startsWith('##') || line.includes('**')) break;
+      
+      // Extract specific details
+      if (line.toLowerCase().includes('university:') || line.toLowerCase().includes('institution:')) {
+        details.university = line.split(':')[1]?.trim();
+      } else if (line.toLowerCase().includes('location:') || line.toLowerCase().includes('country:')) {
+        details.location = line.split(':')[1]?.trim();
+      } else if (line.toLowerCase().includes('tuition:') || line.toLowerCase().includes('fees:')) {
+        details.tuition = line.split(':')[1]?.trim();
+      } else if (line.toLowerCase().includes('deadline:') || line.toLowerCase().includes('application:')) {
+        details.deadline = line.split(':')[1]?.trim();
+      } else if (line.toLowerCase().includes('duration:') || line.toLowerCase().includes('length:')) {
+        details.duration = line.split(':')[1]?.trim();
+      } else if (line.toLowerCase().includes('requirements:') || line.toLowerCase().includes('entry:')) {
+        details.requirements = line.split(':')[1]?.trim();
+      } else if (line.toLowerCase().includes('degree:') || line.toLowerCase().includes('level:')) {
+        details.degreeType = line.split(':')[1]?.trim();
+      } else if (line.length > 20 && !line.includes(':') && !details.description) {
+        details.description = line;
+      }
+    }
+    
+    return details;
+  };
+
+  const extractUniversity = (title: string, details: Partial<ParsedProgram>): string => {
+    if (details.university) return details.university;
+    
+    // Try to extract university name from title
+    const patterns = [
+      /at\s+([^,]+)/i,
+      /\-\s*([^,]+)\s*$/,
+      /,\s*([^,]+)$/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = title.match(pattern);
+      if (match) return match[1].trim();
+    }
+    
+    return 'University information not available';
+  };
+
+  const getSectionType = (title: string): ParsedSection['type'] => {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes('overview') || lowerTitle.includes('summary')) return 'overview';
+    if (lowerTitle.includes('program') || lowerTitle.includes('available')) return 'programs';
+    if (lowerTitle.includes('insight') || lowerTitle.includes('analysis')) return 'insights';
+    if (lowerTitle.includes('consideration') || lowerTitle.includes('application')) return 'considerations';
+    return 'other';
+  };
+
+  const { programs, sections } = parseContent(rawContent);
+
+  const handleAddToShortlist = async (program: ParsedProgram) => {
+    setAddingPrograms(prev => new Set(prev).add(program.id));
+    
+    try {
+      await addProgram({
+        programName: program.title,
+        university: program.university,
+        degreeType: program.degreeType || 'Not specified',
+        country: program.location || 'Location not specified',
+        tuition: program.tuition || 'Contact university for fees',
+        deadline: program.deadline || 'Check university website',
+        statusTagId: 'status-considering',
+        customTagIds: [],
+        notes: `Added from search results.\n\nProgram Details:\n${program.description || 'No description available'}\n\n${
+          program.requirements ? `Requirements: ${program.requirements}\n` : ''
+        }${
+          program.duration ? `Duration: ${program.duration}\n` : ''
+        }\n\nIMPORTANT: Always verify all details directly with the university before applying.`
+      });
+      
+      toast.success(`${program.title} added to your shortlist!`);
+    } catch (error) {
+      toast.error("Failed to add program to shortlist");
+    } finally {
+      setAddingPrograms(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(program.id);
+        return newSet;
+      });
+    }
   };
 
   const formatTextWithLinks = (text: string) => {
@@ -166,7 +283,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
             rel="noopener noreferrer"
             className="text-primary hover:underline font-medium break-all inline-flex items-center gap-1 text-sm"
           >
-            {part.length > 40 ? `${part.substring(0, 40)}...` : part}
+            {part.length > 50 ? `${part.substring(0, 50)}...` : part}
             <ExternalLink className="h-3 w-3 shrink-0" />
           </a>
         );
@@ -212,94 +329,146 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
                 </div>
               </div>
             </div>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSearchGoogle}
-              className="w-full sm:w-auto"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Search Google for More
-            </Button>
           </div>
         </CardHeader>
       </Card>
 
-      {/* Program Cards Grid */}
+      {/* Program Cards - Enhanced Design */}
       {programs.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Featured Programs</h2>
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" />
+              Featured Programs
+            </h2>
             <Badge variant="secondary" className="text-xs">
               {programs.length} programs
             </Badge>
           </div>
           
-          <div className="grid gap-4 md:gap-6">
+          <div className="grid gap-6">
             {programs.map((program) => (
               <Card 
                 key={program.id} 
-                className={`transition-all duration-200 hover:shadow-md ${
-                  program.highlighted ? 'ring-2 ring-primary/20 bg-primary/5' : ''
+                className={`transition-all duration-200 hover:shadow-lg border ${
+                  program.highlighted ? 'ring-2 ring-primary/30 bg-gradient-to-r from-primary/5 to-transparent border-primary/30' : 'hover:border-primary/20'
                 }`}
               >
                 <CardContent className="p-6">
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     {/* Program Header */}
-                    <div className="flex items-start gap-3">
-                      {program.highlighted && (
-                        <div className="p-1 bg-primary/10 rounded-full shrink-0 mt-1">
-                          <Star className="h-3 w-3 text-primary fill-current" />
-                        </div>
-                      )}
+                    <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-foreground leading-tight mb-2">
-                          {program.title}
-                        </h3>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                          <GraduationCap className="h-4 w-4" />
-                          <span className="font-medium">{program.university}</span>
+                        <div className="flex items-start gap-3 mb-3">
+                          {program.highlighted && (
+                            <div className="p-1 bg-primary/10 rounded-full shrink-0 mt-1">
+                              <Star className="h-3 w-3 text-primary fill-current" />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-foreground leading-tight mb-2">
+                              {program.title}
+                            </h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <GraduationCap className="h-4 w-4" />
+                              <span className="font-medium">{program.university}</span>
+                              {program.location && (
+                                <>
+                                  <span>•</span>
+                                  <MapPin className="h-3 w-3" />
+                                  <span>{program.location}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
+                        
+                        {/* Degree Type Badge */}
+                        {program.degreeType && (
+                          <Badge variant="outline" className="mb-3">
+                            {program.degreeType}
+                          </Badge>
+                        )}
                       </div>
+                      
+                      {/* Add to Shortlist Button */}
+                      <Button
+                        onClick={() => handleAddToShortlist(program)}
+                        disabled={addingPrograms.has(program.id)}
+                        size="sm"
+                        className="shrink-0"
+                      >
+                        {addingPrograms.has(program.id) ? (
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                        ) : (
+                          <Plus className="h-4 w-4 mr-2" />
+                        )}
+                        {addingPrograms.has(program.id) ? "Adding..." : "Add to Shortlist"}
+                      </Button>
                     </div>
 
                     {/* Program Details Grid */}
-                    {program.details.length > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {program.details.map((detail, index) => (
-                          <div key={index} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
-                            <div className="shrink-0 mt-0.5">
-                              {detail.icon}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm text-foreground mb-1">
-                                {detail.label}
-                              </div>
-                              <div className="text-sm text-muted-foreground leading-relaxed">
-                                {formatTextWithLinks(detail.value)}
-                              </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {program.tuition && (
+                        <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+                          <DollarSign className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm text-foreground mb-1">Tuition Fees</div>
+                            <div className="text-sm text-muted-foreground">
+                              {formatTextWithLinks(program.tuition)}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        </div>
+                      )}
+                      
+                      {program.deadline && (
+                        <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+                          <Calendar className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm text-foreground mb-1">Application Deadline</div>
+                            <div className="text-sm text-muted-foreground">{program.deadline}</div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {program.duration && (
+                        <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+                          <Clock className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm text-foreground mb-1">Duration</div>
+                            <div className="text-sm text-muted-foreground">{program.duration}</div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {program.requirements && (
+                        <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+                          <Target className="h-4 w-4 text-orange-600 mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm text-foreground mb-1">Entry Requirements</div>
+                            <div className="text-sm text-muted-foreground line-clamp-2">
+                              {formatTextWithLinks(program.requirements)}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Program Description */}
                     {program.description && (
                       <div className="pt-2">
                         <Separator className="mb-3" />
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                          {formatTextWithLinks(program.description.trim())}
+                          {formatTextWithLinks(program.description)}
                         </p>
                       </div>
                     )}
 
-                    {/* Action Button */}
+                    {/* Visit Program Button */}
                     {program.url && (
                       <div className="pt-2">
                         <Button
-                          variant="default"
+                          variant="outline"
                           size="sm"
                           className="w-full sm:w-auto"
                           onClick={() => window.open(program.url, '_blank')}
@@ -317,25 +486,30 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
         </div>
       )}
 
-      {/* Additional Sections */}
+      {/* Content Sections */}
       {sections.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Info className="h-5 w-5" />
-              Additional Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {sections.map((section, index) => (
-              <div key={index} className="prose prose-sm max-w-none">
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {formatTextWithLinks(section)}
-                </p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          {sections.map((section, index) => (
+            <Card key={index}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  {section.type === 'overview' && <Info className="h-4 w-4" />}
+                  {section.type === 'insights' && <BookOpen className="h-4 w-4" />}
+                  {section.type === 'considerations' && <AlertTriangle className="h-4 w-4" />}
+                  {section.type === 'other' && <FileText className="h-4 w-4" />}
+                  {section.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="prose prose-sm max-w-none">
+                  <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {formatTextWithLinks(section.content)}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
       
       {/* Verification Notice */}
