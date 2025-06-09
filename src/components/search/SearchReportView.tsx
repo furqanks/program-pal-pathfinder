@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Search as SearchIcon, 
@@ -9,8 +10,6 @@ import { SectionHeader } from "./SectionHeader";
 import { FormattedText } from "./FormattedText";
 import { CitationsList } from "./CitationsList";
 import { VerificationNotice } from "./VerificationNotice";
-import { ProgramCardsView } from "./ProgramCardsView";
-import { parseProgramsFromContent } from "./ProgramDataParser";
 
 interface SearchReportViewProps {
   rawContent: string;
@@ -19,20 +18,6 @@ interface SearchReportViewProps {
 }
 
 const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProps) => {
-  // Check if we can parse structured program data
-  const parsedPrograms = parseProgramsFromContent(rawContent);
-  
-  // If we have structured program data, use the cards view
-  if (parsedPrograms.length > 0) {
-    return (
-      <ProgramCardsView 
-        rawContent={rawContent}
-        query={query}
-        citations={citations}
-      />
-    );
-  }
-
   // Enhanced content parsing with better structure recognition
   const parseContentWithStructure = (content: string) => {
     if (!content) return [];
