@@ -70,7 +70,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
       if (programDetailsMatch) {
         return (
           <div key={index} className="bg-muted/30 p-3 rounded-lg border mb-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
               {trimmedSection.split('\n').map((line, lineIndex) => {
                 const [label, ...valueParts] = line.split(':');
                 const value = valueParts.join(':').trim();
@@ -89,8 +89,8 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
                   <div key={lineIndex} className="flex items-start gap-2">
                     {getIcon(label)}
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-xs text-foreground">{label.trim()}</div>
-                      <div className="text-xs text-muted-foreground break-words">{value}</div>
+                      <div className="font-medium text-sm text-foreground">{label.trim()}</div>
+                      <div className="text-sm text-muted-foreground break-words">{value}</div>
                     </div>
                   </div>
                 );
@@ -121,7 +121,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
         );
       }
 
-      // Format regular paragraphs with smaller, lighter text styling
+      // Format regular paragraphs with consistent text styling matching the intro
       const formatTextWithLinks = (text: string) => {
         // Parse inline URLs - improved regex for better URL detection
         const urlRegex = /(https?:\/\/[^\s\)\]\,\;]+)/g;
@@ -135,7 +135,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
                 href={part}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline font-normal break-all inline-flex items-center gap-1 text-xs"
+                className="text-primary hover:underline font-normal break-all inline-flex items-center gap-1 text-sm"
               >
                 {part.length > 60 ? `${part.substring(0, 60)}...` : part}
                 <ExternalLink className="h-3 w-3" />
@@ -143,7 +143,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
             );
           }
           
-          // Format text with bold markers - reduced emphasis
+          // Format text with bold markers - consistent weight
           return part
             .split(/(\*\*[^*]+\*\*)/)
             .map((textPart, textIndex) => {
@@ -162,7 +162,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
       return (
         <div key={index} className="mb-4">
           <div className="prose prose-sm max-w-none">
-            <p className="text-xs text-muted-foreground leading-relaxed font-normal">
+            <p className="text-sm text-muted-foreground leading-relaxed font-normal">
               {formatTextWithLinks(trimmedSection)}
             </p>
           </div>
@@ -184,7 +184,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
                 </div>
                 <div>
                   <h1 className="text-lg font-medium">University Program Search Report</h1>
-                  <p className="text-xs font-normal text-muted-foreground mt-1">
+                  <p className="text-sm font-normal text-muted-foreground mt-1">
                     Comprehensive analysis of: <span className="font-medium italic">"{query}"</span>
                   </p>
                 </div>
@@ -229,7 +229,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
               <h3 className="font-medium text-amber-800 dark:text-amber-200 text-sm">
                 Verification Required
               </h3>
-              <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed font-normal">
+              <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed font-normal">
                 This report provides AI-generated insights from official university sources. 
                 <span className="font-medium"> Always verify all program details, fees, deadlines, and requirements directly with the universities</span> before making application decisions. 
                 University information can change frequently, and admission requirements may vary by student status and academic year.
@@ -269,12 +269,12 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
                       href={citation.url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-xs font-medium text-primary hover:underline line-clamp-2 block mb-2"
+                      className="text-sm font-medium text-primary hover:underline line-clamp-2 block mb-2"
                     >
                       {citation.title || citation.url}
                     </a>
                     {citation.text && (
-                      <p className="text-xs text-muted-foreground line-clamp-3 mb-2 font-normal">
+                      <p className="text-sm text-muted-foreground line-clamp-3 mb-2 font-normal">
                         {citation.text}
                       </p>
                     )}
