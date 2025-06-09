@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Search as SearchIcon, 
@@ -17,34 +18,47 @@ interface SearchReportViewProps {
 }
 
 const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProps) => {
-  // Enhanced content parsing for better presentation
+  // Enhanced content parsing with better structure recognition
   const parseContentWithStructure = (content: string) => {
     if (!content) return [];
 
-    // Split content into meaningful sections with better text handling
-    const sections = content.split('\n\n').filter(section => section.trim().length > 0);
+    // Pre-process content to normalize formatting
+    const normalizedContent = content
+      .replace(/\n\s*\n\s*\n/g, '\n\n') // Normalize multiple line breaks
+      .replace(/^\s+|\s+$/g, ''); // Trim whitespace
+
+    // Split content into meaningful sections
+    const sections = normalizedContent.split(/\n\s*\n/).filter(section => section.trim().length > 0);
     
     return sections.map((section, index) => {
       const trimmedSection = section.trim();
       
-      // Check for program listings with enhanced formatting
-      const programMatch = trimmedSection.match(/^\[(\d+)\]:\s*\[([^\]]+)\]\s*\(([^)]+)\)/);
-      if (programMatch) {
-        const [, number, title, url] = programMatch;
-        return (
-          <ProgramCard
-            key={index}
-            number={number}
-            title={title}
-            url={url}
-            index={index}
-          />
-        );
+      // Check for program listings with enhanced pattern matching
+      const programPatterns = [
+        /^\[(\d+)\]:\s*\[([^\]]+)\]\s*\(([^)]+)\)/,
+        /^(\d+)\.\s*\[([^\]]+)\]\s*\(([^)]+)\)/,
+        /^(\d+)\.\s*([^(]+)\s*\(([^)]+)\)/
+      ];
+      
+      for (const pattern of programPatterns) {
+        const programMatch = trimmedSection.match(pattern);
+        if (programMatch) {
+          const [, number, title, url] = programMatch;
+          return (
+            <ProgramCard
+              key={index}
+              number={number}
+              title={title.trim()}
+              url={url.trim()}
+              index={index}
+            />
+          );
+        }
       }
 
-      // Parse program details sections with better formatting
-      const programDetailsMatch = trimmedSection.match(/University:\s*([^\n]+)|Program:\s*([^\n]+)|Tuition:\s*([^\n]+)|Deadline:\s*([^\n]+)|Duration:\s*([^\n]+)/);
-      if (programDetailsMatch) {
+      // Enhanced program details detection
+      const hasStructuredData = trimmedSection.match(/^(University|Program|Tuition|Deadline|Duration|Requirements|Application|Contact):/mi);
+      if (hasStructuredData) {
         return (
           <ProgramDetailsSection
             key={index}
@@ -54,12 +68,15 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
         );
       }
 
-      // Check for major section headers - improve styling
-      const isMajorHeader = trimmedSection.startsWith('##') || 
-                           (trimmedSection.includes('**') && 
-                            trimmedSection.length < 150 && 
-                            !trimmedSection.includes('\n') &&
-                            trimmedSection.match(/^\*\*[^*]+\*\*:?\s*$/));
+      // Enhanced section header detection
+      const isMajorHeader = 
+        trimmedSection.startsWith('##') || 
+        trimmedSection.startsWith('###') ||
+        (trimmedSection.includes('**') && 
+         trimmedSection.length < 200 && 
+         !trimmedSection.includes('\n') &&
+         (trimmedSection.match(/^\*\*[^*]+\*\*:?\s*$/) || 
+          trimmedSection.match(/^\*\*[A-Z][^*]*\*\*$/)));
       
       if (isMajorHeader) {
         return (
@@ -71,7 +88,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
         );
       }
 
-      // Enhanced text content formatting - let FormattedText handle the complexity
+      // Enhanced content formatting - pass to FormattedText for processing
       return (
         <div key={index} className="mb-6">
           <FormattedText text={trimmedSection} />
@@ -121,7 +138,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
       {/* Main Report Content */}
       <Card>
         <CardContent className="pt-6">
-          <div className="space-y-4">
+          <div className="space-y-6">
             {parseContentWithStructure(rawContent)}
           </div>
         </CardContent>
