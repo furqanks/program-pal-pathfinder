@@ -8,8 +8,7 @@ import {
   Sparkles,
   SidebarClose,
   SidebarOpen,
-  Filter,
-  FileText
+  Filter
 } from "lucide-react";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 
@@ -35,71 +34,39 @@ const NotesHeader = ({
   const { analyzeAllNotes, notes } = useAINotesContext();
 
   return (
-    <div className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-20 shadow-sm">
-      <div className="flex items-center justify-between p-6">
-        <div className="flex items-center gap-4">
+    <div className="border-b bg-white sticky top-0 z-20 shadow-sm">
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={onSidebarToggle}
-            className="h-9 w-9 hover:bg-muted/50"
+            className="h-8 w-8 hover:bg-gray-100"
           >
-            {sidebarOpen ? <SidebarClose className="h-5 w-5" /> : <SidebarOpen className="h-5 w-5" />}
+            {sidebarOpen ? <SidebarClose className="h-4 w-4" /> : <SidebarOpen className="h-4 w-4" />}
           </Button>
           
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <FileText className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Notes</h1>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{notes.filter(n => !n.is_archived).length} notes</span>
-                <span>•</span>
-                <span>Notion-style editor</span>
-              </div>
-            </div>
-          </div>
+          <h1 className="text-lg font-semibold text-gray-900">Notes</h1>
         </div>
 
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={analyzeAllNotes}
-            disabled={notes.length === 0}
-            className="h-9"
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            Analyze All
-          </Button>
-          
-          <Button onClick={onNewNote} size="sm" className="h-9 bg-primary text-primary-foreground hover:bg-primary/90">
-            <Plus className="mr-2 h-4 w-4" />
-            New Note
-          </Button>
-        </div>
-      </div>
-
-      <div className="px-6 pb-4 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search notes..."
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-9 h-9 border-border/50 focus:border-primary"
+              className="pl-9 h-8 w-64 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
           <Select value={contextFilter} onValueChange={onContextFilterChange}>
-            <SelectTrigger className="w-40 h-9 border-border/50">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Context" />
+            <SelectTrigger className="w-32 h-8 border-gray-200">
+              <Filter className="mr-2 h-3 w-3" />
+              <SelectValue placeholder="Filter" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Contexts</SelectItem>
+              <SelectItem value="all">All</SelectItem>
               <SelectItem value="general">General</SelectItem>
               <SelectItem value="academic">Academic</SelectItem>
               <SelectItem value="financial">Financial</SelectItem>
@@ -107,6 +74,26 @@ const NotesHeader = ({
               <SelectItem value="research">Research</SelectItem>
             </SelectContent>
           </Select>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={analyzeAllNotes}
+            disabled={notes.length === 0}
+            className="h-8 border-gray-200"
+          >
+            <Sparkles className="mr-2 h-3 w-3" />
+            Analyze
+          </Button>
+          
+          <Button 
+            onClick={onNewNote} 
+            size="sm" 
+            className="h-8 bg-blue-600 text-white hover:bg-blue-700"
+          >
+            <Plus className="mr-2 h-3 w-3" />
+            New
+          </Button>
         </div>
       </div>
     </div>

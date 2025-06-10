@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,15 +11,11 @@ import {
   Hash, 
   Save, 
   Sparkles,
-  Clock,
   BookOpen,
   Target,
   DollarSign,
   Archive,
-  ArrowLeft,
-  MoreHorizontal,
-  Pin,
-  Share
+  MoreHorizontal
 } from "lucide-react";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { useAINotesContext } from "@/contexts/AINotesContext";
@@ -34,7 +29,7 @@ interface NotionLikeEditorProps {
   onBackToTimeline?: () => void;
 }
 
-const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackToTimeline }: NotionLikeEditorProps) => {
+const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: NotionLikeEditorProps) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [contextType, setContextType] = useState("general");
@@ -42,7 +37,6 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   const titleRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
@@ -51,7 +45,6 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
   const { tags } = useTagContext();
   const { addNote, updateNote, analyzeNote } = useAINotesContext();
 
-  // Load selected note data
   useEffect(() => {
     if (selectedNote) {
       setTitle(selectedNote.title || "");
@@ -60,13 +53,11 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
       setProgramId(selectedNote.program_id || "");
       setSelectedTags(selectedNote.tags || []);
     } else {
-      // Clear form for new note
       setTitle("");
       setContent("");
       setContextType("general");
       setProgramId("");
       setSelectedTags([]);
-      // Focus title input for new notes
       setTimeout(() => titleRef.current?.focus(), 100);
     }
   }, [selectedNote]);
@@ -105,14 +96,12 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
         await addNote(noteData);
         onNoteCreated?.();
         toast.success("Note created");
-        // Clear form after creating
         setTitle("");
         setContent("");
         setContextType("general");
         setProgramId("");
         setSelectedTags([]);
       }
-      setLastSaved(new Date());
     } catch (error) {
       toast.error("Failed to save note");
     } finally {
@@ -145,87 +134,15 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
     );
   };
 
-  const formatLastSaved = () => {
-    if (!lastSaved) return "";
-    return `Saved at ${lastSaved.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    })}`;
-  };
-
   return (
     <div className="h-full flex flex-col bg-white">
-      {/* Top Action Bar */}
-      <div className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-10 px-6 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBackToTimeline}
-              className="h-8 w-8 p-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              <span>
-                {selectedNote 
-                  ? `Last edited ${new Date(selectedNote.updated_at).toLocaleDateString()}` 
-                  : "New note"
-                }
-              </span>
-              {lastSaved && (
-                <span className="text-green-600">• {formatLastSaved()}</span>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {selectedNote && (
-              <>
-                <Button variant="ghost" size="sm">
-                  <Pin className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Share className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-            {selectedNote && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleAnalyze}
-                disabled={isAnalyzing}
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                {isAnalyzing ? "Analyzing..." : "AI Analyze"}
-              </Button>
-            )}
-            <Button 
-              onClick={handleSave} 
-              size="sm"
-              disabled={isSaving}
-              className="bg-primary text-primary-foreground"
-            >
-              <Save className="mr-2 h-4 w-4" />
-              {isSaving ? "Saving..." : "Save"}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Metadata Bar */}
-      <div className="border-b bg-gray-50/50 px-6 py-3">
-        <div className="flex flex-wrap items-center gap-3">
+      {/* Simple top bar with actions */}
+      <div className="flex items-center justify-between px-8 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             {getContextIcon(contextType)}
             <Select value={contextType} onValueChange={setContextType}>
-              <SelectTrigger className="w-32 h-8 text-xs border-0 bg-white shadow-sm">
+              <SelectTrigger className="w-32 h-8 text-sm border-0 bg-gray-50 hover:bg-gray-100">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -239,7 +156,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
           </div>
 
           <Select value={programId} onValueChange={setProgramId}>
-            <SelectTrigger className="w-48 h-8 text-xs border-0 bg-white shadow-sm">
+            <SelectTrigger className="w-48 h-8 text-sm border-0 bg-gray-50 hover:bg-gray-100">
               <SelectValue placeholder="Link to program..." />
             </SelectTrigger>
             <SelectContent>
@@ -251,34 +168,64 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
               ))}
             </SelectContent>
           </Select>
-
-          <div className="flex flex-wrap gap-1">
-            {tags.slice(0, 6).map(tag => (
-              <Badge
-                key={tag.id}
-                variant={selectedTags.includes(tag.id) ? "default" : "outline"}
-                className="cursor-pointer text-xs h-6 hover:shadow-sm transition-shadow"
-                onClick={() => handleTagToggle(tag.id)}
-              >
-                {tag.name}
-              </Badge>
-            ))}
-          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {selectedNote && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAnalyze}
+              disabled={isAnalyzing}
+              className="h-8"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              {isAnalyzing ? "Analyzing..." : "Analyze"}
+            </Button>
+          )}
+          <Button 
+            onClick={handleSave} 
+            size="sm"
+            disabled={isSaving}
+            className="h-8 bg-blue-600 text-white hover:bg-blue-700"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            {isSaving ? "Saving..." : "Save"}
+          </Button>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
-      {/* Main editor area */}
+      {/* Main editor area - Notion style */}
       <div className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto p-8">
+        <div className="max-w-4xl mx-auto px-24 py-16">
           {/* Title */}
           <Input
             ref={titleRef}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Untitled"
-            className="text-4xl font-bold border-none shadow-none p-0 h-auto focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/40 mb-8"
-            style={{ fontSize: '2.5rem', lineHeight: '3rem' }}
+            className="text-5xl font-bold border-none shadow-none p-0 h-auto focus-visible:ring-0 bg-transparent placeholder:text-gray-300 mb-4"
+            style={{ fontSize: '3rem', lineHeight: '1.1', fontWeight: '700' }}
           />
+
+          {/* Tags section */}
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-8">
+              {tags.slice(0, 8).map(tag => (
+                <Badge
+                  key={tag.id}
+                  variant={selectedTags.includes(tag.id) ? "default" : "outline"}
+                  className="cursor-pointer text-sm px-3 py-1 hover:shadow-sm transition-all"
+                  onClick={() => handleTagToggle(tag.id)}
+                >
+                  {tag.name}
+                </Badge>
+              ))}
+            </div>
+          )}
 
           {/* Content */}
           <Textarea
@@ -286,13 +233,13 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Start writing..."
-            className="text-lg border-none shadow-none p-0 min-h-[500px] resize-none focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/40 leading-relaxed"
-            style={{ fontSize: '1.125rem', lineHeight: '1.75' }}
+            className="text-base border-none shadow-none p-0 min-h-[600px] resize-none focus-visible:ring-0 bg-transparent placeholder:text-gray-400 leading-relaxed"
+            style={{ fontSize: '1rem', lineHeight: '1.6' }}
           />
 
           {/* AI Summary Display */}
           {selectedNote?.ai_summary && (
-            <Card className="mt-12 border-l-4 border-l-purple-500 shadow-sm">
+            <Card className="mt-16 border border-purple-200 bg-purple-50/30">
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2 bg-purple-100 rounded-lg">
@@ -310,7 +257,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
 
           {/* AI Insights */}
           {selectedNote?.ai_insights && Object.keys(selectedNote.ai_insights).length > 0 && (
-            <Card className="mt-6 border-l-4 border-l-amber-500 shadow-sm">
+            <Card className="mt-6 border border-amber-200 bg-amber-50/30">
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2 bg-amber-100 rounded-lg">
