@@ -403,6 +403,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_note: {
+        Args: { note_id: string; user_id: string }
+        Returns: boolean
+      }
       get_next_version_number: {
         Args: {
           p_user_id: string
