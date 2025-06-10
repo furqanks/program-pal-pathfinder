@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -222,25 +223,28 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
 
     try {
+      // Clean the data to ensure proper null values for UUIDs
+      const cleanedNoteData = {
+        user_id: user.id,
+        title: noteData.title,
+        content: noteData.content,
+        program_id: noteData.program_id || null,
+        tags: noteData.tags,
+        context_type: noteData.context_type,
+        rich_content: noteData.rich_content,
+        folder_id: noteData.folder_id || null,
+        ai_categories: [],
+        ai_insights: {},
+        priority_score: 0,
+        attachments: [],
+        is_archived: false,
+        is_pinned: false,
+        view_count: 0
+      };
+
       const { data, error } = await supabase
         .from('ai_notes')
-        .insert({
-          user_id: user.id,
-          title: noteData.title,
-          content: noteData.content,
-          program_id: noteData.program_id,
-          tags: noteData.tags,
-          context_type: noteData.context_type,
-          rich_content: noteData.rich_content,
-          folder_id: noteData.folder_id,
-          ai_categories: [],
-          ai_insights: {},
-          priority_score: 0,
-          attachments: [],
-          is_archived: false,
-          is_pinned: false,
-          view_count: 0
-        })
+        .insert(cleanedNoteData)
         .select()
         .single();
 
