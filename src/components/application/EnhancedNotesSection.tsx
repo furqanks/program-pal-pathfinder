@@ -736,5 +736,3 @@ const EnhancedNotesSection = () => {
 };
 
 export default EnhancedNotesSection;
-
-</initial_code>
