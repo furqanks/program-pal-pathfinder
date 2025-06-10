@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,7 +85,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
         title: title.trim(),
         content: content.trim(),
         context_type: contextType,
-        program_id: programId || undefined,
+        program_id: programId === "none" ? undefined : programId || undefined,
         tags: selectedTags
       };
 
@@ -160,7 +161,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
               <SelectValue placeholder="Link to program..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No program</SelectItem>
+              <SelectItem value="none">No program</SelectItem>
               {programs.map(program => (
                 <SelectItem key={program.id} value={program.id}>
                   {program.programName} - {program.university}
@@ -255,7 +256,6 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
             </Card>
           )}
 
-          {/* AI Insights */}
           {selectedNote?.ai_insights && Object.keys(selectedNote.ai_insights).length > 0 && (
             <Card className="mt-6 border border-amber-200 bg-amber-50/30">
               <div className="p-6">
