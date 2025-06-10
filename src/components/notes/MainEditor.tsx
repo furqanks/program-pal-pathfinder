@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -207,7 +208,7 @@ const MainEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: MainEditorPr
               <SelectValue placeholder="Link to program..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No program</SelectItem>
+              <SelectItem value="none">No program</SelectItem>
               {programs.map(program => (
                 <SelectItem key={program.id} value={program.id}>
                   {program.programName} - {program.university}
