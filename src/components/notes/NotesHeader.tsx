@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,8 +9,6 @@ import {
   SidebarClose,
   SidebarOpen,
   Filter,
-  LayoutGrid,
-  Clock,
   FileText
 } from "lucide-react";
 import { useAINotesContext } from "@/contexts/AINotesContext";
@@ -21,8 +18,6 @@ interface NotesHeaderProps {
   onSearchChange: (term: string) => void;
   contextFilter: string;
   onContextFilterChange: (filter: string) => void;
-  showTimeline: boolean;
-  onTimelineToggle: () => void;
   onNewNote: () => void;
   sidebarOpen: boolean;
   onSidebarToggle: () => void;
@@ -33,8 +28,6 @@ const NotesHeader = ({
   onSearchChange,
   contextFilter,
   onContextFilterChange,
-  showTimeline,
-  onTimelineToggle,
   onNewNote,
   sidebarOpen,
   onSidebarToggle
@@ -63,7 +56,7 @@ const NotesHeader = ({
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>{notes.filter(n => !n.is_archived).length} notes</span>
                 <span>•</span>
-                <span>Organized by time</span>
+                <span>Notion-style editor</span>
               </div>
             </div>
           </div>
@@ -114,16 +107,6 @@ const NotesHeader = ({
               <SelectItem value="research">Research</SelectItem>
             </SelectContent>
           </Select>
-
-          <Button
-            variant={showTimeline ? "default" : "outline"}
-            size="sm"
-            onClick={onTimelineToggle}
-            className="h-9"
-          >
-            {showTimeline ? <Clock className="mr-2 h-4 w-4" /> : <LayoutGrid className="mr-2 h-4 w-4" />}
-            {showTimeline ? "Timeline" : "Editor"}
-          </Button>
         </div>
       </div>
     </div>
