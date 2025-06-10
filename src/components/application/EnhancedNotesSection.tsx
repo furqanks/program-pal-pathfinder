@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -92,9 +93,9 @@ const EnhancedNotesSection = () => {
     await addNote({
       title: newNote.title.trim(),
       content: newNote.content.trim(),
-      program_id: newNote.program_id || undefined,
+      program_id: newNote.program_id === "none" ? undefined : newNote.program_id,
       context_type: newNote.context_type,
-      folder_id: newNote.folder_id || undefined,
+      folder_id: newNote.folder_id === "none" ? undefined : newNote.folder_id,
       tags: newNote.tags
     });
 
@@ -111,7 +112,7 @@ const EnhancedNotesSection = () => {
     await addFolder({
       name: newFolder.name.trim(),
       color: newFolder.color,
-      parent_id: newFolder.parent_id || undefined
+      parent_id: newFolder.parent_id === "none" ? undefined : newFolder.parent_id
     });
 
     setNewFolder({ name: "", color: "#6366f1", parent_id: "" });
@@ -139,9 +140,9 @@ const EnhancedNotesSection = () => {
     await updateNote(editingNote.id, {
       title: newNote.title.trim(),
       content: newNote.content.trim(),
-      program_id: newNote.program_id || undefined,
+      program_id: newNote.program_id === "none" ? undefined : newNote.program_id,
       context_type: newNote.context_type,
-      folder_id: newNote.folder_id || undefined,
+      folder_id: newNote.folder_id === "none" ? undefined : newNote.folder_id,
       tags: newNote.tags
     });
 
@@ -624,7 +625,7 @@ const EnhancedNotesSection = () => {
                     <SelectValue placeholder="Select folder..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Folder</SelectItem>
+                    <SelectItem value="none">No Folder</SelectItem>
                     {folders.map(folder => (
                       <SelectItem key={folder.id} value={folder.id}>
                         {folder.name}
@@ -644,7 +645,7 @@ const EnhancedNotesSection = () => {
                     <SelectValue placeholder="Select program..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Program</SelectItem>
+                    <SelectItem value="none">No Program</SelectItem>
                     {programs.map(program => (
                       <SelectItem key={program.id} value={program.id}>
                         {program.programName} - {program.university}
@@ -708,7 +709,7 @@ const EnhancedNotesSection = () => {
                     <SelectValue placeholder="No parent..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Parent</SelectItem>
+                    <SelectItem value="none">No Parent</SelectItem>
                     {folders.map(folder => (
                       <SelectItem key={folder.id} value={folder.id}>
                         {folder.name}
