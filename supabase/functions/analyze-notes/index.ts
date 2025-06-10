@@ -58,6 +58,7 @@ serve(async (req) => {
     // Get user from JWT
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     if (authError || !user) {
+      console.error('Auth error:', authError)
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -65,6 +66,7 @@ serve(async (req) => {
     }
 
     const { noteId, action, customPrompt, insightsPrompt, timelinePrompt }: AnalyzeNotesRequest = await req.json()
+    console.log('Received request:', { noteId, action })
 
     if (action === 'analyze_single' && noteId) {
       // Analyze a single note
@@ -76,11 +78,14 @@ serve(async (req) => {
         .single()
 
       if (!note) {
+        console.error('Note not found:', noteId)
         return new Response(JSON.stringify({ error: 'Note not found' }), {
           status: 404,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }
+
+      console.log('Found note:', note.title)
 
       // Call OpenAI to analyze the note
       const systemPrompt = customPrompt || `You are an AI assistant specialized in analyzing university application notes. 
@@ -93,6 +98,7 @@ serve(async (req) => {
       
       Return ONLY a JSON object with these keys: summary, categories, insights, priority_score, context_type, action_items`
 
+      console.log('Calling OpenAI...')
       const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -115,11 +121,65 @@ serve(async (req) => {
         }),
       })
 
+      if (!openaiResponse.ok) {
+        const errorText = await openaiResponse.text()
+        console.error('OpenAI API error:', openaiResponse.status, errorText)
+        return new Response(JSON.stringify({ 
+          error: 'OpenAI API error',
+          details: `${openaiResponse.status}: ${errorText}`
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
       const openaiData = await openaiResponse.json()
-      const analysis = extractJSONFromResponse(openaiData.choices[0].message.content)
+      console.log('OpenAI response:', openaiData)
+
+      // Validate OpenAI response structure
+      if (!openaiData.choices || !openaiData.choices[0] || !openaiData.choices[0].message) {
+        console.error('Invalid OpenAI response structure:', openaiData)
+        return new Response(JSON.stringify({ 
+          error: 'Invalid OpenAI response structure',
+          details: openaiData
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      const messageContent = openaiData.choices[0].message.content
+      if (!messageContent) {
+        console.error('Empty message content from OpenAI')
+        return new Response(JSON.stringify({ 
+          error: 'Empty response from OpenAI'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      console.log('OpenAI message content:', messageContent)
+
+      let analysis
+      try {
+        analysis = extractJSONFromResponse(messageContent)
+        console.log('Parsed analysis:', analysis)
+      } catch (parseError) {
+        console.error('Failed to parse OpenAI response:', parseError, 'Content:', messageContent)
+        return new Response(JSON.stringify({ 
+          error: 'Failed to parse AI response',
+          details: parseError.message,
+          rawContent: messageContent
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
 
       // Update the note with AI analysis
-      await supabase
+      console.log('Updating note with analysis...')
+      const { error: updateError } = await supabase
         .from('ai_notes')
         .update({
           ai_summary: analysis.summary,
@@ -131,6 +191,18 @@ serve(async (req) => {
         })
         .eq('id', noteId)
 
+      if (updateError) {
+        console.error('Database update error:', updateError)
+        return new Response(JSON.stringify({ 
+          error: 'Failed to update note',
+          details: updateError.message
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      console.log('Note updated successfully')
       return new Response(JSON.stringify({ 
         success: true, 
         analysis,
@@ -214,8 +286,57 @@ serve(async (req) => {
         }),
       })
 
+      if (!openaiResponse.ok) {
+        const errorText = await openaiResponse.text()
+        console.error('OpenAI API error:', openaiResponse.status, errorText)
+        return new Response(JSON.stringify({ 
+          error: 'OpenAI API error',
+          details: `${openaiResponse.status}: ${errorText}`
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
       const openaiData = await openaiResponse.json()
-      const insights = extractJSONFromResponse(openaiData.choices[0].message.content)
+
+      // Validate OpenAI response structure
+      if (!openaiData.choices || !openaiData.choices[0] || !openaiData.choices[0].message) {
+        console.error('Invalid OpenAI response structure:', openaiData)
+        return new Response(JSON.stringify({ 
+          error: 'Invalid OpenAI response structure',
+          details: openaiData
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      const messageContent = openaiData.choices[0].message.content
+      if (!messageContent) {
+        console.error('Empty message content from OpenAI')
+        return new Response(JSON.stringify({ 
+          error: 'Empty response from OpenAI'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      let insights
+      try {
+        insights = extractJSONFromResponse(messageContent)
+      } catch (parseError) {
+        console.error('Failed to parse OpenAI response:', parseError, 'Content:', messageContent)
+        return new Response(JSON.stringify({ 
+          error: 'Failed to parse AI response',
+          details: parseError.message,
+          rawContent: messageContent
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
 
       // Store insights in the database
       await supabase
