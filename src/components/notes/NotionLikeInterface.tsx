@@ -30,6 +30,11 @@ const NotionLikeInterface = () => {
     // Stay in editor view after updating
   };
 
+  const handleBackToTimeline = () => {
+    setShowTimeline(true);
+    setSelectedNote(null);
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gray-50/30">
       <NotesHeader
@@ -47,9 +52,9 @@ const NotionLikeInterface = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Timeline Sidebar */}
         <div className={cn(
-          "transition-all duration-300 border-r bg-white",
-          sidebarOpen ? "w-96" : "w-0",
-          "overflow-hidden"
+          "transition-all duration-300 border-r bg-white/95 backdrop-blur-sm",
+          sidebarOpen ? "w-80" : "w-0",
+          "overflow-hidden shadow-sm"
         )}>
           {sidebarOpen && (
             <NotesTimeline
@@ -65,18 +70,21 @@ const NotionLikeInterface = () => {
         <div className="flex-1 bg-white">
           {showTimeline ? (
             // Full timeline view when sidebar is closed
-            <NotesTimeline
-              selectedNoteId={selectedNote?.id}
-              onNoteSelect={handleNoteSelect}
-              searchTerm={searchTerm}
-              contextFilter={contextFilter}
-            />
+            <div className="h-full bg-gradient-to-br from-gray-50/50 to-white">
+              <NotesTimeline
+                selectedNoteId={selectedNote?.id}
+                onNoteSelect={handleNoteSelect}
+                searchTerm={searchTerm}
+                contextFilter={contextFilter}
+              />
+            </div>
           ) : (
             // Editor view
             <NotionLikeEditor
               selectedNote={selectedNote}
               onNoteCreated={handleNoteCreated}
               onNoteUpdated={handleNoteUpdated}
+              onBackToTimeline={handleBackToTimeline}
             />
           )}
         </div>

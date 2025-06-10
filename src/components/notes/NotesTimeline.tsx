@@ -14,7 +14,8 @@ import {
   Hash,
   Pin,
   Sparkles,
-  Edit2
+  Plus,
+  FileText
 } from "lucide-react";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
@@ -95,79 +96,84 @@ const NotesTimeline = ({ selectedNoteId, onNoteSelect, searchTerm = "", contextF
     }
   };
 
+  const getContentPreview = (content: string) => {
+    return content.length > 150 ? content.substring(0, 150) + "..." : content;
+  };
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-4 space-y-6">
+      <div className="p-6 space-y-8">
         {Object.entries(groupedNotes).map(([dateString, dateNotes]) => (
-          <div key={dateString} className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <div key={dateString} className="space-y-4">
+            <div className="flex items-center gap-3 text-sm font-semibold text-muted-foreground sticky top-0 bg-white/95 backdrop-blur-sm py-2 z-10">
               <Calendar className="h-4 w-4" />
               {formatDate(dateString)}
+              <div className="h-px flex-1 bg-border"></div>
+              <span className="text-xs">{dateNotes.length} notes</span>
             </div>
             
-            <div className="space-y-2 ml-6">
+            <div className="space-y-3">
               {dateNotes.map((note) => (
                 <Card
                   key={note.id}
-                  className={`p-3 cursor-pointer transition-all hover:shadow-md ${
+                  className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${
                     selectedNoteId === note.id 
-                      ? 'ring-2 ring-primary bg-primary/5' 
-                      : 'hover:bg-muted/50'
+                      ? 'ring-2 ring-primary bg-primary/5 shadow-md' 
+                      : 'hover:bg-muted/30 border-border/50'
                   }`}
                   onClick={() => onNoteSelect(note)}
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-2">
                           {note.is_pinned && <Pin className="h-3 w-3 text-primary flex-shrink-0" />}
-                          <h4 className="font-medium text-sm truncate">{note.title}</h4>
+                          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <h4 className="font-semibold text-base truncate text-foreground">{note.title}</h4>
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {note.content}
+                        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+                          {getContentPreview(note.content)}
                         </p>
-                      </div>
-                      <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                        {getContextIcon(note.context_type)}
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {new Date(note.updated_at).toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </div>
                       </div>
                     </div>
 
                     {/* Program association */}
                     {note.program_id && (
-                      <div className="text-xs text-blue-600 font-medium">
+                      <div className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-full inline-block">
                         📚 {getProgramName(note.program_id)}
                       </div>
                     )}
 
                     {/* AI Summary preview */}
                     {note.ai_summary && (
-                      <div className="bg-purple-50 rounded p-2 text-xs">
-                        <div className="flex items-center gap-1 mb-1">
+                      <div className="bg-gradient-to-r from-purple-50 to-purple-100/50 rounded-lg p-3 text-xs border border-purple-200">
+                        <div className="flex items-center gap-2 mb-2">
                           <Sparkles className="h-3 w-3 text-purple-600" />
                           <span className="font-medium text-purple-800">AI Summary</span>
                         </div>
-                        <p className="text-purple-700 line-clamp-2">{note.ai_summary}</p>
+                        <p className="text-purple-700 line-clamp-2 leading-relaxed">{note.ai_summary}</p>
                       </div>
                     )}
 
-                    {/* Priority and context badges */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex gap-1">
-                        <Badge variant="outline" className="text-xs">
-                          {note.context_type}
+                    {/* Footer with metadata */}
+                    <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs h-5 px-2">
+                          {getContextIcon(note.context_type)}
+                          <span className="ml-1">{note.context_type}</span>
                         </Badge>
                         {note.priority_score > 6 && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs h-5 px-2">
                             High Priority
                           </Badge>
                         )}
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {new Date(note.updated_at).toLocaleTimeString('en-US', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
                       </div>
                     </div>
                   </div>
@@ -178,11 +184,15 @@ const NotesTimeline = ({ selectedNoteId, onNoteSelect, searchTerm = "", contextF
         ))}
 
         {filteredNotes.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No notes found</p>
-            {(searchTerm || contextFilter) && (
-              <p className="text-sm">Try adjusting your filters</p>
+          <div className="text-center py-16 text-muted-foreground">
+            <div className="bg-muted/30 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+              <FileText className="h-10 w-10 opacity-50" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">No notes found</h3>
+            {(searchTerm || contextFilter !== "all") ? (
+              <p className="text-sm">Try adjusting your search or filters</p>
+            ) : (
+              <p className="text-sm">Start by creating your first note</p>
             )}
           </div>
         )}
