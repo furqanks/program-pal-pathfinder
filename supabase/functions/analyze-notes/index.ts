@@ -10,6 +10,33 @@ const corsHeaders = {
 interface AnalyzeNotesRequest {
   noteId?: string;
   action: 'analyze_single' | 'analyze_all' | 'generate_insights';
+  customPrompt?: string;
+  insightsPrompt?: string;
+  timelinePrompt?: string;
+}
+
+// Helper function to extract JSON from OpenAI response that might contain markdown
+function extractJSONFromResponse(content: string): any {
+  try {
+    // First try to parse as regular JSON
+    return JSON.parse(content);
+  } catch (error) {
+    // If that fails, try to extract JSON from markdown code blocks
+    const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[1]);
+    }
+    
+    // Try to find JSON without markdown
+    const jsonStart = content.indexOf('{');
+    const jsonEnd = content.lastIndexOf('}');
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      return JSON.parse(content.substring(jsonStart, jsonEnd + 1));
+    }
+    
+    // If all else fails, throw the original error
+    throw error;
+  }
 }
 
 serve(async (req) => {
@@ -37,7 +64,7 @@ serve(async (req) => {
       })
     }
 
-    const { noteId, action }: AnalyzeNotesRequest = await req.json()
+    const { noteId, action, customPrompt, insightsPrompt, timelinePrompt }: AnalyzeNotesRequest = await req.json()
 
     if (action === 'analyze_single' && noteId) {
       // Analyze a single note
@@ -56,6 +83,16 @@ serve(async (req) => {
       }
 
       // Call OpenAI to analyze the note
+      const systemPrompt = customPrompt || `You are an AI assistant specialized in analyzing university application notes. 
+      Analyze the given note and provide:
+      1. A concise summary (max 100 words)
+      2. Categorize into relevant tags (academic, financial, application, research, personal)
+      3. Extract key insights and action items
+      4. Assign a priority score (1-10) based on urgency and importance
+      5. Determine context type (general, academic, financial, application, research)
+      
+      Return ONLY a JSON object with these keys: summary, categories, insights, priority_score, context_type, action_items`
+
       const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -67,15 +104,7 @@ serve(async (req) => {
           messages: [
             {
               role: 'system',
-              content: `You are an AI assistant specialized in analyzing university application notes. 
-              Analyze the given note and provide:
-              1. A concise summary (max 100 words)
-              2. Categorize into relevant tags (academic, financial, application, research, personal)
-              3. Extract key insights and action items
-              4. Assign a priority score (1-10) based on urgency and importance
-              5. Determine context type (general, academic, financial, application, research)
-              
-              Return as JSON with keys: summary, categories, insights, priority_score, context_type, action_items`
+              content: systemPrompt
             },
             {
               role: 'user',
@@ -87,17 +116,17 @@ serve(async (req) => {
       })
 
       const openaiData = await openaiResponse.json()
-      const analysis = JSON.parse(openaiData.choices[0].message.content)
+      const analysis = extractJSONFromResponse(openaiData.choices[0].message.content)
 
       // Update the note with AI analysis
       await supabase
         .from('ai_notes')
         .update({
           ai_summary: analysis.summary,
-          ai_categories: analysis.categories,
-          ai_insights: analysis.insights,
-          priority_score: analysis.priority_score,
-          context_type: analysis.context_type,
+          ai_categories: analysis.categories || [],
+          ai_insights: analysis.insights || {},
+          priority_score: analysis.priority_score || 0,
+          context_type: analysis.context_type || 'general',
           last_ai_analysis: new Date().toISOString()
         })
         .eq('id', noteId)
@@ -148,6 +177,20 @@ serve(async (req) => {
         deadline: program.deadline
       })) || []
 
+      // Use custom prompts if provided, otherwise use default
+      const systemPrompt = insightsPrompt || `You are an AI assistant specialized in university application planning. 
+      Analyze all the user's notes and programs to provide comprehensive insights.
+      
+      Generate:
+      1. Overall summary of their application journey
+      2. Key patterns and themes across notes
+      3. Specific recommendations for each program
+      4. Action items with priority and deadlines
+      5. Potential gaps or missing information
+      6. Strategic advice for strengthening applications
+      
+      Return ONLY a JSON object with these keys: overall_summary, patterns, program_recommendations, action_items, gaps, strategic_advice`
+
       // Call OpenAI for comprehensive analysis
       const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -160,18 +203,7 @@ serve(async (req) => {
           messages: [
             {
               role: 'system',
-              content: `You are an AI assistant specialized in university application planning. 
-              Analyze all the user's notes and programs to provide comprehensive insights.
-              
-              Generate:
-              1. Overall summary of their application journey
-              2. Key patterns and themes across notes
-              3. Specific recommendations for each program
-              4. Action items with priority and deadlines
-              5. Potential gaps or missing information
-              6. Strategic advice for strengthening applications
-              
-              Return as JSON with keys: overall_summary, patterns, program_recommendations, action_items, gaps, strategic_advice`
+              content: systemPrompt
             },
             {
               role: 'user',
@@ -183,7 +215,7 @@ serve(async (req) => {
       })
 
       const openaiData = await openaiResponse.json()
-      const insights = JSON.parse(openaiData.choices[0].message.content)
+      const insights = extractJSONFromResponse(openaiData.choices[0].message.content)
 
       // Store insights in the database
       await supabase
@@ -199,10 +231,10 @@ serve(async (req) => {
         })
 
       // Generate smart reminders based on insights
-      if (insights.action_items && insights.action_items.length > 0) {
+      if (insights.action_items && Array.isArray(insights.action_items) && insights.action_items.length > 0) {
         const reminders = insights.action_items.slice(0, 5).map((item: any) => ({
           user_id: user.id,
-          title: item.title || item.action,
+          title: item.title || item.action || 'Action Item',
           description: item.description || '',
           reminder_type: item.type || 'task',
           due_date: item.deadline || null,
@@ -231,7 +263,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in analyze-notes function:', error)
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(JSON.stringify({ error: 'Internal server error', details: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
