@@ -1,262 +1,193 @@
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
-  Calendar, 
+  Calendar,
   Clock, 
-  TrendingUp, 
-  Target, 
-  CheckCircle,
-  AlertCircle,
+  BookOpen,
+  Target,
+  DollarSign,
+  Archive,
+  Hash,
+  Pin,
   Sparkles,
-  RefreshCw
+  Edit2
 } from "lucide-react";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
-interface TimelineEvent {
-  date: string;
-  title: string;
-  description: string;
-  type: "past" | "current" | "future";
-  category: "academic" | "application" | "financial" | "personal";
-  importance: "high" | "medium" | "low";
+interface NotesTimelineProps {
+  selectedNoteId?: string;
+  onNoteSelect: (note: any) => void;
+  searchTerm?: string;
+  contextFilter?: string;
 }
 
-interface TimelineData {
-  timeline_events: TimelineEvent[];
-  current_phase: string;
-  next_focus_areas: string[];
-  motivation_message: string;
-}
-
-const NotesTimeline = () => {
-  const [timelineData, setTimelineData] = useState<TimelineData | null>(null);
-  const [loading, setLoading] = useState(false);
+const NotesTimeline = ({ selectedNoteId, onNoteSelect, searchTerm = "", contextFilter = "" }: NotesTimelineProps) => {
   const { notes } = useAINotesContext();
   const { programs } = useProgramContext();
 
-  const generateTimeline = async () => {
-    if (notes.length === 0) {
-      toast.error("Add some notes first to generate a timeline!");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Mock AI analysis for now - in a real implementation, this would call an AI API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockTimeline: TimelineData = {
-        timeline_events: [
-          {
-            date: "2024-01-15",
-            title: "Started Research Phase",
-            description: "Began exploring graduate programs and requirements",
-            type: "past",
-            category: "academic",
-            importance: "high"
-          },
-          {
-            date: "2024-03-01",
-            title: "Current Focus: Applications",
-            description: "Working on personal statements and gathering documents",
-            type: "current",
-            category: "application",
-            importance: "high"
-          },
-          {
-            date: "2024-04-15",
-            title: "Application Deadlines",
-            description: "Multiple program deadlines approaching",
-            type: "future",
-            category: "application",
-            importance: "high"
-          },
-          {
-            date: "2024-06-01",
-            title: "Decision Period",
-            description: "Expect to hear back from programs",
-            type: "future",
-            category: "academic",
-            importance: "medium"
-          }
-        ],
-        current_phase: "You're in the application crunch phase! 💪 Things are heating up but you're making solid progress.",
-        next_focus_areas: [
-          "Finish personal statements ASAP",
-          "Request transcripts and letters of rec",
-          "Prepare for potential interviews"
-        ],
-        motivation_message: "You've come so far already! The research phase is behind you and now it's execution time. Trust the process and keep pushing forward! 🚀"
-      };
-
-      setTimelineData(mockTimeline);
-      toast.success("Timeline generated! Check out your journey so far 📅");
-    } catch (error) {
-      console.error("Error generating timeline:", error);
-      toast.error("Failed to generate timeline");
-    } finally {
-      setLoading(false);
+  const getContextIcon = (context: string) => {
+    switch (context) {
+      case "academic": return <BookOpen className="h-3 w-3" />;
+      case "application": return <Target className="h-3 w-3" />;
+      case "financial": return <DollarSign className="h-3 w-3" />;
+      case "research": return <Archive className="h-3 w-3" />;
+      default: return <Hash className="h-3 w-3" />;
     }
   };
 
-  const getEventIcon = (type: string, category: string) => {
-    if (type === "past") return <CheckCircle className="h-4 w-4 text-green-600" />;
-    if (type === "current") return <Clock className="h-4 w-4 text-blue-600" />;
-    if (category === "application") return <Target className="h-4 w-4 text-purple-600" />;
-    return <Calendar className="h-4 w-4 text-gray-600" />;
+  const getProgramName = (programId: string) => {
+    const program = programs.find(p => p.id === programId);
+    return program ? `${program.programName} - ${program.university}` : null;
   };
 
-  const getImportanceColor = (importance: string) => {
-    switch (importance) {
-      case "high": return "border-red-200 bg-red-50";
-      case "medium": return "border-yellow-200 bg-yellow-50";
-      case "low": return "border-green-200 bg-green-50";
-      default: return "border-gray-200 bg-gray-50";
+  const filteredNotes = notes
+    .filter(note => !note.is_archived)
+    .filter(note => {
+      if (searchTerm && !note.title.toLowerCase().includes(searchTerm.toLowerCase()) && 
+          !note.content.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      if (contextFilter && contextFilter !== "all" && note.context_type !== contextFilter) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      // Pinned notes first
+      if (a.is_pinned && !b.is_pinned) return -1;
+      if (!a.is_pinned && b.is_pinned) return 1;
+      // Then by update time
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    });
+
+  // Group notes by date
+  const groupedNotes = filteredNotes.reduce((groups, note) => {
+    const date = new Date(note.updated_at).toDateString();
+    if (!groups[date]) {
+      groups[date] = [];
     }
-  };
+    groups[date].push(note);
+    return groups;
+  }, {} as Record<string, any[]>);
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "academic": return "bg-blue-100 text-blue-800";
-      case "application": return "bg-purple-100 text-purple-800";
-      case "financial": return "bg-green-100 text-green-800";
-      case "personal": return "bg-pink-100 text-pink-800";
-      default: return "bg-gray-100 text-gray-800";
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return "Today";
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return "Yesterday";
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
     }
   };
 
   return (
-    <Card className="bg-white/70 backdrop-blur-sm">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-purple-600" />
-            Your Journey Timeline
-          </CardTitle>
-          <Button 
-            onClick={generateTimeline} 
-            disabled={loading || notes.length === 0}
-            variant="outline"
-            size="sm"
-          >
-            {loading ? (
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="mr-2 h-4 w-4" />
-            )}
-            {timelineData ? "Refresh Timeline" : "Generate Timeline"}
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent>
-        {!timelineData && !loading && (
-          <div className="text-center py-8 border-2 border-dashed border-purple-200 rounded-lg">
-            <TrendingUp className="h-12 w-12 text-purple-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No timeline yet</h3>
-            <p className="text-gray-500 mb-6">
-              Generate a personalized timeline based on your notes and goals
-            </p>
-            <Button onClick={generateTimeline} disabled={notes.length === 0}>
-              <Sparkles className="mr-2 h-4 w-4" />
-              Create My Timeline
-            </Button>
-          </div>
-        )}
-
-        {loading && (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Analyzing your journey and creating timeline...</p>
-          </div>
-        )}
-
-        {timelineData && (
-          <div className="space-y-6">
-            {/* Current Phase */}
-            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
-              <h4 className="font-medium text-purple-800 mb-2 flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Where You Are Now
-              </h4>
-              <p className="text-purple-700">{timelineData.current_phase}</p>
+    <ScrollArea className="h-full">
+      <div className="p-4 space-y-6">
+        {Object.entries(groupedNotes).map(([dateString, dateNotes]) => (
+          <div key={dateString} className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              {formatDate(dateString)}
             </div>
-
-            {/* Timeline Events */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-gray-800 flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Your Journey
-              </h4>
-              <div className="space-y-3">
-                {timelineData.timeline_events.map((event, index) => (
-                  <div 
-                    key={index} 
-                    className={cn(
-                      "border rounded-lg p-4 transition-all hover:shadow-md",
-                      getImportanceColor(event.importance)
-                    )}
-                  >
+            
+            <div className="space-y-2 ml-6">
+              {dateNotes.map((note) => (
+                <Card
+                  key={note.id}
+                  className={`p-3 cursor-pointer transition-all hover:shadow-md ${
+                    selectedNoteId === note.id 
+                      ? 'ring-2 ring-primary bg-primary/5' 
+                      : 'hover:bg-muted/50'
+                  }`}
+                  onClick={() => onNoteSelect(note)}
+                >
+                  <div className="space-y-2">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3 flex-1">
-                        {getEventIcon(event.type, event.category)}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h5 className="font-medium text-sm">{event.title}</h5>
-                            <Badge className={cn("text-xs", getCategoryColor(event.category))}>
-                              {event.category}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-gray-600 mb-2">{event.description}</p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(event.date).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {note.is_pinned && <Pin className="h-3 w-3 text-primary flex-shrink-0" />}
+                          <h4 className="font-medium text-sm truncate">{note.title}</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {note.content}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                        {getContextIcon(note.context_type)}
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {new Date(note.updated_at).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
                         </div>
                       </div>
                     </div>
+
+                    {/* Program association */}
+                    {note.program_id && (
+                      <div className="text-xs text-blue-600 font-medium">
+                        📚 {getProgramName(note.program_id)}
+                      </div>
+                    )}
+
+                    {/* AI Summary preview */}
+                    {note.ai_summary && (
+                      <div className="bg-purple-50 rounded p-2 text-xs">
+                        <div className="flex items-center gap-1 mb-1">
+                          <Sparkles className="h-3 w-3 text-purple-600" />
+                          <span className="font-medium text-purple-800">AI Summary</span>
+                        </div>
+                        <p className="text-purple-700 line-clamp-2">{note.ai_summary}</p>
+                      </div>
+                    )}
+
+                    {/* Priority and context badges */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex gap-1">
+                        <Badge variant="outline" className="text-xs">
+                          {note.context_type}
+                        </Badge>
+                        {note.priority_score > 6 && (
+                          <Badge variant="secondary" className="text-xs">
+                            High Priority
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Next Focus Areas */}
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-              <h4 className="font-medium text-green-800 mb-3 flex items-center gap-2">
-                <Target className="h-4 w-4" />
-                Next Focus Areas
-              </h4>
-              <ul className="space-y-2">
-                {timelineData.next_focus_areas.map((area, index) => (
-                  <li key={index} className="text-green-700 text-sm flex items-start gap-2">
-                    <span className="text-green-500 mt-1">•</span>
-                    {area}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Motivation Message */}
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4">
-              <h4 className="font-medium text-amber-800 mb-2 flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
-                Keep Going!
-              </h4>
-              <p className="text-amber-700 text-sm">{timelineData.motivation_message}</p>
+                </Card>
+              ))}
             </div>
           </div>
+        ))}
+
+        {filteredNotes.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No notes found</p>
+            {(searchTerm || contextFilter) && (
+              <p className="text-sm">Try adjusting your filters</p>
+            )}
+          </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </ScrollArea>
   );
 };
 
