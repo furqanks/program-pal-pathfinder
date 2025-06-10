@@ -11,7 +11,7 @@ import {
   SidebarOpen,
   Filter,
   LayoutGrid,
-  Timeline
+  Clock
 } from "lucide-react";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 
@@ -110,7 +110,7 @@ const NotesHeader = ({
             size="sm"
             onClick={onTimelineToggle}
           >
-            {showTimeline ? <Timeline className="mr-2 h-4 w-4" /> : <LayoutGrid className="mr-2 h-4 w-4" />}
+            {showTimeline ? <Clock className="mr-2 h-4 w-4" /> : <LayoutGrid className="mr-2 h-4 w-4" />}
             {showTimeline ? "Timeline" : "Editor"}
           </Button>
         </div>
