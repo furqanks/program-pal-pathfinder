@@ -1,43 +1,12 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface AnalyzeNotesRequest {
-  noteId?: string;
-  action: 'analyze_single' | 'analyze_all' | 'generate_insights';
-  customPrompt?: string;
-  insightsPrompt?: string;
-  timelinePrompt?: string;
-}
-
-// Helper function to extract JSON from OpenAI response that might contain markdown
-function extractJSONFromResponse(content: string): any {
-  try {
-    // First try to parse as regular JSON
-    return JSON.parse(content);
-  } catch (error) {
-    // If that fails, try to extract JSON from markdown code blocks
-    const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[1]);
-    }
-    
-    // Try to find JSON without markdown
-    const jsonStart = content.indexOf('{');
-    const jsonEnd = content.lastIndexOf('}');
-    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-      return JSON.parse(content.substring(jsonStart, jsonEnd + 1));
-    }
-    
-    // If all else fails, throw the original error
-    throw error;
-  }
-}
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -46,347 +15,355 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    // Get the authorization header
-    const authHeader = req.headers.get('Authorization')!
-    const token = authHeader.replace('Bearer ', '')
+    const body = await req.json();
+    const { noteId, action, customPrompt, insightsPrompt, notes } = body;
     
-    // Get user from JWT
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    if (authError || !user) {
-      console.error('Auth error:', authError)
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+    console.log('Received request:', { noteId, action, hasCustomPrompt: !!customPrompt, hasInsightsPrompt: !!insightsPrompt, notesCount: notes?.length });
+
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIApiKey) {
+      console.error('OpenAI API key not found');
+      return new Response(
+        JSON.stringify({ error: 'OpenAI API key not configured' }), 
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
-    const { noteId, action, customPrompt, insightsPrompt, timelinePrompt }: AnalyzeNotesRequest = await req.json()
-    console.log('Received request:', { noteId, action })
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user from authorization header
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authorization header missing' }), 
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      console.error('User authentication failed:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed' }), 
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
     if (action === 'analyze_single' && noteId) {
-      // Analyze a single note
-      const { data: note } = await supabase
+      // Handle single note analysis
+      const { data: note, error: noteError } = await supabase
         .from('ai_notes')
         .select('*')
         .eq('id', noteId)
         .eq('user_id', user.id)
-        .single()
+        .single();
 
-      if (!note) {
-        console.error('Note not found:', noteId)
-        return new Response(JSON.stringify({ error: 'Note not found' }), {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+      if (noteError || !note) {
+        console.error('Note not found:', noteError);
+        return new Response(
+          JSON.stringify({ error: 'Note not found' }), 
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
       }
 
-      console.log('Found note:', note.title)
+      const analysisPrompt = customPrompt || `Analyze this note and provide insights, key points, and suggestions for improvement or next steps:
 
-      // Call OpenAI to analyze the note
-      const systemPrompt = customPrompt || `You are an AI assistant specialized in analyzing university application notes. 
-      Analyze the given note and provide:
-      1. A concise summary (max 100 words)
-      2. Categorize into relevant tags (academic, financial, application, research, personal)
-      3. Extract key insights and action items
-      4. Assign a priority score (1-10) based on urgency and importance
-      5. Determine context type (general, academic, financial, application, research)
-      
-      Return ONLY a JSON object with these keys: summary, categories, insights, priority_score, context_type, action_items`
+Title: ${note.title}
+Content: ${note.content}
+Context: ${note.context_type}
 
-      console.log('Calling OpenAI...')
-      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+Provide your analysis in a clear, structured format with actionable insights.`;
+
+      console.log('Calling OpenAI for single note analysis...');
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+          'Authorization': `Bearer ${openAIApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
-            {
-              role: 'system',
-              content: systemPrompt
+            { 
+              role: 'system', 
+              content: 'You are an expert note analyst and academic assistant. Provide clear, actionable insights about notes.' 
             },
-            {
-              role: 'user',
-              content: `Title: ${note.title}\nContent: ${note.content}`
-            }
+            { role: 'user', content: analysisPrompt }
           ],
-          temperature: 0.3,
+          temperature: 0.7,
+          max_tokens: 1000
         }),
-      })
+      });
 
-      if (!openaiResponse.ok) {
-        const errorText = await openaiResponse.text()
-        console.error('OpenAI API error:', openaiResponse.status, errorText)
-        return new Response(JSON.stringify({ 
-          error: 'OpenAI API error',
-          details: `${openaiResponse.status}: ${errorText}`
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('OpenAI API error:', response.status, errorData);
+        throw new Error(`OpenAI API error: ${response.status}`);
       }
 
-      const openaiData = await openaiResponse.json()
-      console.log('OpenAI response:', openaiData)
+      const data = await response.json();
+      const analysis = data.choices[0].message.content;
 
-      // Validate OpenAI response structure
-      if (!openaiData.choices || !openaiData.choices[0] || !openaiData.choices[0].message) {
-        console.error('Invalid OpenAI response structure:', openaiData)
-        return new Response(JSON.stringify({ 
-          error: 'Invalid OpenAI response structure',
-          details: openaiData
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
-      const messageContent = openaiData.choices[0].message.content
-      if (!messageContent) {
-        console.error('Empty message content from OpenAI')
-        return new Response(JSON.stringify({ 
-          error: 'Empty response from OpenAI'
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
-      console.log('OpenAI message content:', messageContent)
-
-      let analysis
-      try {
-        analysis = extractJSONFromResponse(messageContent)
-        console.log('Parsed analysis:', analysis)
-      } catch (parseError) {
-        console.error('Failed to parse OpenAI response:', parseError, 'Content:', messageContent)
-        return new Response(JSON.stringify({ 
-          error: 'Failed to parse AI response',
-          details: parseError.message,
-          rawContent: messageContent
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
-      // Update the note with AI analysis
-      console.log('Updating note with analysis...')
+      // Update note with AI analysis
       const { error: updateError } = await supabase
         .from('ai_notes')
         .update({
-          ai_summary: analysis.summary,
-          ai_categories: analysis.categories || [],
-          ai_insights: analysis.insights || {},
-          priority_score: analysis.priority_score || 0,
-          context_type: analysis.context_type || 'general',
-          last_ai_analysis: new Date().toISOString()
+          ai_summary: analysis,
+          last_ai_analysis: new Date().toISOString(),
+          ai_insights: {
+            analyzed_at: new Date().toISOString(),
+            analysis_type: 'single_note',
+            key_insights: analysis.split('\n').filter(line => line.trim().length > 0).slice(0, 3)
+          }
         })
-        .eq('id', noteId)
+        .eq('id', noteId);
 
       if (updateError) {
-        console.error('Database update error:', updateError)
-        return new Response(JSON.stringify({ 
-          error: 'Failed to update note',
-          details: updateError.message
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+        console.error('Error updating note:', updateError);
       }
 
-      console.log('Note updated successfully')
-      return new Response(JSON.stringify({ 
-        success: true, 
-        analysis,
-        message: 'Note analyzed successfully' 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          analysis,
+          message: 'Note analyzed successfully'
+        }), 
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
 
-    if (action === 'analyze_all') {
-      // Get all user's notes and programs for comprehensive analysis
-      const { data: notes } = await supabase
+    } else if (action === 'summarize_all') {
+      // Handle summarizing all notes
+      const { data: allNotes, error: notesError } = await supabase
         .from('ai_notes')
         .select('*')
         .eq('user_id', user.id)
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false });
 
-      const { data: programs } = await supabase
-        .from('programs_saved')
-        .select('*')
-        .eq('user_id', user.id)
-
-      if (!notes || notes.length === 0) {
-        return new Response(JSON.stringify({ 
-          error: 'No notes found for analysis' 
-        }), {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+      if (notesError) {
+        console.error('Error fetching notes:', notesError);
+        throw new Error('Failed to fetch notes');
       }
 
-      // Prepare data for OpenAI analysis
-      const notesContent = notes.map(note => ({
-        id: note.id,
-        title: note.title,
-        content: note.content,
-        program_id: note.program_id
-      }))
+      if (!allNotes || allNotes.length === 0) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'No notes found to summarize' 
+          }), 
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
 
-      const programsContent = programs?.map(program => ({
-        id: program.id,
-        name: program.program_name,
-        university: program.university,
-        country: program.country,
-        deadline: program.deadline
-      })) || []
+      const notesContent = allNotes.map(note => 
+        `Title: ${note.title}\nContent: ${note.content}\nContext: ${note.context_type}\nCreated: ${note.created_at}`
+      ).join('\n\n---\n\n');
 
-      // Use custom prompts if provided, otherwise use default
-      const systemPrompt = insightsPrompt || `You are an AI assistant specialized in university application planning. 
-      Analyze all the user's notes and programs to provide comprehensive insights.
-      
-      Generate:
-      1. Overall summary of their application journey
-      2. Key patterns and themes across notes
-      3. Specific recommendations for each program
-      4. Action items with priority and deadlines
-      5. Potential gaps or missing information
-      6. Strategic advice for strengthening applications
-      
-      Return ONLY a JSON object with these keys: overall_summary, patterns, program_recommendations, action_items, gaps, strategic_advice`
+      const summaryPrompt = insightsPrompt || `Create a comprehensive summary of all these notes. Focus on:
+1. Key themes and patterns
+2. Important insights and learnings
+3. Action items and next steps
+4. Connections between different notes
+5. Areas that need attention
 
-      // Call OpenAI for comprehensive analysis
-      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+Notes:
+${notesContent}
+
+Provide a well-structured summary that helps the user understand their overall note collection and identify priorities.`;
+
+      console.log('Calling OpenAI for notes summary...');
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+          'Authorization': `Bearer ${openAIApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'gpt-4o-mini',
           messages: [
-            {
-              role: 'system',
-              content: systemPrompt
+            { 
+              role: 'system', 
+              content: 'You are an expert note analyst and academic assistant specializing in creating comprehensive summaries and insights from collections of notes.' 
             },
-            {
-              role: 'user',
-              content: `Notes: ${JSON.stringify(notesContent)}\nPrograms: ${JSON.stringify(programsContent)}`
-            }
+            { role: 'user', content: summaryPrompt }
           ],
-          temperature: 0.3,
+          temperature: 0.7,
+          max_tokens: 1500
         }),
-      })
+      });
 
-      if (!openaiResponse.ok) {
-        const errorText = await openaiResponse.text()
-        console.error('OpenAI API error:', openaiResponse.status, errorText)
-        return new Response(JSON.stringify({ 
-          error: 'OpenAI API error',
-          details: `${openaiResponse.status}: ${errorText}`
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('OpenAI API error:', response.status, errorData);
+        throw new Error(`OpenAI API error: ${response.status}`);
       }
 
-      const openaiData = await openaiResponse.json()
+      const data = await response.json();
+      const summary = data.choices[0].message.content;
 
-      // Validate OpenAI response structure
-      if (!openaiData.choices || !openaiData.choices[0] || !openaiData.choices[0].message) {
-        console.error('Invalid OpenAI response structure:', openaiData)
-        return new Response(JSON.stringify({ 
-          error: 'Invalid OpenAI response structure',
-          details: openaiData
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+      // Create an insight for the summary
+      const { error: insightError } = await supabase.from('ai_insights').insert({
+        user_id: user.id,
+        insight_type: 'notes_summary',
+        title: `All Notes Summary - ${new Date().toLocaleDateString()}`,
+        content: summary,
+        related_notes: allNotes.map(note => note.id),
+        confidence_score: 0.9,
+        is_active: true
+      });
+
+      if (insightError) {
+        console.error('Error creating insight:', insightError);
       }
 
-      const messageContent = openaiData.choices[0].message.content
-      if (!messageContent) {
-        console.error('Empty message content from OpenAI')
-        return new Response(JSON.stringify({ 
-          error: 'Empty response from OpenAI'
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+      console.log('Notes summary completed successfully');
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          summary,
+          message: 'Notes summary created successfully! Check your insights for the detailed summary.'
+        }), 
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+
+    } else if (action === 'daily_summary') {
+      // Handle daily summary
+      const providedNotes = notes || [];
+      
+      if (providedNotes.length === 0) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: 'No notes from today to summarize' 
+          }), 
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
       }
 
-      let insights
-      try {
-        insights = extractJSONFromResponse(messageContent)
-      } catch (parseError) {
-        console.error('Failed to parse OpenAI response:', parseError, 'Content:', messageContent)
-        return new Response(JSON.stringify({ 
-          error: 'Failed to parse AI response',
-          details: parseError.message,
-          rawContent: messageContent
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+      const notesContent = providedNotes.map((note: any) => 
+        `Title: ${note.title}\nContent: ${note.content}\nContext: ${note.context_type}\nCreated: ${note.created_at}`
+      ).join('\n\n---\n\n');
+
+      const dailySummaryPrompt = customPrompt || `Create a summary of today's notes and activities. Focus on:
+1. Key activities and accomplishments from today
+2. Important insights and learnings
+3. Action items for tomorrow
+4. Progress made on ongoing projects
+5. Any challenges or issues that need attention
+
+Today's notes:
+${notesContent}
+
+Provide a clear, actionable summary of today's activities and next steps.`;
+
+      console.log('Calling OpenAI for daily summary...');
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { 
+              role: 'system', 
+              content: 'You are an expert productivity assistant specializing in daily summaries and planning. Help users understand their daily progress and plan next steps.' 
+            },
+            { role: 'user', content: dailySummaryPrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('OpenAI API error:', response.status, errorData);
+        throw new Error(`OpenAI API error: ${response.status}`);
       }
 
-      // Store insights in the database
-      await supabase
-        .from('ai_insights')
-        .insert({
-          user_id: user.id,
-          insight_type: 'summary',
-          title: 'Comprehensive Application Analysis',
-          content: JSON.stringify(insights),
-          related_notes: notes.map(n => n.id),
-          related_programs: programs?.map(p => p.id) || [],
-          confidence_score: 0.9
-        })
+      const data = await response.json();
+      const summary = data.choices[0].message.content;
 
-      // Generate smart reminders based on insights
-      if (insights.action_items && Array.isArray(insights.action_items) && insights.action_items.length > 0) {
-        const reminders = insights.action_items.slice(0, 5).map((item: any) => ({
-          user_id: user.id,
-          title: item.title || item.action || 'Action Item',
-          description: item.description || '',
-          reminder_type: item.type || 'task',
-          due_date: item.deadline || null,
-          ai_generated: true,
-          priority: item.priority || 3
-        }))
+      // Create an insight for the daily summary
+      const { error: insightError } = await supabase.from('ai_insights').insert({
+        user_id: user.id,
+        insight_type: 'daily_summary',
+        title: `Daily Summary - ${new Date().toLocaleDateString()}`,
+        content: summary,
+        related_notes: providedNotes.map((note: any) => note.id),
+        confidence_score: 0.9,
+        is_active: true
+      });
 
-        await supabase
-          .from('smart_reminders')
-          .insert(reminders)
+      if (insightError) {
+        console.error('Error creating daily summary insight:', insightError);
       }
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        insights,
-        message: 'Comprehensive analysis completed' 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+      console.log('Daily summary completed successfully');
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          summary,
+          message: "Today's summary created successfully! Check your insights for the detailed summary."
+        }), 
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+
+    } else {
+      return new Response(
+        JSON.stringify({ error: 'Invalid action or missing parameters' }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
-    return new Response(JSON.stringify({ error: 'Invalid action' }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
-
   } catch (error) {
-    console.error('Error in analyze-notes function:', error)
-    return new Response(JSON.stringify({ error: 'Internal server error', details: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    console.error('Error in analyze-notes function:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Failed to process request. Please try again.',
+        details: error.message 
+      }), 
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
-})
+});
