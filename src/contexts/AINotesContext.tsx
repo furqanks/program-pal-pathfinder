@@ -481,8 +481,21 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      await fetchAllData();
-      toast.success('Summary complete! Check your insights for the overview! 📋✨');
+      // Create a new note with the summary content for editing
+      if (data?.summary) {
+        const summaryNoteData = {
+          title: `All Notes Summary - ${new Date().toLocaleDateString()}`,
+          content: data.summary,
+          context_type: 'general' as const,
+          tags: ['summary', 'ai-generated']
+        };
+
+        await addNote(summaryNoteData);
+        toast.success('Summary created as a new note! You can now edit it in the editor. 📋✨');
+      } else {
+        await fetchAllData();
+        toast.success('Summary complete! Check your insights for the overview! 📋✨');
+      }
 
     } catch (error) {
       console.error('Error summarizing notes:', error);
@@ -522,8 +535,21 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      await fetchAllData();
-      toast.success("Today's summary is ready! 🎯");
+      // Create a new note with the daily summary content for editing
+      if (data?.summary) {
+        const dailySummaryNoteData = {
+          title: `Daily Summary - ${new Date().toLocaleDateString()}`,
+          content: data.summary,
+          context_type: 'general' as const,
+          tags: ['daily-summary', 'ai-generated']
+        };
+
+        await addNote(dailySummaryNoteData);
+        toast.success("Today's summary created as a new note! You can now edit it in the editor. 🎯");
+      } else {
+        await fetchAllData();
+        toast.success("Today's summary is ready! 🎯");
+      }
 
     } catch (error) {
       console.error('Error creating today\'s summary:', error);
@@ -559,8 +585,21 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      await fetchAllData();
-      toast.success("Notes organized successfully! 📋✨ Check your insights for the detailed organization.");
+      // Create a new note with the organization content for editing
+      if (data?.organization) {
+        const organizationNoteData = {
+          title: `Notes Organization - ${new Date().toLocaleDateString()}`,
+          content: data.organization,
+          context_type: 'general' as const,
+          tags: ['organization', 'ai-generated']
+        };
+
+        await addNote(organizationNoteData);
+        toast.success("Notes organized! The organization summary is now available as a new note for editing. 📋✨");
+      } else {
+        await fetchAllData();
+        toast.success("Notes organized successfully! 📋✨ Check your insights for the detailed organization.");
+      }
 
     } catch (error) {
       console.error('Error organizing notes:', error);

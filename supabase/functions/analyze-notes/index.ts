@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
@@ -224,28 +223,13 @@ Provide a well-structured summary that helps the user understand their overall n
       const data = await response.json();
       const summary = data.choices[0].message.content;
 
-      // Create an insight for the summary
-      const { error: insightError } = await supabase.from('ai_insights').insert({
-        user_id: user.id,
-        insight_type: 'notes_summary',
-        title: `All Notes Summary - ${new Date().toLocaleDateString()}`,
-        content: summary,
-        related_notes: allNotes.map(note => note.id),
-        confidence_score: 0.9,
-        is_active: true
-      });
-
-      if (insightError) {
-        console.error('Error creating insight:', insightError);
-      }
-
       console.log('Notes summary completed successfully');
 
       return new Response(
         JSON.stringify({ 
           success: true, 
           summary,
-          message: 'Notes summary created successfully! Check your insights for the detailed summary.'
+          message: 'Notes summary created successfully!'
         }), 
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -315,28 +299,13 @@ Provide a clear, actionable summary of today's activities and next steps.`;
       const data = await response.json();
       const summary = data.choices[0].message.content;
 
-      // Create an insight for the daily summary
-      const { error: insightError } = await supabase.from('ai_insights').insert({
-        user_id: user.id,
-        insight_type: 'daily_summary',
-        title: `Daily Summary - ${new Date().toLocaleDateString()}`,
-        content: summary,
-        related_notes: providedNotes.map((note: any) => note.id),
-        confidence_score: 0.9,
-        is_active: true
-      });
-
-      if (insightError) {
-        console.error('Error creating daily summary insight:', insightError);
-      }
-
       console.log('Daily summary completed successfully');
 
       return new Response(
         JSON.stringify({ 
           success: true, 
           summary,
-          message: "Today's summary created successfully! Check your insights for the detailed summary."
+          message: "Today's summary created successfully!"
         }), 
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
