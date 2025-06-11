@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,7 @@ const AINotesSection = () => {
     updateNote, 
     deleteNote, 
     analyzeNote,
-    analyzeAllNotes,
+    summarizeAllNotes,
     completeReminder,
     loading 
   } = useAINotesContext();
@@ -153,7 +152,7 @@ const AINotesSection = () => {
             </CardTitle>
             <div className="flex gap-2">
               <Button 
-                onClick={analyzeAllNotes} 
+                onClick={summarizeAllNotes} 
                 variant="outline" 
                 size="sm"
                 disabled={notes.length === 0}
