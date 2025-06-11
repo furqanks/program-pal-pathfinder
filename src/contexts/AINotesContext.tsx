@@ -109,6 +109,7 @@ interface AINotesContextType {
   analyzeNote: (noteId: string) => Promise<void>;
   summarizeAllNotes: () => Promise<void>;
   getTodaysSummary: () => Promise<void>;
+  organizeNotes: () => Promise<void>;
   completeReminder: (id: string) => Promise<void>;
   loading: boolean;
 }
@@ -530,6 +531,43 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const organizeNotes = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session');
+
+      const today = new Date().toISOString().split('T')[0];
+      const todaysNotes = notes.filter(note => 
+        note.created_at.startsWith(today) || note.updated_at.startsWith(today)
+      );
+
+      if (todaysNotes.length === 0) {
+        toast.info("No notes from today to organize! 📅");
+        return;
+      }
+
+      toast.info("Organizing today's notes with AI... 🤖✨");
+
+      const { data, error } = await supabase.functions.invoke('organize-notes', {
+        body: { 
+          notes: todaysNotes
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        }
+      });
+
+      if (error) throw error;
+
+      await fetchAllData();
+      toast.success("Notes organized successfully! 📋✨ Check your insights for the detailed organization.");
+
+    } catch (error) {
+      console.error('Error organizing notes:', error);
+      toast.error('Failed to organize notes. Please try again!');
+    }
+  };
+
   const completeReminder = async (id: string) => {
     try {
       const { error } = await supabase
@@ -569,6 +607,7 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       analyzeNote,
       summarizeAllNotes,
       getTodaysSummary,
+      organizeNotes,
       completeReminder,
       loading
     }}>
@@ -576,3 +615,5 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
     </AINotesContext.Provider>
   );
 };
+
+export default AINotesProvider;

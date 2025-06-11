@@ -9,7 +9,8 @@ import {
   Calendar,
   SidebarClose,
   SidebarOpen,
-  Filter
+  Filter,
+  FolderOpen
 } from "lucide-react";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 
@@ -32,7 +33,7 @@ const NotesHeader = ({
   sidebarOpen,
   onSidebarToggle
 }: NotesHeaderProps) => {
-  const { summarizeAllNotes, getTodaysSummary, notes } = useAINotesContext();
+  const { summarizeAllNotes, getTodaysSummary, organizeNotes, notes } = useAINotesContext();
 
   return (
     <div className="border-b bg-white sticky top-0 z-20 shadow-sm">
@@ -84,6 +85,16 @@ const NotesHeader = ({
           >
             <Calendar className="mr-2 h-3 w-3" />
             Today's Summary
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={organizeNotes}
+            className="h-8 border-gray-200"
+          >
+            <FolderOpen className="mr-2 h-3 w-3" />
+            Organise
           </Button>
 
           <Button
