@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
@@ -205,7 +206,7 @@ Provide a well-structured summary that helps the user understand their overall n
           messages: [
             { 
               role: 'system', 
-              content: 'You are an expert note analyst and academic assistant specializing in creating comprehensive summaries and insights from collections of notes.' 
+              content: 'You are an expert note analyst and academic assistant specializing in creating comprehensive summaries and insights from collections of notes. Always respond with clear, well-formatted text that can be directly used as note content.' 
             },
             { role: 'user', content: summaryPrompt }
           ],
@@ -281,7 +282,7 @@ Provide a clear, actionable summary of today's activities and next steps.`;
           messages: [
             { 
               role: 'system', 
-              content: 'You are an expert productivity assistant specializing in daily summaries and planning. Help users understand their daily progress and plan next steps.' 
+              content: 'You are an expert productivity assistant specializing in daily summaries and planning. Always respond with clear, well-formatted text that can be directly used as note content. Help users understand their daily progress and plan next steps.' 
             },
             { role: 'user', content: dailySummaryPrompt }
           ],
