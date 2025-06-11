@@ -1,4 +1,3 @@
-
 import ApplicationStatusCard from "@/components/application/ApplicationStatusCard";
 import UpcomingDeadlines from "@/components/application/UpcomingDeadlines";
 import QuickActions from "@/components/application/QuickActions";
@@ -6,23 +5,24 @@ import AINotesSection from "@/components/application/AINotesSection";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Clock, FileText, Target } from "lucide-react";
-
 const Dashboard = () => {
-  const { programs } = useProgramContext();
-
+  const {
+    programs
+  } = useProgramContext();
   const getApplicationStats = () => {
     const total = programs.length;
     const applied = programs.filter(p => p.statusTagId === 'status-applied').length;
     const accepted = programs.filter(p => p.statusTagId === 'status-accepted').length;
     const inProgress = programs.filter(p => !['status-applied', 'status-accepted', 'status-rejected'].includes(p.statusTagId)).length;
-
-    return { total, applied, accepted, inProgress };
+    return {
+      total,
+      applied,
+      accepted,
+      inProgress
+    };
   };
-
   const stats = getApplicationStats();
-
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
+  return <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -77,24 +77,15 @@ const Dashboard = () => {
         </div>
 
         {/* Application Status Cards */}
-        {programs.length > 0 ? (
-          <div className="space-y-6">
+        {programs.length > 0 ? <div className="space-y-6">
             <h2 className="text-xl font-semibold">Your Applications</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {programs.slice(0, 6).map((program) => (
-                <ApplicationStatusCard 
-                  key={program.id}
-                  program={program}
-                  onViewDetails={() => {
-                    // TODO: Navigate to program details
-                    console.log('View details for:', program.id);
-                  }}
-                />
-              ))}
+              {programs.slice(0, 6).map(program => <ApplicationStatusCard key={program.id} program={program} onViewDetails={() => {
+            // TODO: Navigate to program details
+            console.log('View details for:', program.id);
+          }} />)}
             </div>
-          </div>
-        ) : (
-          <Card>
+          </div> : <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <BookOpen className="h-12 w-12 text-gray-400 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Programs Yet</h3>
@@ -102,11 +93,10 @@ const Dashboard = () => {
                 Start building your university application shortlist by searching for programs that match your interests.
               </p>
             </CardContent>
-          </Card>
-        )}
+          </Card>}
 
         {/* Status Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-0">
           <UpcomingDeadlines />
           <QuickActions />
         </div>
@@ -114,8 +104,6 @@ const Dashboard = () => {
         {/* AI Notes Section */}
         <AINotesSection />
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Dashboard;
