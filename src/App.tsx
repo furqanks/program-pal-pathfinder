@@ -17,6 +17,7 @@ import { ProgramProvider } from "./contexts/ProgramContext";
 import { PerplexityProvider } from "./contexts/PerplexityContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { AINotesProvider } from "./contexts/AINotesContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 
@@ -28,7 +29,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
@@ -65,23 +73,27 @@ const AppRoutes = () => {
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <ProgramProvider>
-            <TagProvider>
-              <AINotesProvider>
-                <PerplexityProvider>
-                  <BrowserRouter>
-                    <Toaster />
-                    <Sonner />
-                    <AppRoutes />
-                  </BrowserRouter>
-                </PerplexityProvider>
-              </AINotesProvider>
-            </TagProvider>
-          </ProgramProvider>
-        </AuthProvider>
-      </TooltipProvider>
+      <ThemeProvider defaultTheme="dark" storageKey="uniapp-ui-theme">
+        <TooltipProvider>
+          <AuthProvider>
+            <ProgramProvider>
+              <TagProvider>
+                <AINotesProvider>
+                  <PerplexityProvider>
+                    <BrowserRouter>
+                      <div className="min-h-screen bg-background text-foreground">
+                        <Toaster />
+                        <Sonner />
+                        <AppRoutes />
+                      </div>
+                    </BrowserRouter>
+                  </PerplexityProvider>
+                </AINotesProvider>
+              </TagProvider>
+            </ProgramProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };
