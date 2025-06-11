@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -108,7 +107,8 @@ interface AINotesContextType {
   addTemplate: (template: Omit<NoteTemplate, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   deleteTemplate: (id: string) => Promise<void>;
   analyzeNote: (noteId: string) => Promise<void>;
-  analyzeAllNotes: () => Promise<void>;
+  summarizeAllNotes: () => Promise<void>;
+  getTodaysSummary: () => Promise<void>;
   completeReminder: (id: string) => Promise<void>;
   loading: boolean;
 }
@@ -459,21 +459,19 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const analyzeAllNotes = async () => {
+  const summarizeAllNotes = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No session');
 
-      toast.info('Analyzing all notes... This might take a minute! ⏳');
+      toast.info('Creating summary of all notes... 📝');
 
       const insightsPrompt = getInsightPrompt(notes, []);
-      const timelinePrompt = getTimelinePrompt(notes, []);
 
       const { data, error } = await supabase.functions.invoke('analyze-notes', {
         body: { 
-          action: 'analyze_all',
-          insightsPrompt, 
-          timelinePrompt
+          action: 'summarize_all',
+          insightsPrompt
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -483,11 +481,52 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
 
       await fetchAllData();
-      toast.success('All done! Your notes are now super-charged with insights! 💪');
+      toast.success('Summary complete! Check your insights for the overview! 📋✨');
 
     } catch (error) {
-      console.error('Error analyzing all notes:', error);
-      toast.error('Failed to analyze notes. Please try again later!');
+      console.error('Error summarizing notes:', error);
+      toast.error('Failed to create summary. Please try again!');
+    }
+  };
+
+  const getTodaysSummary = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session');
+
+      const today = new Date().toISOString().split('T')[0];
+      const todaysNotes = notes.filter(note => 
+        note.created_at.startsWith(today) || note.updated_at.startsWith(today)
+      );
+
+      if (todaysNotes.length === 0) {
+        toast.info("No notes from today to summarize! 📅");
+        return;
+      }
+
+      toast.info("Creating today's summary... 🌅");
+
+      const summaryPrompt = `Create a summary of today's notes and activities. Focus on key insights, important updates, and action items from today's notes: ${todaysNotes.map(note => `${note.title}: ${note.content}`).join('\n\n')}`;
+
+      const { data, error } = await supabase.functions.invoke('analyze-notes', {
+        body: { 
+          action: 'daily_summary',
+          customPrompt: summaryPrompt,
+          notes: todaysNotes
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        }
+      });
+
+      if (error) throw error;
+
+      await fetchAllData();
+      toast.success("Today's summary is ready! 🎯");
+
+    } catch (error) {
+      console.error('Error creating today\'s summary:', error);
+      toast.error('Failed to create today\'s summary. Please try again!');
     }
   };
 
@@ -528,7 +567,8 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       addTemplate,
       deleteTemplate,
       analyzeNote,
-      analyzeAllNotes,
+      summarizeAllNotes,
+      getTodaysSummary,
       completeReminder,
       loading
     }}>

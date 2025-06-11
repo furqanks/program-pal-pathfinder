@@ -5,7 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { 
   Search, 
   Plus, 
-  Sparkles,
+  FileText,
+  Calendar,
   SidebarClose,
   SidebarOpen,
   Filter
@@ -31,7 +32,7 @@ const NotesHeader = ({
   sidebarOpen,
   onSidebarToggle
 }: NotesHeaderProps) => {
-  const { analyzeAllNotes, notes } = useAINotesContext();
+  const { summarizeAllNotes, getTodaysSummary, notes } = useAINotesContext();
 
   return (
     <div className="border-b bg-white sticky top-0 z-20 shadow-sm">
@@ -78,12 +79,22 @@ const NotesHeader = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={analyzeAllNotes}
+            onClick={getTodaysSummary}
+            className="h-8 border-gray-200"
+          >
+            <Calendar className="mr-2 h-3 w-3" />
+            Today's Summary
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={summarizeAllNotes}
             disabled={notes.length === 0}
             className="h-8 border-gray-200"
           >
-            <Sparkles className="mr-2 h-3 w-3" />
-            Analyze
+            <FileText className="mr-2 h-3 w-3" />
+            Summarize
           </Button>
           
           <Button 
