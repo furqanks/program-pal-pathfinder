@@ -136,14 +136,14 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
   };
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Simple top bar with actions */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-gray-100">
+    <div className="h-full flex flex-col bg-background">
+      {/* Top bar with actions */}
+      <div className="flex items-center justify-between px-8 py-4 border-b border-border bg-card/50">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             {getContextIcon(contextType)}
             <Select value={contextType} onValueChange={setContextType}>
-              <SelectTrigger className="w-32 h-8 text-sm border-0 bg-gray-50 hover:bg-gray-100">
+              <SelectTrigger className="w-32 h-8 text-sm border-0 bg-accent/50 hover:bg-accent">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -157,7 +157,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
           </div>
 
           <Select value={programId} onValueChange={setProgramId}>
-            <SelectTrigger className="w-48 h-8 text-sm border-0 bg-gray-50 hover:bg-gray-100">
+            <SelectTrigger className="w-48 h-8 text-sm border-0 bg-accent/50 hover:bg-accent">
               <SelectValue placeholder="Link to program..." />
             </SelectTrigger>
             <SelectContent>
@@ -188,7 +188,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
             onClick={handleSave} 
             size="sm"
             disabled={isSaving}
-            className="h-8 bg-blue-600 text-white hover:bg-blue-700"
+            className="h-8 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Save className="mr-2 h-4 w-4" />
             {isSaving ? "Saving..." : "Save"}
@@ -199,7 +199,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
         </div>
       </div>
 
-      {/* Main editor area - Notion style */}
+      {/* Main editor area */}
       <div className="flex-1 overflow-auto">
         <div className="max-w-4xl mx-auto px-24 py-16">
           {/* Title */}
@@ -208,7 +208,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Untitled"
-            className="text-5xl font-bold border-none shadow-none p-0 h-auto focus-visible:ring-0 bg-transparent placeholder:text-gray-300 mb-4"
+            className="text-5xl font-bold border-none shadow-none p-0 h-auto focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/50 mb-4"
             style={{ fontSize: '3rem', lineHeight: '1.1', fontWeight: '700' }}
           />
 
@@ -234,41 +234,41 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Start writing..."
-            className="text-base border-none shadow-none p-0 min-h-[600px] resize-none focus-visible:ring-0 bg-transparent placeholder:text-gray-400 leading-relaxed"
+            className="text-base border-none shadow-none p-0 min-h-[600px] resize-none focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/70 leading-relaxed"
             style={{ fontSize: '1rem', lineHeight: '1.6' }}
           />
 
           {/* AI Summary Display */}
           {selectedNote?.ai_summary && (
-            <Card className="mt-16 border border-purple-200 bg-purple-50/30">
+            <Card className="mt-16 border border-purple-200 bg-purple-50/30 dark:border-purple-800 dark:bg-purple-950/30">
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Brain className="h-5 w-5 text-purple-600" />
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                    <Brain className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-purple-800">AI Summary</h3>
-                    <p className="text-sm text-purple-600">Generated insights from your note</p>
+                    <h3 className="font-semibold text-purple-800 dark:text-purple-200">AI Summary</h3>
+                    <p className="text-sm text-purple-600 dark:text-purple-400">Generated insights from your note</p>
                   </div>
                 </div>
-                <p className="text-purple-700 leading-relaxed">{selectedNote.ai_summary}</p>
+                <p className="text-purple-700 dark:text-purple-300 leading-relaxed">{selectedNote.ai_summary}</p>
               </div>
             </Card>
           )}
 
           {selectedNote?.ai_insights && Object.keys(selectedNote.ai_insights).length > 0 && (
-            <Card className="mt-6 border border-amber-200 bg-amber-50/30">
+            <Card className="mt-6 border border-amber-200 bg-amber-50/30 dark:border-amber-800 dark:bg-amber-950/30">
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-amber-100 rounded-lg">
-                    <Sparkles className="h-5 w-5 text-amber-600" />
+                  <div className="p-2 bg-amber-100 dark:bg-amber-900 rounded-lg">
+                    <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-amber-800">Key Insights</h3>
-                    <p className="text-sm text-amber-600">AI-powered analysis and recommendations</p>
+                    <h3 className="font-semibold text-amber-800 dark:text-amber-200">Key Insights</h3>
+                    <p className="text-sm text-amber-600 dark:text-amber-400">AI-powered analysis and recommendations</p>
                   </div>
                 </div>
-                <div className="space-y-4 text-amber-700">
+                <div className="space-y-4 text-amber-700 dark:text-amber-300">
                   {selectedNote.ai_insights.key_insights && (
                     <div>
                       <h4 className="font-medium mb-2">Key Insights:</h4>

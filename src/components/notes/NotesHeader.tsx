@@ -36,34 +36,34 @@ const NotesHeader = ({
   const { summarizeAllNotes, getTodaysSummary, organizeNotes, notes } = useAINotesContext();
 
   return (
-    <div className="border-b bg-white sticky top-0 z-20 shadow-sm">
+    <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-20">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={onSidebarToggle}
-            className="h-8 w-8 hover:bg-gray-100"
+            className="h-8 w-8 hover:bg-accent"
           >
             {sidebarOpen ? <SidebarClose className="h-4 w-4" /> : <SidebarOpen className="h-4 w-4" />}
           </Button>
           
-          <h1 className="text-lg font-semibold text-gray-900">Notes</h1>
+          <h1 className="text-lg font-semibold">Notes</h1>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-9 h-8 w-64 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="pl-9 h-8 w-64 bg-background border-border focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </div>
 
           <Select value={contextFilter} onValueChange={onContextFilterChange}>
-            <SelectTrigger className="w-32 h-8 border-gray-200">
+            <SelectTrigger className="w-32 h-8 bg-background border-border">
               <Filter className="mr-2 h-3 w-3" />
               <SelectValue placeholder="Filter" />
             </SelectTrigger>
@@ -81,7 +81,7 @@ const NotesHeader = ({
             variant="outline"
             size="sm"
             onClick={getTodaysSummary}
-            className="h-8 border-gray-200"
+            className="h-8 bg-background border-border hover:bg-accent"
           >
             <Calendar className="mr-2 h-3 w-3" />
             Today's Summary
@@ -91,7 +91,7 @@ const NotesHeader = ({
             variant="outline"
             size="sm"
             onClick={organizeNotes}
-            className="h-8 border-gray-200"
+            className="h-8 bg-background border-border hover:bg-accent"
           >
             <FolderOpen className="mr-2 h-3 w-3" />
             Organise
@@ -102,7 +102,7 @@ const NotesHeader = ({
             size="sm"
             onClick={summarizeAllNotes}
             disabled={notes.length === 0}
-            className="h-8 border-gray-200"
+            className="h-8 bg-background border-border hover:bg-accent"
           >
             <FileText className="mr-2 h-3 w-3" />
             Summarize
@@ -111,7 +111,7 @@ const NotesHeader = ({
           <Button 
             onClick={onNewNote} 
             size="sm" 
-            className="h-8 bg-blue-600 text-white hover:bg-blue-700"
+            className="h-8 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="mr-2 h-3 w-3" />
             New

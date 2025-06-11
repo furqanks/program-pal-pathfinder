@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import NotesHeader from "./NotesHeader";
@@ -9,7 +10,7 @@ const NotionLikeInterface = () => {
   const [contextFilter, setContextFilter] = useState("all");
   const [selectedNote, setSelectedNote] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [viewMode, setViewMode] = useState<'timeline' | 'editor'>('editor');
+  const [viewMode, setViewMode] = useState<'timeline' | 'editor'>('timeline');
 
   const handleNewNote = () => {
     setSelectedNote(null);
@@ -27,7 +28,6 @@ const NotionLikeInterface = () => {
   };
 
   const handleNoteUpdated = () => {
-    // Keep the note selected after updating
     setViewMode('timeline');
   };
 
@@ -37,7 +37,7 @@ const NotionLikeInterface = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-white">
+    <div className="h-screen flex flex-col bg-background">
       <NotesHeader
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
@@ -51,7 +51,7 @@ const NotionLikeInterface = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Notes Timeline */}
         <div className={cn(
-          "transition-all duration-300 border-r bg-gray-50/30 backdrop-blur-sm",
+          "transition-all duration-300 border-r border-border bg-background",
           sidebarOpen ? "w-80" : "w-0",
           "overflow-hidden"
         )}>
@@ -65,12 +65,21 @@ const NotionLikeInterface = () => {
           )}
         </div>
 
-        {/* Main Content Area - Full Notion-like Editor */}
+        {/* Main Content Area */}
         <div className="flex-1 overflow-hidden">
-          {viewMode === 'timeline' ? (
-            <div className="h-full flex items-center justify-center bg-gray-50/30">
+          {viewMode === 'timeline' && !sidebarOpen ? (
+            <div className="h-full">
+              <NotesTimeline
+                selectedNoteId={selectedNote?.id}
+                onNoteSelect={handleNoteSelect}
+                searchTerm={searchTerm}
+                contextFilter={contextFilter}
+              />
+            </div>
+          ) : viewMode === 'timeline' ? (
+            <div className="h-full flex items-center justify-center bg-muted/10">
               <div className="text-center">
-                <div className="bg-white rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <div className="bg-card rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-sm border">
                   <span className="text-3xl">📝</span>
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Select a note to edit</h3>
