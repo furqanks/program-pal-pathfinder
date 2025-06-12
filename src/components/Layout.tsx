@@ -12,11 +12,11 @@ const Layout = () => {
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="flex h-screen w-full overflow-hidden bg-background">
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       
       <main className={cn(
-        "flex-1 overflow-auto transition-all duration-300 ease-in-out", 
+        "flex-1 overflow-auto transition-all duration-300 ease-in-out bg-background", 
         isMobile ? "p-3" : "p-6",
         sidebarOpen ? (isMobile ? "ml-0" : "ml-56") : "ml-0 md:ml-14"
       )}>

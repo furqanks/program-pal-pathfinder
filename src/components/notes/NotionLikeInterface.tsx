@@ -66,7 +66,7 @@ const NotionLikeInterface = () => {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden bg-background">
           {viewMode === 'timeline' && !sidebarOpen ? (
             <div className="h-full">
               <NotesTimeline
@@ -77,7 +77,7 @@ const NotionLikeInterface = () => {
               />
             </div>
           ) : viewMode === 'timeline' ? (
-            <div className="h-full flex items-center justify-center bg-muted/10">
+            <div className="h-full flex items-center justify-center bg-background">
               <div className="text-center">
                 <div className="bg-card rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-sm border">
                   <span className="text-3xl">📝</span>

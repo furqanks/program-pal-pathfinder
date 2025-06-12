@@ -67,14 +67,17 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
         </div>
         <div className="flex items-center gap-1">
           {open && <ThemeToggle />}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setOpen(false)}
-            className="h-8 w-8 hover:bg-accent"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          {/* Only show X button when sidebar is open */}
+          {open && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setOpen(false)}
+              className="h-8 w-8 hover:bg-accent"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
