@@ -17,7 +17,7 @@ const Layout = () => {
       
       <main className={cn(
         "flex-1 overflow-auto transition-all duration-300 ease-in-out bg-background", 
-        isMobile ? "p-3" : "p-6",
+        isMobile ? "p-4" : "p-6",
         sidebarOpen ? (isMobile ? "ml-0" : "ml-56") : "ml-0 md:ml-14"
       )}>
         {(isMobile || !sidebarOpen) && (
@@ -33,8 +33,8 @@ const Layout = () => {
           </div>
         )}
         <div className={cn(
-          "container mx-auto max-w-7xl pb-8",
-          isMobile ? "px-0" : "px-4"
+          "max-w-7xl mx-auto pb-8",
+          isMobile ? "px-0" : "px-0"
         )}>
           <Outlet />
         </div>

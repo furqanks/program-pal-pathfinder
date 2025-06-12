@@ -6,11 +6,12 @@ import AINotesSection from "@/components/application/AINotesSection";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Clock, FileText, Target } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
-  const {
-    programs
-  } = useProgramContext();
+  const { programs } = useProgramContext();
+  const isMobile = useIsMobile();
   
   const getApplicationStats = () => {
     const total = programs.length;
@@ -28,7 +29,7 @@ const Dashboard = () => {
   const stats = getApplicationStats();
   
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -40,44 +41,99 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
+        <div className={cn(
+          "grid gap-4",
+          isMobile ? "grid-cols-2" : "grid-cols-1 md:grid-cols-4"
+        )}>
+          <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Programs</CardTitle>
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className={cn(
+                "font-medium text-foreground",
+                isMobile ? "text-xs" : "text-sm"
+              )}>
+                Total Programs
+              </CardTitle>
+              <BookOpen className={cn(
+                "text-muted-foreground",
+                isMobile ? "h-3 w-3" : "h-4 w-4"
+              )} />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
+            <CardContent className={isMobile ? "pt-1" : ""}>
+              <div className={cn(
+                "font-bold text-foreground",
+                isMobile ? "text-lg" : "text-2xl"
+              )}>
+                {stats.total}
+              </div>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className={cn(
+                "font-medium text-foreground",
+                isMobile ? "text-xs" : "text-sm"
+              )}>
+                In Progress
+              </CardTitle>
+              <Clock className={cn(
+                "text-muted-foreground",
+                isMobile ? "h-3 w-3" : "h-4 w-4"
+              )} />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.inProgress}</div>
+            <CardContent className={isMobile ? "pt-1" : ""}>
+              <div className={cn(
+                "font-bold text-foreground",
+                isMobile ? "text-lg" : "text-2xl"
+              )}>
+                {stats.inProgress}
+              </div>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Applied</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className={cn(
+                "font-medium text-foreground",
+                isMobile ? "text-xs" : "text-sm"
+              )}>
+                Applied
+              </CardTitle>
+              <FileText className={cn(
+                "text-muted-foreground",
+                isMobile ? "h-3 w-3" : "h-4 w-4"
+              )} />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.applied}</div>
+            <CardContent className={isMobile ? "pt-1" : ""}>
+              <div className={cn(
+                "font-bold text-foreground",
+                isMobile ? "text-lg" : "text-2xl"
+              )}>
+                {stats.applied}
+              </div>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Accepted</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className={cn(
+                "font-medium text-foreground",
+                isMobile ? "text-xs" : "text-sm"
+              )}>
+                Accepted
+              </CardTitle>
+              <Target className={cn(
+                "text-muted-foreground",
+                isMobile ? "h-3 w-3" : "h-4 w-4"
+              )} />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.accepted}</div>
+            <CardContent className={isMobile ? "pt-1" : ""}>
+              <div className={cn(
+                "font-bold text-foreground",
+                isMobile ? "text-lg" : "text-2xl"
+              )}>
+                {stats.accepted}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -85,8 +141,11 @@ const Dashboard = () => {
         {/* Application Status Cards */}
         {programs.length > 0 ? (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Your Applications</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <h2 className="text-xl font-semibold text-foreground">Your Applications</h2>
+            <div className={cn(
+              "grid gap-4",
+              isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+            )}>
               {programs.slice(0, 6).map(program => (
                 <ApplicationStatusCard 
                   key={program.id} 
@@ -100,11 +159,11 @@ const Dashboard = () => {
             </div>
           </div>
         ) : (
-          <Card>
+          <Card className="bg-card border-border">
             <CardContent className="flex flex-col items-center justify-center py-12">
               <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No Programs Yet</h3>
-              <p className="text-muted-foreground text-center mb-4">
+              <p className="text-muted-foreground text-center mb-4 max-w-md">
                 Start building your university application shortlist by searching for programs that match your interests.
               </p>
             </CardContent>
@@ -112,7 +171,10 @@ const Dashboard = () => {
         )}
 
         {/* Status Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mx-0">
+        <div className={cn(
+          "grid gap-6",
+          isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+        )}>
           <UpcomingDeadlines />
           <QuickActions />
         </div>
