@@ -5,6 +5,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Menu } from "lucide-react";
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -17,19 +18,17 @@ const Layout = () => {
       <main className={cn(
         "flex-1 overflow-auto transition-all duration-300 ease-in-out", 
         isMobile ? "p-3" : "p-6",
-        sidebarOpen ? "md:ml-64" : "ml-0"
+        sidebarOpen ? (isMobile ? "ml-0" : "ml-56") : "ml-0 md:ml-14"
       )}>
-        {isMobile && (
+        {(isMobile || !sidebarOpen) && (
           <div className="mb-4">
             <Button 
               variant="outline" 
               size="icon" 
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="h-12 w-12 bg-card/80 backdrop-blur-sm border-border/50"
+              className="h-10 w-10 bg-card/80 backdrop-blur-sm border-border/50"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              <Menu className="h-4 w-4" />
             </Button>
           </div>
         )}

@@ -49,27 +49,29 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-card/95 backdrop-blur-xl border-r border-border/50 transition-transform duration-300 ease-in-out",
-        open ? "translate-x-0" : "-translate-x-full md:translate-x-0 md:w-16"
+        "fixed inset-y-0 left-0 z-50 flex flex-col bg-card/95 backdrop-blur-xl border-r border-border/50 transition-transform duration-300 ease-in-out",
+        open ? "translate-x-0 w-56" : "-translate-x-full md:translate-x-0 md:w-14"
       )}
     >
       {/* Header */}
-      <div className="flex h-16 items-center justify-between px-4 py-4 border-b border-border/50">
-        <div className={cn("flex items-center gap-2", !open && "md:hidden")}>
-          <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/60 rounded-lg flex items-center justify-center">
-            <Target className="h-4 w-4 text-primary-foreground" />
+      <div className="flex h-14 items-center justify-between px-3 py-3 border-b border-border/50">
+        <div className={cn("flex items-center gap-2", !open && "md:justify-center")}>
+          <div className="w-6 h-6 bg-gradient-to-br from-primary to-primary/60 rounded-md flex items-center justify-center">
+            <Target className="h-3 w-3 text-primary-foreground" />
           </div>
-          <h1 className="font-semibold text-lg bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            UniApp Space
-          </h1>
+          {open && (
+            <h1 className="font-semibold text-sm bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+              UniApp Space
+            </h1>
+          )}
         </div>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
+        <div className="flex items-center gap-1">
+          {open && <ThemeToggle />}
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
             onClick={() => setOpen(false)}
+            className="h-8 w-8 hover:bg-accent"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -77,28 +79,29 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-auto py-4">
-        <nav className="grid gap-1 px-3">
+      <div className="flex-1 overflow-auto py-3">
+        <nav className="grid gap-1 px-2">
           {navItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all hover:bg-accent/50",
+                "flex items-center gap-3 rounded-lg px-2 py-2.5 text-sm font-medium transition-all hover:bg-accent/50",
                 location.pathname === item.path
                   ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+                !open && "md:justify-center md:px-3"
               )}
             >
               <div className={cn(
-                "p-2 rounded-lg transition-colors",
+                "p-1.5 rounded-md transition-colors",
                 location.pathname === item.path
                   ? "bg-primary/20 text-primary"
                   : "bg-secondary/50 text-muted-foreground group-hover:text-foreground"
               )}>
                 <item.icon className="h-4 w-4" />
               </div>
-              <span className={cn("", !open && "md:hidden")}>
+              <span className={cn("truncate", !open && "md:hidden")}>
                 {item.label}
               </span>
             </Link>
@@ -107,20 +110,20 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
       </div>
 
       {/* User section */}
-      <div className="border-t border-border/50 p-4">
+      <div className="border-t border-border/50 p-3">
         {user ? (
-          <div className={cn("flex items-center justify-between", !open && "md:justify-center")}>
+          <div className={cn("flex items-center", !open && "md:justify-center")}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-0 h-auto hover:bg-transparent flex items-center gap-3 w-full justify-start">
-                  <Avatar className="h-10 w-10 border-2 border-border/50">
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-primary-foreground font-semibold">
+                  <Avatar className="h-8 w-8 border-2 border-border/50">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-primary-foreground font-semibold text-sm">
                       {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
                   {open && (
-                    <div className="flex flex-col items-start md:hidden">
-                      <span className="text-sm font-medium text-foreground">{user.email}</span>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-medium text-foreground truncate max-w-32">{user.email}</span>
                       <span className="text-xs text-muted-foreground">Account settings</span>
                     </div>
                   )}
@@ -129,7 +132,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem className="flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  <span>{user.email}</span>
+                  <span className="truncate">{user.email}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
                   <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
