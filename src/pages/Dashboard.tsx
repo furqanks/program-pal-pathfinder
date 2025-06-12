@@ -30,110 +30,142 @@ const Dashboard = () => {
   
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className={cn(
+        "w-full mx-auto space-y-6",
+        isMobile ? "px-4 py-4" : "px-6 py-6 max-w-7xl"
+      )}>
+        {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground mt-2">
+            <h1 className={cn(
+              "font-bold text-foreground",
+              isMobile ? "text-2xl" : "text-3xl"
+            )}>
+              Dashboard
+            </h1>
+            <p className={cn(
+              "text-muted-foreground mt-2",
+              isMobile ? "text-sm" : "text-base"
+            )}>
               Track your university applications and manage your progress
             </p>
           </div>
         </div>
 
-        {/* Quick Stats */}
+        {/* Quick Stats Cards */}
         <div className={cn(
           "grid gap-4",
-          isMobile ? "grid-cols-2" : "grid-cols-1 md:grid-cols-4"
+          isMobile ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
         )}>
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="bg-card border-border hover:shadow-lg transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className={cn(
-                "font-medium text-foreground",
+                "font-medium text-card-foreground",
                 isMobile ? "text-xs" : "text-sm"
               )}>
                 Total Programs
               </CardTitle>
-              <BookOpen className={cn(
-                "text-muted-foreground",
-                isMobile ? "h-3 w-3" : "h-4 w-4"
-              )} />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <BookOpen className={cn(
+                  "text-primary",
+                  isMobile ? "h-3 w-3" : "h-4 w-4"
+                )} />
+              </div>
             </CardHeader>
             <CardContent className={isMobile ? "pt-1" : ""}>
               <div className={cn(
-                "font-bold text-foreground",
-                isMobile ? "text-lg" : "text-2xl"
+                "font-bold text-card-foreground",
+                isMobile ? "text-xl" : "text-2xl"
               )}>
                 {stats.total}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Total tracked programs
+              </p>
             </CardContent>
           </Card>
           
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="bg-card border-border hover:shadow-lg transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className={cn(
-                "font-medium text-foreground",
+                "font-medium text-card-foreground",
                 isMobile ? "text-xs" : "text-sm"
               )}>
                 In Progress
               </CardTitle>
-              <Clock className={cn(
-                "text-muted-foreground",
-                isMobile ? "h-3 w-3" : "h-4 w-4"
-              )} />
+              <div className="p-2 bg-orange-500/10 rounded-lg">
+                <Clock className={cn(
+                  "text-orange-500",
+                  isMobile ? "h-3 w-3" : "h-4 w-4"
+                )} />
+              </div>
             </CardHeader>
             <CardContent className={isMobile ? "pt-1" : ""}>
               <div className={cn(
-                "font-bold text-foreground",
-                isMobile ? "text-lg" : "text-2xl"
+                "font-bold text-card-foreground",
+                isMobile ? "text-xl" : "text-2xl"
               )}>
                 {stats.inProgress}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Active applications
+              </p>
             </CardContent>
           </Card>
           
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="bg-card border-border hover:shadow-lg transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className={cn(
-                "font-medium text-foreground",
+                "font-medium text-card-foreground",
                 isMobile ? "text-xs" : "text-sm"
               )}>
                 Applied
               </CardTitle>
-              <FileText className={cn(
-                "text-muted-foreground",
-                isMobile ? "h-3 w-3" : "h-4 w-4"
-              )} />
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <FileText className={cn(
+                  "text-blue-500",
+                  isMobile ? "h-3 w-3" : "h-4 w-4"
+                )} />
+              </div>
             </CardHeader>
             <CardContent className={isMobile ? "pt-1" : ""}>
               <div className={cn(
-                "font-bold text-foreground",
-                isMobile ? "text-lg" : "text-2xl"
+                "font-bold text-card-foreground",
+                isMobile ? "text-xl" : "text-2xl"
               )}>
                 {stats.applied}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Submitted applications
+              </p>
             </CardContent>
           </Card>
           
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="bg-card border-border hover:shadow-lg transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className={cn(
-                "font-medium text-foreground",
+                "font-medium text-card-foreground",
                 isMobile ? "text-xs" : "text-sm"
               )}>
                 Accepted
               </CardTitle>
-              <Target className={cn(
-                "text-muted-foreground",
-                isMobile ? "h-3 w-3" : "h-4 w-4"
-              )} />
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <Target className={cn(
+                  "text-green-500",
+                  isMobile ? "h-3 w-3" : "h-4 w-4"
+                )} />
+              </div>
             </CardHeader>
             <CardContent className={isMobile ? "pt-1" : ""}>
               <div className={cn(
-                "font-bold text-foreground",
-                isMobile ? "text-lg" : "text-2xl"
+                "font-bold text-card-foreground",
+                isMobile ? "text-xl" : "text-2xl"
               )}>
                 {stats.accepted}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Successful applications
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -141,7 +173,12 @@ const Dashboard = () => {
         {/* Application Status Cards */}
         {programs.length > 0 ? (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-foreground">Your Applications</h2>
+            <h2 className={cn(
+              "font-semibold text-foreground",
+              isMobile ? "text-lg" : "text-xl"
+            )}>
+              Your Applications
+            </h2>
             <div className={cn(
               "grid gap-4",
               isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
@@ -151,7 +188,6 @@ const Dashboard = () => {
                   key={program.id} 
                   program={program} 
                   onViewDetails={() => {
-                    // TODO: Navigate to program details
                     console.log('View details for:', program.id);
                   }} 
                 />
@@ -161,8 +197,10 @@ const Dashboard = () => {
         ) : (
           <Card className="bg-card border-border">
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No Programs Yet</h3>
+              <div className="p-4 bg-muted/50 rounded-full mb-4">
+                <BookOpen className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium text-card-foreground mb-2">No Programs Yet</h3>
               <p className="text-muted-foreground text-center mb-4 max-w-md">
                 Start building your university application shortlist by searching for programs that match your interests.
               </p>
@@ -170,13 +208,21 @@ const Dashboard = () => {
           </Card>
         )}
 
-        {/* Status Overview */}
+        {/* Status Overview Grid */}
         <div className={cn(
           "grid gap-6",
           isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
         )}>
-          <UpcomingDeadlines />
-          <QuickActions />
+          <div className={cn(
+            isMobile ? "col-span-1" : "md:col-span-1"
+          )}>
+            <UpcomingDeadlines />
+          </div>
+          <div className={cn(
+            isMobile ? "col-span-1" : "md:col-span-1 lg:col-span-2"
+          )}>
+            <QuickActions />
+          </div>
         </div>
 
         {/* AI Notes Section */}
