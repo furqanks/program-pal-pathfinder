@@ -2,7 +2,6 @@
 import ApplicationStatusCard from "@/components/application/ApplicationStatusCard";
 import UpcomingDeadlines from "@/components/application/UpcomingDeadlines";
 import QuickActions from "@/components/application/QuickActions";
-import AINotesSection from "@/components/application/AINotesSection";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Clock, FileText, Target } from "lucide-react";
@@ -224,9 +223,6 @@ const Dashboard = () => {
             <QuickActions />
           </div>
         </div>
-
-        {/* AI Notes Section */}
-        <AINotesSection />
       </div>
     </div>
   );
