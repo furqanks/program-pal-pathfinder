@@ -83,13 +83,19 @@ serve(async (req) => {
         );
       }
 
-      const analysisPrompt = customPrompt || `Analyze this note and provide insights, key points, and suggestions for improvement or next steps:
+      const analysisPrompt = customPrompt || `Analyze this note and provide insights in a clear, readable format:
 
 Title: ${note.title}
 Content: ${note.content}
 Context: ${note.context_type}
 
-Provide your analysis in a clear, structured format with actionable insights.`;
+Please provide your analysis as natural, well-formatted text with:
+- A brief summary of key points
+- Main insights and observations  
+- Recommended next steps or actions
+- Any important connections or patterns
+
+Format your response as readable text with clear headings and bullet points where appropriate. Do not use JSON format.`;
 
       console.log('Calling OpenAI for single note analysis...');
 
@@ -122,6 +128,18 @@ Provide your analysis in a clear, structured format with actionable insights.`;
       const data = await response.json();
       const analysis = data.choices[0].message.content;
 
+      // Parse analysis to extract structured insights
+      const lines = analysis.split('\n').filter(line => line.trim().length > 0);
+      const keyInsights = lines.filter(line => 
+        line.includes('•') || line.includes('-') || line.includes('*') || 
+        line.toLowerCase().includes('insight') || line.toLowerCase().includes('recommend')
+      ).slice(0, 5);
+      
+      const nextSteps = lines.filter(line => 
+        line.toLowerCase().includes('next') || line.toLowerCase().includes('action') || 
+        line.toLowerCase().includes('should') || line.toLowerCase().includes('consider')
+      ).slice(0, 3);
+
       // Update note with AI analysis
       const { error: updateError } = await supabase
         .from('ai_notes')
@@ -131,7 +149,9 @@ Provide your analysis in a clear, structured format with actionable insights.`;
           ai_insights: {
             analyzed_at: new Date().toISOString(),
             analysis_type: 'single_note',
-            key_insights: analysis.split('\n').filter(line => line.trim().length > 0).slice(0, 3)
+            key_insights: keyInsights,
+            next_steps: nextSteps,
+            confidence_score: 0.85
           }
         })
         .eq('id', noteId);

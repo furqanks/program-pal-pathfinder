@@ -11,18 +11,6 @@ interface AISummaryDisplayProps {
 const AISummaryDisplay = ({ note }: AISummaryDisplayProps) => {
   if (!note?.ai_summary && !note?.ai_insights) return null;
 
-  // Parse AI summary - handle both JSON and markdown text
-  const parseAISummary = (summary: string) => {
-    try {
-      return JSON.parse(summary);
-    } catch {
-      // If not JSON, treat as markdown/text and extract key info
-      return { 
-        summary: processMarkdownSummary(summary)
-      };
-    }
-  };
-
   // Process markdown text into readable format
   const processMarkdownSummary = (text: string) => {
     if (!text) return "";
@@ -47,7 +35,6 @@ const AISummaryDisplay = ({ note }: AISummaryDisplayProps) => {
     return processed;
   };
 
-  const summaryData = note.ai_summary ? parseAISummary(note.ai_summary) : {};
   const insights = note.ai_insights || {};
 
   return (
@@ -67,68 +54,9 @@ const AISummaryDisplay = ({ note }: AISummaryDisplayProps) => {
             </div>
 
             <div className="prose dark:prose-invert max-w-none prose-sm sm:prose-base">
-              {summaryData.summary ? (
-                <div className="leading-relaxed text-sm sm:text-base">
-                  <div dangerouslySetInnerHTML={{ __html: summaryData.summary }} />
-                </div>
-              ) : (
-                <p className="leading-relaxed text-sm sm:text-base">
-                  {note.ai_summary}
-                </p>
-              )}
-
-              {/* Key Points Table */}
-              {summaryData.keyPoints && summaryData.keyPoints.length > 0 && (
-                <div className="mt-4 sm:mt-6">
-                  <h4 className="font-medium mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
-                    <Target className="h-3 w-3 sm:h-4 sm:w-4" />
-                    Key Points
-                  </h4>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-16 sm:w-20 text-xs sm:text-sm">Priority</TableHead>
-                          <TableHead className="text-xs sm:text-sm">Point</TableHead>
-                          <TableHead className="text-xs sm:text-sm">Category</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {summaryData.keyPoints.map((point: any, index: number) => (
-                          <TableRow key={index}>
-                            <TableCell>
-                              <Badge 
-                                variant={point.priority === 'high' ? 'destructive' : point.priority === 'medium' ? 'default' : 'secondary'}
-                                className="text-xs px-1 sm:px-2"
-                              >
-                                {point.priority || 'Low'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-xs sm:text-sm">{point.content || point}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="text-xs px-1 sm:px-2">{point.category || 'General'}</Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              )}
-
-              {/* Topics Overview */}
-              {summaryData.topics && summaryData.topics.length > 0 && (
-                <div className="mt-4 sm:mt-6">
-                  <h4 className="font-medium mb-2 sm:mb-3 text-sm sm:text-base">Topics Covered</h4>
-                  <div className="flex flex-wrap gap-1 sm:gap-2">
-                    {summaryData.topics.map((topic: string, index: number) => (
-                      <Badge key={index} variant="outline" className="text-xs sm:text-sm px-1 sm:px-2">
-                        {topic}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="leading-relaxed text-sm sm:text-base">
+                <div dangerouslySetInnerHTML={{ __html: processMarkdownSummary(note.ai_summary) }} />
+              </div>
             </div>
           </div>
         </Card>
