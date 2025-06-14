@@ -110,6 +110,7 @@ interface AINotesContextType {
   summarizeAllNotes: () => Promise<void>;
   getTodaysSummary: () => Promise<void>;
   organizeNotes: () => Promise<void>;
+  convertExistingAIContent: () => Promise<void>;
   completeReminder: (id: string) => Promise<void>;
   loading: boolean;
 }
@@ -607,6 +608,36 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const convertExistingAIContent = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session');
+
+      toast.info('Converting existing AI content from JSON to readable format... 🔄');
+
+      const { data, error } = await supabase.functions.invoke('convert-ai-content', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        }
+      });
+
+      if (error) throw error;
+
+      // Refresh notes to show updated content
+      await fetchAllData();
+      
+      if (data?.processedCount > 0) {
+        toast.success(`Successfully converted ${data.processedCount} notes! All AI content is now in readable format. ✨`);
+      } else {
+        toast.success('All AI content is already in readable format! 👍');
+      }
+
+    } catch (error) {
+      console.error('Error converting AI content:', error);
+      toast.error('Failed to convert AI content. Please try again!');
+    }
+  };
+
   const completeReminder = async (id: string) => {
     try {
       const { error } = await supabase
@@ -647,6 +678,7 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       summarizeAllNotes,
       getTodaysSummary,
       organizeNotes,
+      convertExistingAIContent,
       completeReminder,
       loading
     }}>
