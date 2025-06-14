@@ -15,81 +15,51 @@ const AISummaryDisplay = ({ note }: AISummaryDisplayProps) => {
   const processMarkdownSummary = (text: string) => {
     if (!text) return "";
     
-    try {
-      let processed = text.trim();
-      
-      // First, handle code blocks to preserve them
-      const codeBlocks: string[] = [];
-      processed = processed.replace(/```[\s\S]*?```/g, (match, index) => {
-        codeBlocks.push(match);
-        return `__CODE_BLOCK_${index}__`;
-      });
-      
-      // Handle inline code
-      const inlineCodes: string[] = [];
-      processed = processed.replace(/`([^`]+)`/g, (match, code) => {
-        inlineCodes.push(`<code class="bg-muted px-1 py-0.5 rounded text-sm">${code}</code>`);
-        return `__INLINE_CODE_${inlineCodes.length - 1}__`;
-      });
-      
-      // Process headers (## or ### or ####)
-      processed = processed.replace(/^#{1,6}\s+(.+)$/gm, (match, text) => {
-        const level = match.match(/^#+/)?.[0].length || 2;
-        const className = level <= 2 ? 'text-lg font-semibold mt-4 mb-2' : 'text-base font-medium mt-3 mb-1';
-        return `<h${level} class="${className}">${text.trim()}</h${level}>`;
-      });
-      
-      // Process bold text
-      processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>');
-      
-      // Process italic text
-      processed = processed.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>');
-      
-      // Process bullet points (• or - or *)
-      processed = processed.replace(/^[\s]*[•\-*]\s+(.+)$/gm, '<li class="ml-4 mb-1">$1</li>');
-      
-      // Wrap consecutive list items in ul tags
-      processed = processed.replace(/(<li[^>]*>.*<\/li>\s*)+/g, (match) => {
-        return `<ul class="list-disc space-y-1 mb-3">${match}</ul>`;
-      });
-      
-      // Process numbered lists
-      processed = processed.replace(/^[\s]*\d+\.\s+(.+)$/gm, '<li class="ml-4 mb-1">$1</li>');
-      processed = processed.replace(/(<li[^>]*>.*<\/li>\s*)+/g, (match) => {
-        if (!match.includes('list-disc')) {
-          return `<ol class="list-decimal space-y-1 mb-3">${match}</ol>`;
-        }
-        return match;
-      });
-      
-      // Split into paragraphs and process line breaks
-      const paragraphs = processed.split(/\n\s*\n/);
-      processed = paragraphs.map(para => {
-        if (para.trim() && !para.includes('<h') && !para.includes('<ul') && !para.includes('<ol')) {
-          return `<p class="mb-3 leading-relaxed">${para.replace(/\n/g, '<br/>')}</p>`;
-        }
-        return para;
-      }).join('\n');
-      
-      // Restore code blocks
-      codeBlocks.forEach((block, index) => {
-        const cleanBlock = block.replace(/```[\w]*\n?/, '').replace(/```$/, '');
-        processed = processed.replace(`__CODE_BLOCK_${index}__`, 
-          `<pre class="bg-muted p-3 rounded-md overflow-x-auto my-3"><code>${cleanBlock}</code></pre>`);
-      });
-      
-      // Restore inline code
-      inlineCodes.forEach((code, index) => {
-        processed = processed.replace(`__INLINE_CODE_${index}__`, code);
-      });
-      
-      return processed;
-      
-    } catch (error) {
-      console.error('Error processing markdown:', error);
-      // Fallback: just return the original text with basic HTML escaping
-      return text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
+    let processed = text.trim();
+    
+    // Handle headers (### or ## or #)
+    processed = processed.replace(/^#+\s+(.+)$/gm, (match, content) => {
+      const level = match.match(/^#+/)?.[0].length || 3;
+      const className = level === 1 ? 'text-xl font-bold mb-3 mt-4' : 
+                       level === 2 ? 'text-lg font-semibold mb-2 mt-3' : 
+                       'text-base font-medium mb-2 mt-2';
+      return `<h${Math.min(level, 6)} class="${className}">${content.trim()}</h${Math.min(level, 6)}>`;
+    });
+    
+    // Handle bold text (**text**)
+    processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>');
+    
+    // Handle italic text (*text*)
+    processed = processed.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>');
+    
+    // Handle bullet points (- text)
+    processed = processed.replace(/^[\s]*-[\s]+(.+)$/gm, '<li class="ml-4 mb-1">$1</li>');
+    
+    // Wrap consecutive <li> elements in <ul>
+    processed = processed.replace(/(<li[^>]*>.*?<\/li>\s*)+/g, (match) => {
+      return `<ul class="list-disc mb-3 space-y-1">${match}</ul>`;
+    });
+    
+    // Handle numbered lists (1. text)
+    processed = processed.replace(/^[\s]*\d+\.[\s]+(.+)$/gm, '<li class="ml-4 mb-1">$1</li>');
+    processed = processed.replace(/(<li[^>]*>.*?<\/li>\s*)+/g, (match) => {
+      if (!match.includes('list-disc')) {
+        return `<ol class="list-decimal mb-3 space-y-1">${match}</ol>`;
+      }
+      return match;
+    });
+    
+    // Split into paragraphs and wrap them
+    const paragraphs = processed.split(/\n\s*\n/);
+    processed = paragraphs.map(para => {
+      para = para.trim();
+      if (para && !para.includes('<h') && !para.includes('<ul') && !para.includes('<ol')) {
+        return `<p class="mb-3 leading-relaxed">${para.replace(/\n/g, '<br>')}</p>`;
+      }
+      return para;
+    }).join('\n');
+    
+    return processed;
   };
 
   const insights = note.ai_insights || {};
