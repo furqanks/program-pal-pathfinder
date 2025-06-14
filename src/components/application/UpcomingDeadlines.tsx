@@ -7,14 +7,11 @@ import { useProgramContext } from "@/contexts/ProgramContext";
 import { useTagContext } from "@/contexts/TagContext";
 import { format, parseISO, differenceInDays, isValid } from "date-fns";
 import { useState } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
 
 const UpcomingDeadlines = () => {
   const { programs } = useProgramContext();
   const { getStatusTag } = useTagContext();
   const [showAll, setShowAll] = useState(false);
-  const isMobile = useIsMobile();
 
   // Filter and sort programs by deadline
   const programsWithDeadlines = programs
@@ -43,13 +40,13 @@ const UpcomingDeadlines = () => {
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
       case "overdue":
-        return "bg-red-500/10 text-red-600 border-red-500/20";
+        return "bg-red-100 text-red-800 border-red-200";
       case "urgent":
-        return "bg-orange-500/10 text-orange-600 border-orange-500/20";
+        return "bg-orange-100 text-orange-800 border-orange-200";
       case "warning":
-        return "bg-yellow-500/10 text-yellow-600 border-yellow-500/20";
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
       default:
-        return "bg-green-500/10 text-green-600 border-green-500/20";
+        return "bg-green-100 text-green-800 border-green-200";
     }
   };
 
@@ -66,21 +63,18 @@ const UpcomingDeadlines = () => {
 
   if (programsWithDeadlines.length === 0) {
     return (
-      <Card className="bg-card/50 backdrop-blur-sm border-border/50 shadow-sm">
-        <CardHeader className={cn(isMobile ? "px-4 pt-4 pb-3" : "px-6 pt-6 pb-4")}>
-          <CardTitle className="text-lg flex items-center gap-2 text-card-foreground">
-            <Calendar className="h-5 w-5 text-primary" />
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
             Upcoming Deadlines
           </CardTitle>
         </CardHeader>
-        <CardContent className={cn(isMobile ? "px-4 pb-4" : "px-6 pb-6")}>
-          <div className="text-center py-8">
-            <div className="p-3 bg-green-500/10 rounded-full w-fit mx-auto mb-3">
-              <CheckCircle2 className="h-8 w-8 text-green-500" />
-            </div>
-            <h3 className="font-medium text-card-foreground mb-1">All caught up!</h3>
+        <CardContent>
+          <div className="text-center py-6">
+            <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">
-              No upcoming deadlines to worry about.
+              No upcoming deadlines! All caught up.
             </p>
           </div>
         </CardContent>
@@ -89,19 +83,19 @@ const UpcomingDeadlines = () => {
   }
 
   return (
-    <Card className="bg-card/50 backdrop-blur-sm border-border/50 shadow-sm">
-      <CardHeader className={cn(isMobile ? "px-4 pt-4 pb-3" : "px-6 pt-6 pb-4")}>
+    <Card>
+      <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2 text-card-foreground">
-            <Calendar className="h-5 w-5 text-primary" />
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
             Upcoming Deadlines
           </CardTitle>
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+          <Badge variant="outline">
             {programsWithDeadlines.length} pending
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className={cn(isMobile ? "px-4 pb-4" : "px-6 pb-6")}>
+      <CardContent>
         <div className="space-y-3">
           {displayedPrograms.map((program) => {
             const urgency = getUrgencyLevel(program.daysUntilDeadline);
@@ -110,26 +104,26 @@ const UpcomingDeadlines = () => {
             return (
               <div
                 key={program.id}
-                className="flex items-center justify-between p-4 bg-card border border-border/50 rounded-lg hover:bg-accent/30 transition-all duration-200 hover:shadow-sm"
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
               >
-                <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className="mt-1 text-muted-foreground">
+                <div className="flex items-start gap-3 flex-1">
+                  <div className="mt-0.5">
                     {getUrgencyIcon(urgency)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm text-card-foreground truncate mb-1">
+                    <h4 className="font-medium text-sm truncate">
                       {program.programName}
                     </h4>
-                    <p className="text-xs text-muted-foreground truncate mb-2">
+                    <p className="text-xs text-muted-foreground truncate">
                       {program.university}
                     </p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs">
                         {format(parseISO(program.deadline!), "MMM dd, yyyy")}
-                      </span>
+                      </p>
                       <Badge 
                         variant="outline" 
-                        className={cn("text-xs", getUrgencyColor(urgency))}
+                        className={`text-xs ${getUrgencyColor(urgency)}`}
                       >
                         {program.daysUntilDeadline < 0 
                           ? `${Math.abs(program.daysUntilDeadline)} days overdue`
@@ -145,10 +139,9 @@ const UpcomingDeadlines = () => {
                   <Badge 
                     style={{
                       backgroundColor: statusTag.color,
-                      color: '#fff',
-                      borderColor: statusTag.color
+                      color: '#fff'
                     }}
-                    className="text-xs ml-3 shrink-0"
+                    className="text-xs ml-2"
                   >
                     {statusTag.label}
                   </Badge>
@@ -162,7 +155,7 @@ const UpcomingDeadlines = () => {
               variant="ghost"
               size="sm"
               onClick={() => setShowAll(!showAll)}
-              className="w-full mt-3 text-muted-foreground hover:text-primary hover:bg-accent/50"
+              className="w-full"
             >
               {showAll ? "Show Less" : `Show All ${programsWithDeadlines.length} Deadlines`}
             </Button>

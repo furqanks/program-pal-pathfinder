@@ -37,7 +37,6 @@ import { useProgramContext } from "@/contexts/ProgramContext";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 import { useTagContext } from "@/contexts/TagContext";
 import { toast } from "sonner";
-import CompactAISummary from "../notes/CompactAISummary";
 
 const EnhancedNotesSection = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -427,12 +426,14 @@ const EnhancedNotesSection = () => {
                   
                   <p className="text-sm text-muted-foreground line-clamp-3">{note.content}</p>
                   
-                  {/* Enhanced AI Summary Display */}
-                  {(note.ai_summary || note.ai_insights) && (
-                    <CompactAISummary
-                      summary={note.ai_summary}
-                      insights={note.ai_insights}
-                    />
+                  {note.ai_summary && (
+                    <div className="bg-purple-50 p-2 rounded text-xs">
+                      <div className="flex items-center gap-1 mb-1">
+                        <Brain className="h-3 w-3 text-purple-600" />
+                        <span className="font-medium text-purple-800">AI Summary</span>
+                      </div>
+                      <p className="text-purple-700">{note.ai_summary}</p>
+                    </div>
                   )}
                   
                   {note.program_id && (
