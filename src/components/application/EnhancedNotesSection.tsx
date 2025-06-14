@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,6 @@ const EnhancedNotesSection = () => {
 
   const [newFolder, setNewFolder] = useState({
     name: "",
-    color: "#6366f1",
     parent_id: ""
   });
 
@@ -97,11 +95,10 @@ const EnhancedNotesSection = () => {
 
     await addFolder({
       name: newFolder.name.trim(),
-      color: newFolder.color,
       parent_id: newFolder.parent_id === "none" ? undefined : newFolder.parent_id
     });
 
-    setNewFolder({ name: "", color: "#6366f1", parent_id: "" });
+    setNewFolder({ name: "", parent_id: "" });
     setIsFolderDialogOpen(false);
   };
 
@@ -172,7 +169,7 @@ const EnhancedNotesSection = () => {
         case "created_at":
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case "priority":
-          return b.priority_score - a.priority_score;
+          return (b.priority_score || 0) - (a.priority_score || 0);
         default:
           return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       }
@@ -504,32 +501,21 @@ const EnhancedNotesSection = () => {
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Color</label>
-                <Input
-                  type="color"
-                  value={newFolder.color}
-                  onChange={(e) => setNewFolder({ ...newFolder, color: e.target.value })}
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-2 block">Parent Folder (Optional)</label>
-                <Select 
-                  value={newFolder.parent_id} 
-                  onValueChange={(value) => setNewFolder({ ...newFolder, parent_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="No parent..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No Parent</SelectItem>
-                    {folders.map(folder => (
-                      <SelectItem key={folder.id} value={folder.id}>
-                        {folder.name}
-                      </SelectItem>
-                    ))}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Parent Folder (Optional)</label>
+              <Select 
+                value={newFolder.parent_id} 
+                onValueChange={(value) => setNewFolder({ ...newFolder, parent_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="No parent..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Parent</SelectItem>
+                  {folders.map(folder => (
+                    <SelectItem key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
