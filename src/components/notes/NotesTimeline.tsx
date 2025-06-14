@@ -105,7 +105,7 @@ const NotesTimeline = ({ selectedNoteId, onNoteSelect, searchTerm = "", contextF
       <div className="p-6 space-y-8">
         {Object.entries(groupedNotes).map(([dateString, dateNotes]) => (
           <div key={dateString} className="space-y-4">
-            <div className="flex items-center gap-3 text-sm font-semibold text-muted-foreground sticky top-0 bg-white/95 backdrop-blur-sm py-2 z-10">
+            <div className="flex items-center gap-3 text-sm font-semibold text-muted-foreground sticky top-0 bg-background/95 backdrop-blur-sm py-2 z-10">
               <Calendar className="h-4 w-4" />
               {formatDate(dateString)}
               <div className="h-px flex-1 bg-border"></div>
@@ -139,19 +139,19 @@ const NotesTimeline = ({ selectedNoteId, onNoteSelect, searchTerm = "", contextF
 
                     {/* Program association */}
                     {note.program_id && (
-                      <div className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-full inline-block">
+                      <div className="text-xs text-muted-foreground font-medium bg-muted px-2 py-1 rounded-full inline-block">
                         📚 {getProgramName(note.program_id)}
                       </div>
                     )}
 
                     {/* AI Summary preview */}
                     {note.ai_summary && (
-                      <div className="bg-gradient-to-r from-purple-50 to-purple-100/50 rounded-lg p-3 text-xs border border-purple-200">
+                      <div className="bg-muted rounded-lg p-3 text-xs border">
                         <div className="flex items-center gap-2 mb-2">
-                          <Sparkles className="h-3 w-3 text-purple-600" />
-                          <span className="font-medium text-purple-800">AI Summary</span>
+                          <Sparkles className="h-3 w-3 text-muted-foreground" />
+                          <span className="font-medium text-foreground">AI Summary</span>
                         </div>
-                        <p className="text-purple-700 line-clamp-2 leading-relaxed">{note.ai_summary}</p>
+                        <p className="text-muted-foreground line-clamp-2 leading-relaxed">{note.ai_summary}</p>
                       </div>
                     )}
 
