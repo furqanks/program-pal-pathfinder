@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import { 
   Brain, 
@@ -45,6 +46,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
   
   const titleRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   
   const { programs } = useProgramContext();
   const { tags } = useTagContext();
@@ -209,96 +211,98 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Top bar with actions */}
-      <div className="flex flex-col gap-3 px-4 py-3 border-b border-border bg-card/50">
-        {/* First row - Context and Program selectors */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-          <div className="flex items-center gap-2 flex-1 sm:flex-none">
-            {getContextIcon(contextType)}
-            <Select value={contextType} onValueChange={setContextType}>
-              <SelectTrigger className="w-full sm:w-32 h-8 text-sm border-0 bg-accent/50 hover:bg-accent">
-                <SelectValue />
+      {/* Top bar with actions - hidden on mobile */}
+      {!isMobile && (
+        <div className="flex flex-col gap-3 px-4 py-3 border-b border-border bg-card/50">
+          {/* First row - Context and Program selectors */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 flex-1 sm:flex-none">
+              {getContextIcon(contextType)}
+              <Select value={contextType} onValueChange={setContextType}>
+                <SelectTrigger className="w-full sm:w-32 h-8 text-sm border-0 bg-accent/50 hover:bg-accent">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">General</SelectItem>
+                  <SelectItem value="academic">Academic</SelectItem>
+                  <SelectItem value="financial">Financial</SelectItem>
+                  <SelectItem value="application">Application</SelectItem>
+                  <SelectItem value="research">Research</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Select value={programId} onValueChange={setProgramId}>
+              <SelectTrigger className="w-full sm:w-64 h-8 text-sm border-0 bg-accent/50 hover:bg-accent">
+                <SelectValue placeholder="Link to program..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="general">General</SelectItem>
-                <SelectItem value="academic">Academic</SelectItem>
-                <SelectItem value="financial">Financial</SelectItem>
-                <SelectItem value="application">Application</SelectItem>
-                <SelectItem value="research">Research</SelectItem>
+                <SelectItem value="none">No program</SelectItem>
+                {programs.map(program => (
+                  <SelectItem key={program.id} value={program.id}>
+                    <span className="truncate">{program.programName} - {program.university}</span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
-
-          <Select value={programId} onValueChange={setProgramId}>
-            <SelectTrigger className="w-full sm:w-64 h-8 text-sm border-0 bg-accent/50 hover:bg-accent">
-              <SelectValue placeholder="Link to program..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No program</SelectItem>
-              {programs.map(program => (
-                <SelectItem key={program.id} value={program.id}>
-                  <span className="truncate">{program.programName} - {program.university}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {/* Second row - Action buttons */}
-        <div className="flex items-center gap-2 justify-between">
-          <div className="flex items-center gap-2">
-            {onBackToTimeline && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onBackToTimeline}
-                className="h-8 text-sm border-border hover:bg-accent md:hidden"
-              >
-                <ArrowLeft className="mr-2 h-3 w-3" />
-                Back
-              </Button>
-            )}
-          </div>
           
-          <div className="flex items-center gap-2">
-            {selectedNote && (
-              <>
+          {/* Second row - Action buttons */}
+          <div className="flex items-center gap-2 justify-between">
+            <div className="flex items-center gap-2">
+              {onBackToTimeline && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  onClick={handleAnalyze}
-                  disabled={isAnalyzing}
-                  className="h-8 text-sm"
+                  onClick={onBackToTimeline}
+                  className="h-8 text-sm border-border hover:bg-accent md:hidden"
                 >
-                  <Sparkles className="mr-2 h-3 w-3" />
-                  <span className="hidden sm:inline">{isAnalyzing ? "Analyzing..." : "Analyze"}</span>
-                  <span className="sm:hidden">{isAnalyzing ? "..." : "AI"}</span>
+                  <ArrowLeft className="mr-2 h-3 w-3" />
+                  Back
                 </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDelete}
-                  className="h-8 text-sm text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="mr-2 h-3 w-3" />
-                  <span className="hidden sm:inline">Delete</span>
-                </Button>
-              </>
-            )}
+              )}
+            </div>
             
-            <Button 
-              onClick={handleSave} 
-              size="sm"
-              disabled={isSaving}
-              className="h-8 bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
-            >
-              <Save className="mr-2 h-3 w-3" />
-              {isSaving ? "Saving..." : "Save"}
-            </Button>
+            <div className="flex items-center gap-2">
+              {selectedNote && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing}
+                    className="h-8 text-sm"
+                  >
+                    <Sparkles className="mr-2 h-3 w-3" />
+                    <span className="hidden sm:inline">{isAnalyzing ? "Analyzing..." : "Analyze"}</span>
+                    <span className="sm:hidden">{isAnalyzing ? "..." : "AI"}</span>
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDelete}
+                    className="h-8 text-sm text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="mr-2 h-3 w-3" />
+                    <span className="hidden sm:inline">Delete</span>
+                  </Button>
+                </>
+              )}
+              
+              <Button 
+                onClick={handleSave} 
+                size="sm"
+                disabled={isSaving}
+                className="h-8 bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
+              >
+                <Save className="mr-2 h-3 w-3" />
+                {isSaving ? "Saving..." : "Save"}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main editor area */}
       <div className="flex-1 overflow-auto">

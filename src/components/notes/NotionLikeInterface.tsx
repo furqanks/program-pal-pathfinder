@@ -9,7 +9,7 @@ const NotionLikeInterface = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [contextFilter, setContextFilter] = useState("all");
   const [selectedNote, setSelectedNote] = useState<any>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'timeline' | 'editor'>('timeline');
 
   const handleNewNote = () => {
