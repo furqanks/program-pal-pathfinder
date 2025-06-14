@@ -139,6 +139,8 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (user) {
       fetchAllData();
+      // Auto-convert existing AI content in background
+      autoConvertAIContent();
     } else {
       setNotes([]);
       setFolders([]);
@@ -605,6 +607,32 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Error organizing notes:', error);
       toast.error('Failed to organize notes. Please try again!');
+    }
+  };
+
+  const autoConvertAIContent = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase.functions.invoke('convert-ai-content', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        }
+      });
+
+      if (error) throw error;
+
+      // Only show toast and refresh if content was actually converted
+      if (data?.processedCount > 0) {
+        // Refresh notes to show updated content
+        await fetchAllData();
+        toast.success(`Automatically converted ${data.processedCount} notes to readable format! ✨`);
+      }
+
+    } catch (error) {
+      console.error('Error auto-converting AI content:', error);
+      // Silently fail for auto-conversion to avoid disrupting user experience
     }
   };
 

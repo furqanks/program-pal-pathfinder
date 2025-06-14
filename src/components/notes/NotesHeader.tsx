@@ -10,8 +10,7 @@ import {
   SidebarClose,
   SidebarOpen,
   Filter,
-  FolderOpen,
-  RefreshCw
+  FolderOpen
 } from "lucide-react";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 
@@ -34,7 +33,7 @@ const NotesHeader = ({
   sidebarOpen,
   onSidebarToggle
 }: NotesHeaderProps) => {
-  const { summarizeAllNotes, getTodaysSummary, organizeNotes, convertExistingAIContent, notes } = useAINotesContext();
+  const { summarizeAllNotes, getTodaysSummary, organizeNotes, notes } = useAINotesContext();
 
   return (
     <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-20">
@@ -109,15 +108,6 @@ const NotesHeader = ({
             Summarize
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={convertExistingAIContent}
-            className="h-8 bg-background border-border hover:bg-accent"
-          >
-            <RefreshCw className="mr-2 h-3 w-3" />
-            Fix AI Content
-          </Button>
           
           <Button 
             onClick={onNewNote} 

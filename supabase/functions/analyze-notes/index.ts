@@ -89,13 +89,25 @@ Title: ${note.title}
 Content: ${note.content}
 Context: ${note.context_type}
 
-Please provide your analysis as natural, well-formatted text with:
-- A brief summary of key points
-- Main insights and observations  
-- Recommended next steps or actions
-- Any important connections or patterns
+Please provide your analysis as natural, well-formatted text with clear headings and bullet points. Structure your response like this:
 
-Format your response as readable text with clear headings and bullet points where appropriate. Do not use JSON format.`;
+## Summary
+Brief overview of the main points and themes
+
+## Key Insights
+• First key insight or observation
+• Second key insight or observation
+• Third key insight or observation
+
+## Recommended Actions
+• Specific actionable step you can take
+• Another concrete next step
+• Third recommended action
+
+## Connections & Patterns
+Brief note about how this relates to your goals or other areas
+
+Keep your response conversational but well-organized. Do NOT use JSON format. Write in natural, readable text that's easy to scan and understand.`;
 
       console.log('Calling OpenAI for single note analysis...');
 
@@ -110,7 +122,7 @@ Format your response as readable text with clear headings and bullet points wher
           messages: [
             { 
               role: 'system', 
-              content: 'You are an expert note analyst and academic assistant. Provide clear, actionable insights about notes.' 
+              content: 'You are an expert note analyst and academic assistant. Always provide your analysis in clear, readable text format with proper headings and bullet points. Never respond with JSON or structured data - always use natural, well-formatted text that users can easily read and understand.' 
             },
             { role: 'user', content: analysisPrompt }
           ],
@@ -201,17 +213,38 @@ Format your response as readable text with clear headings and bullet points wher
         `Title: ${note.title}\nContent: ${note.content}\nContext: ${note.context_type}\nCreated: ${note.created_at}`
       ).join('\n\n---\n\n');
 
-      const summaryPrompt = insightsPrompt || `Create a comprehensive summary of all these notes. Focus on:
-1. Key themes and patterns
-2. Important insights and learnings
-3. Action items and next steps
-4. Connections between different notes
-5. Areas that need attention
+      const summaryPrompt = insightsPrompt || `Create a comprehensive summary of all these notes in a clear, readable format:
 
-Notes:
 ${notesContent}
 
-Provide a well-structured summary that helps the user understand their overall note collection and identify priorities.`;
+Structure your response like this:
+
+## Overall Summary
+Brief overview of the main themes and patterns across all notes
+
+## Key Themes & Patterns
+• Major theme 1 with brief explanation
+• Major theme 2 with brief explanation
+• Major theme 3 with brief explanation
+
+## Important Insights & Learning
+• Key insight 1
+• Key insight 2
+• Key insight 3
+
+## Priority Action Items
+• Most important next step
+• Second priority action
+• Third priority action
+
+## Areas Needing Attention
+• Area 1 that needs focus
+• Area 2 that needs focus
+
+## Connections & Recommendations
+Brief summary of how different notes connect and specific recommendations for moving forward.
+
+Keep your response well-formatted and easy to scan. Use clear headings and bullet points throughout.`;
 
       console.log('Calling OpenAI for notes summary...');
 
@@ -277,17 +310,33 @@ Provide a well-structured summary that helps the user understand their overall n
         `Title: ${note.title}\nContent: ${note.content}\nContext: ${note.context_type}\nCreated: ${note.created_at}`
       ).join('\n\n---\n\n');
 
-      const dailySummaryPrompt = customPrompt || `Create a summary of today's notes and activities. Focus on:
-1. Key activities and accomplishments from today
-2. Important insights and learnings
-3. Action items for tomorrow
-4. Progress made on ongoing projects
-5. Any challenges or issues that need attention
+      const dailySummaryPrompt = customPrompt || `Create a summary of today's notes and activities in a clear, readable format:
 
-Today's notes:
 ${notesContent}
 
-Provide a clear, actionable summary of today's activities and next steps.`;
+Structure your response like this:
+
+## Today's Highlights
+Brief overview of key activities and accomplishments
+
+## Key Insights & Learnings
+• Most important insight from today
+• Second key learning
+• Third valuable observation
+
+## Tomorrow's Action Items
+• Priority task 1
+• Priority task 2
+• Priority task 3
+
+## Progress on Ongoing Projects
+Brief update on any progress made on existing projects or goals
+
+## Challenges & Issues
+• Challenge 1 that needs attention
+• Challenge 2 to address
+
+Keep your response well-formatted, actionable, and motivating. Use clear headings and bullet points throughout.`;
 
       console.log('Calling OpenAI for daily summary...');
 

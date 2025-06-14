@@ -4,7 +4,7 @@ export const getAnalysisPrompt = (note: any, allNotes: any[], programs: any[]) =
   const relatedProgram = programs.find(p => p.id === note.program_id);
   
   return `
-Yo! 👋 I need you to analyze this note in a super casual, Gen Z way. Keep it real and helpful!
+Analyze this note and provide insights in a clear, readable format:
 
 **Current Note:**
 Title: ${note.title}
@@ -12,29 +12,28 @@ Content: ${note.content}
 Context: ${note.context_type}
 ${relatedProgram ? `Program: ${relatedProgram.programName} at ${relatedProgram.university}` : ''}
 
-**Previous Notes Context:**
+**Related Notes Context:**
 ${contextNotes.map(n => `- ${n.title}: ${n.content.substring(0, 100)}...`).join('\n')}
 
-**What I need from you:**
-1. **Vibe Check** - What's the overall mood/energy of this note? (anxious, excited, confused, etc.)
-2. **Key Insights** - Break down the main points but make it digestible 
-3. **Next Steps** - Give me 2-3 SPECIFIC actionable things I can do right now
-4. **Categories** - Tag this with relevant categories (academic, financial, application, research, personal, etc.)
-5. **Priority Level** - Rate urgency 1-10 (1 = chill, 10 = DROP EVERYTHING NOW)
-6. **Connections** - How does this relate to my other notes/goals?
+Please structure your analysis like this:
 
-Keep it conversational but helpful - like advice from a smart friend who actually gets it! Use emojis where it makes sense but don't go overboard.
+## Quick Overview
+Brief summary of what this note is about and its overall theme
 
-Response format (JSON):
-{
-  "vibe_check": "string",
-  "key_insights": ["insight1", "insight2", "insight3"],
-  "next_steps": ["action1", "action2", "action3"],
-  "categories": ["category1", "category2"],
-  "priority_score": number,
-  "connections": "string",
-  "summary": "brief casual summary"
-}
+## Key Insights
+• First important insight or observation
+• Second key point or pattern you notice
+• Third valuable insight
+
+## Recommended Next Steps
+• Specific actionable step you can take right now
+• Second concrete action item
+• Third recommended step
+
+## Priority & Context
+Brief note about how urgent this is and how it connects to your other goals or notes
+
+Keep your response conversational and helpful, like advice from a knowledgeable friend. Use clear formatting but keep the tone friendly and accessible.
 `;
 };
 
