@@ -23,7 +23,7 @@ const NotesGrid = ({
   isCompact = false,
   maxNotes
 }: NotesGridProps) => {
-  const { notes } = useAINotesContext();
+  const { notes, pinNote, archiveNote, analyzeNote, deleteNote } = useAINotesContext();
   const { programs } = useProgramContext();
   const { tags } = useTagContext();
 
@@ -60,19 +60,35 @@ const NotesGrid = ({
   if (isCompact) {
     return (
       <ScrollArea className="h-full">
-        <div className="p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-muted-foreground mb-4">Recent Notes</h3>
-          {displayNotes.map((note) => (
-            <CompactNoteCard
-              key={note.id}
-              note={note}
-              isSelected={selectedNoteId === note.id}
-              onSelect={onNoteSelect}
-              getProgramName={getProgramName}
-              getTagName={getTagName}
-              viewMode="list"
-            />
-          ))}
+        <div className="p-4 space-y-2">
+          <div className="flex items-center justify-between mb-4 px-1">
+            <h3 className="text-sm font-semibold text-muted-foreground">Notes</h3>
+            <span className="text-xs text-muted-foreground">{displayNotes.length}</span>
+          </div>
+          {displayNotes.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <div className="w-12 h-12 bg-muted/30 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <FileText className="h-6 w-6 opacity-50" />
+              </div>
+              <p className="text-sm">No notes found</p>
+            </div>
+          ) : (
+            displayNotes.map((note) => (
+              <CompactNoteCard
+                key={note.id}
+                note={note}
+                isSelected={selectedNoteId === note.id}
+                onSelect={onNoteSelect}
+                onPin={pinNote}
+                onArchive={archiveNote}
+                onAnalyze={analyzeNote}
+                onDelete={deleteNote}
+                getProgramName={getProgramName}
+                getTagName={getTagName}
+                viewMode="list"
+              />
+            ))
+          )}
         </div>
       </ScrollArea>
     );
@@ -101,6 +117,10 @@ const NotesGrid = ({
               note={note}
               isSelected={selectedNoteId === note.id}
               onSelect={onNoteSelect}
+              onPin={pinNote}
+              onArchive={archiveNote}
+              onAnalyze={analyzeNote}
+              onDelete={deleteNote}
               getProgramName={getProgramName}
               getTagName={getTagName}
               viewMode="grid"
