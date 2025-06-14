@@ -49,13 +49,15 @@ const NotionLikeInterface = () => {
       />
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar - Notes Timeline - Hidden on mobile when editor is open */}
+        {/* Sidebar - Notes Timeline */}
         <div className={cn(
           "transition-all duration-300 border-r border-border bg-background",
-          sidebarOpen ? "w-80" : "w-0",
+          // Desktop behavior
+          "hidden md:block",
+          sidebarOpen ? "md:w-80" : "md:w-0",
           "overflow-hidden",
-          // Hide sidebar on mobile when in editor mode
-          "md:block",
+          // Mobile behavior - full width when sidebar open, hidden when editor open
+          viewMode === 'timeline' && sidebarOpen && "block w-full md:w-80",
           viewMode === 'editor' && "hidden md:block"
         )}>
           {sidebarOpen && (
@@ -69,7 +71,11 @@ const NotionLikeInterface = () => {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-hidden bg-background">
+        <div className={cn(
+          "flex-1 overflow-hidden bg-background",
+          // Hide on mobile when sidebar is open and in timeline mode
+          viewMode === 'timeline' && sidebarOpen && "hidden md:block"
+        )}>
           {viewMode === 'timeline' && !sidebarOpen ? (
             <div className="h-full">
               <NotesTimeline
@@ -81,12 +87,12 @@ const NotionLikeInterface = () => {
             </div>
           ) : viewMode === 'timeline' ? (
             <div className="h-full flex items-center justify-center bg-background px-4">
-              <div className="text-center">
-                <div className="bg-card rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-sm border">
-                  <span className="text-3xl">📝</span>
+              <div className="text-center max-w-sm mx-auto">
+                <div className="bg-card rounded-full w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-4 shadow-sm border">
+                  <span className="text-2xl md:text-3xl">📝</span>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Select a note to edit</h3>
-                <p className="text-muted-foreground mb-4 text-sm md:text-base">Choose a note from the sidebar or create a new one</p>
+                <h3 className="text-lg md:text-xl font-semibold mb-2">Select a note to edit</h3>
+                <p className="text-muted-foreground mb-4 text-sm leading-relaxed">Choose a note from the sidebar or create a new one</p>
               </div>
             </div>
           ) : (

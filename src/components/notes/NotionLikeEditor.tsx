@@ -32,7 +32,7 @@ interface NotionLikeEditorProps {
   onBackToTimeline?: () => void;
 }
 
-const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: NotionLikeEditorProps) => {
+const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackToTimeline }: NotionLikeEditorProps) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [contextType, setContextType] = useState("general");
@@ -140,12 +140,13 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Top bar with actions */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-8 py-4 border-b border-border bg-card/50 gap-4 sm:gap-0">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto">
-          <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-3 px-4 py-3 border-b border-border bg-card/50">
+        {/* First row - Context and Program selectors */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 flex-1 sm:flex-none">
             {getContextIcon(contextType)}
             <Select value={contextType} onValueChange={setContextType}>
-              <SelectTrigger className="w-28 sm:w-32 h-8 text-xs sm:text-sm border-0 bg-accent/50 hover:bg-accent">
+              <SelectTrigger className="w-full sm:w-32 h-8 text-sm border-0 bg-accent/50 hover:bg-accent">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -159,7 +160,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
           </div>
 
           <Select value={programId} onValueChange={setProgramId}>
-            <SelectTrigger className="w-36 sm:w-48 h-8 text-xs sm:text-sm border-0 bg-accent/50 hover:bg-accent">
+            <SelectTrigger className="w-full sm:w-64 h-8 text-sm border-0 bg-accent/50 hover:bg-accent">
               <SelectValue placeholder="Link to program..." />
             </SelectTrigger>
             <SelectContent>
@@ -173,16 +174,29 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
           </Select>
         </div>
         
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+        {/* Second row - Action buttons */}
+        <div className="flex items-center gap-2 justify-end">
+          {onBackToTimeline && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onBackToTimeline}
+              className="h-8 text-sm border-border hover:bg-accent md:hidden"
+            >
+              <ArrowLeft className="mr-2 h-3 w-3" />
+              Back
+            </Button>
+          )}
+          
           {selectedNote && (
             <Button
               variant="ghost"
               size="sm"
               onClick={handleAnalyze}
               disabled={isAnalyzing}
-              className="h-8 text-xs sm:text-sm"
+              className="h-8 text-sm"
             >
-              <Sparkles className="mr-1 sm:mr-2 h-3 sm:h-4 w-3 sm:w-4" />
+              <Sparkles className="mr-2 h-3 w-3" />
               <span className="hidden sm:inline">{isAnalyzing ? "Analyzing..." : "Analyze"}</span>
               <span className="sm:hidden">{isAnalyzing ? "..." : "AI"}</span>
             </Button>
@@ -191,13 +205,10 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
             onClick={handleSave} 
             size="sm"
             disabled={isSaving}
-            className="h-8 bg-primary text-primary-foreground hover:bg-primary/90 text-xs sm:text-sm"
+            className="h-8 bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
           >
-            <Save className="mr-1 sm:mr-2 h-3 sm:h-4 w-3 sm:w-4" />
+            <Save className="mr-2 h-3 w-3" />
             {isSaving ? "Saving..." : "Save"}
-          </Button>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hidden sm:block">
-            <MoreHorizontal className="h-4 w-4" />
           </Button>
         </div>
       </div>
