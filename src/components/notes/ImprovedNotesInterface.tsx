@@ -220,7 +220,7 @@ const ImprovedNotesInterface = () => {
                     <AISummaryCard
                       summary={note.ai_summary}
                       insights={note.ai_insights}
-                      confidence={note.confidence_score}
+                      confidence={note.ai_insights?.confidence_score || 0}
                       onRegenerate={() => handleAnalyzeNote(note.id)}
                     />
                   )}

@@ -248,7 +248,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
               <AISummaryCard
                 summary={selectedNote.ai_summary}
                 insights={selectedNote.ai_insights}
-                confidence={selectedNote.confidence_score}
+                confidence={selectedNote.ai_insights?.confidence_score || 0}
                 onRegenerate={() => handleAnalyze()}
                 isRegenerating={isAnalyzing}
               />
