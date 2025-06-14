@@ -49,11 +49,14 @@ const NotionLikeInterface = () => {
       />
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar - Notes Timeline */}
+        {/* Sidebar - Notes Timeline - Hidden on mobile when editor is open */}
         <div className={cn(
           "transition-all duration-300 border-r border-border bg-background",
           sidebarOpen ? "w-80" : "w-0",
-          "overflow-hidden"
+          "overflow-hidden",
+          // Hide sidebar on mobile when in editor mode
+          "md:block",
+          viewMode === 'editor' && "hidden md:block"
         )}>
           {sidebarOpen && (
             <NotesTimeline
@@ -77,13 +80,13 @@ const NotionLikeInterface = () => {
               />
             </div>
           ) : viewMode === 'timeline' ? (
-            <div className="h-full flex items-center justify-center bg-background">
+            <div className="h-full flex items-center justify-center bg-background px-4">
               <div className="text-center">
                 <div className="bg-card rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-sm border">
                   <span className="text-3xl">📝</span>
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Select a note to edit</h3>
-                <p className="text-muted-foreground mb-4">Choose a note from the sidebar or create a new one</p>
+                <p className="text-muted-foreground mb-4 text-sm md:text-base">Choose a note from the sidebar or create a new one</p>
               </div>
             </div>
           ) : (

@@ -16,7 +16,8 @@ import {
   Target,
   DollarSign,
   Archive,
-  MoreHorizontal
+  MoreHorizontal,
+  ArrowLeft
 } from "lucide-react";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { useAINotesContext } from "@/contexts/AINotesContext";
@@ -139,12 +140,12 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Top bar with actions */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-border bg-card/50">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-8 py-4 border-b border-border bg-card/50 gap-4 sm:gap-0">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto">
           <div className="flex items-center gap-2">
             {getContextIcon(contextType)}
             <Select value={contextType} onValueChange={setContextType}>
-              <SelectTrigger className="w-32 h-8 text-sm border-0 bg-accent/50 hover:bg-accent">
+              <SelectTrigger className="w-28 sm:w-32 h-8 text-xs sm:text-sm border-0 bg-accent/50 hover:bg-accent">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -158,43 +159,44 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
           </div>
 
           <Select value={programId} onValueChange={setProgramId}>
-            <SelectTrigger className="w-48 h-8 text-sm border-0 bg-accent/50 hover:bg-accent">
+            <SelectTrigger className="w-36 sm:w-48 h-8 text-xs sm:text-sm border-0 bg-accent/50 hover:bg-accent">
               <SelectValue placeholder="Link to program..." />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No program</SelectItem>
               {programs.map(program => (
                 <SelectItem key={program.id} value={program.id}>
-                  {program.programName} - {program.university}
+                  <span className="truncate">{program.programName} - {program.university}</span>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           {selectedNote && (
             <Button
               variant="ghost"
               size="sm"
               onClick={handleAnalyze}
               disabled={isAnalyzing}
-              className="h-8"
+              className="h-8 text-xs sm:text-sm"
             >
-              <Sparkles className="mr-2 h-4 w-4" />
-              {isAnalyzing ? "Analyzing..." : "Analyze"}
+              <Sparkles className="mr-1 sm:mr-2 h-3 sm:h-4 w-3 sm:w-4" />
+              <span className="hidden sm:inline">{isAnalyzing ? "Analyzing..." : "Analyze"}</span>
+              <span className="sm:hidden">{isAnalyzing ? "..." : "AI"}</span>
             </Button>
           )}
           <Button 
             onClick={handleSave} 
             size="sm"
             disabled={isSaving}
-            className="h-8 bg-primary text-primary-foreground hover:bg-primary/90"
+            className="h-8 bg-primary text-primary-foreground hover:bg-primary/90 text-xs sm:text-sm"
           >
-            <Save className="mr-2 h-4 w-4" />
+            <Save className="mr-1 sm:mr-2 h-3 sm:h-4 w-3 sm:w-4" />
             {isSaving ? "Saving..." : "Save"}
           </Button>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hidden sm:block">
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </div>
@@ -202,25 +204,29 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
 
       {/* Main editor area */}
       <div className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto px-24 py-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-8 md:px-16 lg:px-24 py-8 sm:py-12 md:py-16">
           {/* Title */}
           <Input
             ref={titleRef}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Untitled"
-            className="text-5xl font-bold border-none shadow-none p-0 h-auto focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/50 mb-4"
-            style={{ fontSize: '3rem', lineHeight: '1.1', fontWeight: '700' }}
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold border-none shadow-none p-0 h-auto focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/50 mb-4"
+            style={{ 
+              fontSize: 'clamp(1.5rem, 4vw, 3rem)', 
+              lineHeight: '1.1', 
+              fontWeight: '700' 
+            }}
           />
 
           {/* Tags section */}
           {tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-8">
+            <div className="flex flex-wrap gap-1 sm:gap-2 mb-6 sm:mb-8">
               {tags.slice(0, 8).map(tag => (
                 <Badge
                   key={tag.id}
                   variant={selectedTags.includes(tag.id) ? "default" : "outline"}
-                  className="cursor-pointer text-sm px-3 py-1 hover:shadow-sm transition-all"
+                  className="cursor-pointer text-xs sm:text-sm px-2 sm:px-3 py-1 hover:shadow-sm transition-all"
                   onClick={() => handleTagToggle(tag.id)}
                 >
                   {tag.name}
@@ -235,8 +241,8 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Start writing..."
-            className="text-base border-none shadow-none p-0 min-h-[600px] resize-none focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/70 leading-relaxed"
-            style={{ fontSize: '1rem', lineHeight: '1.6' }}
+            className="text-sm sm:text-base border-none shadow-none p-0 min-h-[400px] sm:min-h-[600px] resize-none focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/70 leading-relaxed"
+            style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)', lineHeight: '1.6' }}
           />
 
           {/* AI Summary and Insights Display */}

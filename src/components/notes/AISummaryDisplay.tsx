@@ -11,86 +11,118 @@ interface AISummaryDisplayProps {
 const AISummaryDisplay = ({ note }: AISummaryDisplayProps) => {
   if (!note?.ai_summary && !note?.ai_insights) return null;
 
-  // Parse AI summary if it's JSON string
+  // Parse AI summary - handle both JSON and markdown text
   const parseAISummary = (summary: string) => {
     try {
       return JSON.parse(summary);
     } catch {
-      return { summary: summary };
+      // If not JSON, treat as markdown/text and extract key info
+      return { 
+        summary: processMarkdownSummary(summary)
+      };
     }
+  };
+
+  // Process markdown text into readable format
+  const processMarkdownSummary = (text: string) => {
+    if (!text) return "";
+    
+    // Remove markdown syntax and clean up formatting
+    let processed = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+      .replace(/#{1,6}\s+(.*)/g, '<h3>$1</h3>') // Headers
+      .replace(/\n\n/g, '</p><p>') // Paragraphs
+      .replace(/\n/g, '<br/>') // Line breaks
+      .replace(/^\s*[-*+]\s+(.*)/gm, '<li>$1</li>') // List items
+      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>'); // Wrap lists
+    
+    // Wrap in paragraph if not already wrapped
+    if (!processed.includes('<p>') && !processed.includes('<h3>')) {
+      processed = `<p>${processed}</p>`;
+    } else if (processed.includes('<p>')) {
+      processed = `<p>${processed}</p>`;
+    }
+    
+    return processed;
   };
 
   const summaryData = note.ai_summary ? parseAISummary(note.ai_summary) : {};
   const insights = note.ai_insights || {};
 
   return (
-    <div className="mt-12 space-y-6">
+    <div className="mt-8 sm:mt-12 space-y-4 sm:space-y-6">
       {/* Main AI Summary */}
       {note.ai_summary && (
         <Card className="border shadow-sm">
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-muted rounded-lg">
-                <Brain className="h-5 w-5 text-muted-foreground" />
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <div className="p-1.5 sm:p-2 bg-muted rounded-lg">
+                <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
               </div>
               <div>
-                <h3 className="font-semibold">AI Summary</h3>
-                <p className="text-sm text-muted-foreground">Generated insights from your note</p>
+                <h3 className="font-semibold text-sm sm:text-base">AI Summary</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">Generated insights from your note</p>
               </div>
             </div>
 
-            <div className="prose dark:prose-invert max-w-none">
+            <div className="prose dark:prose-invert max-w-none prose-sm sm:prose-base">
               {summaryData.summary ? (
-                <div className="leading-relaxed">
+                <div className="leading-relaxed text-sm sm:text-base">
                   <div dangerouslySetInnerHTML={{ __html: summaryData.summary }} />
                 </div>
               ) : (
-                <p className="leading-relaxed">
+                <p className="leading-relaxed text-sm sm:text-base">
                   {note.ai_summary}
                 </p>
               )}
 
               {/* Key Points Table */}
               {summaryData.keyPoints && summaryData.keyPoints.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
-                    <Target className="h-4 w-4" />
+                <div className="mt-4 sm:mt-6">
+                  <h4 className="font-medium mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                    <Target className="h-3 w-3 sm:h-4 sm:w-4" />
                     Key Points
                   </h4>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-20">Priority</TableHead>
-                        <TableHead>Point</TableHead>
-                        <TableHead>Category</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {summaryData.keyPoints.map((point: any, index: number) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            <Badge variant={point.priority === 'high' ? 'destructive' : point.priority === 'medium' ? 'default' : 'secondary'}>
-                              {point.priority || 'Low'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{point.content || point}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{point.category || 'General'}</Badge>
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-16 sm:w-20 text-xs sm:text-sm">Priority</TableHead>
+                          <TableHead className="text-xs sm:text-sm">Point</TableHead>
+                          <TableHead className="text-xs sm:text-sm">Category</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {summaryData.keyPoints.map((point: any, index: number) => (
+                          <TableRow key={index}>
+                            <TableCell>
+                              <Badge 
+                                variant={point.priority === 'high' ? 'destructive' : point.priority === 'medium' ? 'default' : 'secondary'}
+                                className="text-xs px-1 sm:px-2"
+                              >
+                                {point.priority || 'Low'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs sm:text-sm">{point.content || point}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs px-1 sm:px-2">{point.category || 'General'}</Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               )}
 
               {/* Topics Overview */}
               {summaryData.topics && summaryData.topics.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="font-medium mb-3">Topics Covered</h4>
-                  <div className="flex flex-wrap gap-2">
+                <div className="mt-4 sm:mt-6">
+                  <h4 className="font-medium mb-2 sm:mb-3 text-sm sm:text-base">Topics Covered</h4>
+                  <div className="flex flex-wrap gap-1 sm:gap-2">
                     {summaryData.topics.map((topic: string, index: number) => (
-                      <Badge key={index} variant="outline">
+                      <Badge key={index} variant="outline" className="text-xs sm:text-sm px-1 sm:px-2">
                         {topic}
                       </Badge>
                     ))}
@@ -105,32 +137,32 @@ const AISummaryDisplay = ({ note }: AISummaryDisplayProps) => {
       {/* AI Insights */}
       {insights && Object.keys(insights).length > 0 && (
         <Card className="border shadow-sm">
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-muted rounded-lg">
-                <Sparkles className="h-5 w-5 text-muted-foreground" />
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <div className="p-1.5 sm:p-2 bg-muted rounded-lg">
+                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
               </div>
               <div>
-                <h3 className="font-semibold">AI Insights & Recommendations</h3>
-                <p className="text-sm text-muted-foreground">AI-powered analysis and actionable next steps</p>
+                <h3 className="font-semibold text-sm sm:text-base">AI Insights & Recommendations</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">AI-powered analysis and actionable next steps</p>
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Key Insights */}
               {insights.key_insights && insights.key_insights.length > 0 && (
                 <div>
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
-                    <Lightbulb className="h-4 w-4" />
+                  <h4 className="font-medium mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                    <Lightbulb className="h-3 w-3 sm:h-4 sm:w-4" />
                     Key Insights
                   </h4>
-                  <div className="grid gap-3">
+                  <div className="grid gap-2 sm:gap-3">
                     {insights.key_insights.map((insight: string, index: number) => (
-                      <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                        <span className="w-6 h-6 bg-foreground text-background text-xs rounded-full flex items-center justify-center mt-0.5 font-medium">
+                      <div key={index} className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-muted/50 rounded-lg">
+                        <span className="w-5 h-5 sm:w-6 sm:h-6 bg-foreground text-background text-xs rounded-full flex items-center justify-center mt-0.5 font-medium flex-shrink-0">
                           {index + 1}
                         </span>
-                        <span className="leading-relaxed">{insight}</span>
+                        <span className="leading-relaxed text-xs sm:text-sm">{insight}</span>
                       </div>
                     ))}
                   </div>
@@ -144,51 +176,53 @@ const AISummaryDisplay = ({ note }: AISummaryDisplayProps) => {
               {/* Next Steps */}
               {insights.next_steps && insights.next_steps.length > 0 && (
                 <div>
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
-                    <Target className="h-4 w-4" />
+                  <h4 className="font-medium mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                    <Target className="h-3 w-3 sm:h-4 sm:w-4" />
                     Recommended Next Steps
                   </h4>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-16">Step</TableHead>
-                        <TableHead>Action</TableHead>
-                        <TableHead className="w-24">Priority</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {insights.next_steps.map((step: string, index: number) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            <div className="w-8 h-8 bg-foreground text-background text-sm rounded-full flex items-center justify-center font-medium">
-                              {index + 1}
-                            </div>
-                          </TableCell>
-                          <TableCell>{step}</TableCell>
-                          <TableCell>
-                            <Badge variant={index < 2 ? 'default' : 'secondary'}>
-                              {index < 2 ? 'High' : 'Medium'}
-                            </Badge>
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12 sm:w-16 text-xs sm:text-sm">Step</TableHead>
+                          <TableHead className="text-xs sm:text-sm">Action</TableHead>
+                          <TableHead className="w-20 sm:w-24 text-xs sm:text-sm">Priority</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {insights.next_steps.map((step: string, index: number) => (
+                          <TableRow key={index}>
+                            <TableCell>
+                              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-foreground text-background text-xs sm:text-sm rounded-full flex items-center justify-center font-medium">
+                                {index + 1}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-xs sm:text-sm">{step}</TableCell>
+                            <TableCell>
+                              <Badge variant={index < 2 ? 'default' : 'secondary'} className="text-xs px-1 sm:px-2">
+                                {index < 2 ? 'High' : 'Medium'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               )}
 
               {/* Confidence Score */}
               {insights.confidence_score && (
-                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Analysis Confidence</span>
-                    <Badge variant="outline">
+                    <span className="text-xs sm:text-sm font-medium">Analysis Confidence</span>
+                    <Badge variant="outline" className="text-xs px-1 sm:px-2">
                       {Math.round(insights.confidence_score * 100)}%
                     </Badge>
                   </div>
-                  <div className="mt-2 w-full bg-muted rounded-full h-2">
+                  <div className="mt-2 w-full bg-muted rounded-full h-1.5 sm:h-2">
                     <div 
-                      className="bg-foreground h-2 rounded-full transition-all duration-300" 
+                      className="bg-foreground h-1.5 sm:h-2 rounded-full transition-all duration-300" 
                       style={{ width: `${insights.confidence_score * 100}%` }}
                     />
                   </div>
