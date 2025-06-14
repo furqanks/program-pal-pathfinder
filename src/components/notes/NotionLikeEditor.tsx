@@ -6,21 +6,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  ArrowLeft,
+  Brain, 
+  Calendar, 
+  Hash, 
   Save, 
   Sparkles,
   BookOpen,
   Target,
   DollarSign,
   Archive,
-  Hash,
   MoreHorizontal
 } from "lucide-react";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 import { useTagContext } from "@/contexts/TagContext";
 import { toast } from "sonner";
-import AISummaryCard from "./AISummaryCard";
+import AISummaryRenderer from "./AISummaryRenderer";
 
 interface NotionLikeEditorProps {
   selectedNote?: any;
@@ -29,7 +30,7 @@ interface NotionLikeEditorProps {
   onBackToTimeline?: () => void;
 }
 
-const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackToTimeline }: NotionLikeEditorProps) => {
+const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: NotionLikeEditorProps) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [contextType, setContextType] = useState("general");
@@ -136,14 +137,9 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Enhanced Top Bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/50">
+      {/* Top bar with actions */}
+      <div className="flex items-center justify-between px-8 py-4 border-b border-border bg-card/50">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={onBackToTimeline} className="h-8">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-          
           <div className="flex items-center gap-2">
             {getContextIcon(contextType)}
             <Select value={contextType} onValueChange={setContextType}>
@@ -243,14 +239,11 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
           />
 
           {/* Enhanced AI Summary Display */}
-          {selectedNote?.ai_summary && (
+          {(selectedNote?.ai_summary || selectedNote?.ai_insights) && (
             <div className="mt-16">
-              <AISummaryCard
+              <AISummaryRenderer
                 summary={selectedNote.ai_summary}
                 insights={selectedNote.ai_insights}
-                confidence={selectedNote.ai_insights?.confidence_score || 0}
-                onRegenerate={() => handleAnalyze()}
-                isRegenerating={isAnalyzing}
               />
             </div>
           )}

@@ -1,8 +1,8 @@
 
-import ImprovedNotesInterface from "@/components/notes/ImprovedNotesInterface";
+import NotionLikeInterface from "@/components/notes/NotionLikeInterface";
 
 const Notes = () => {
-  return <ImprovedNotesInterface />;
+  return <NotionLikeInterface />;
 };
 
 export default Notes;
