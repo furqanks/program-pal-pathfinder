@@ -1,116 +1,46 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
-import { getAnalysisPrompt, getTimelinePrompt, getInsightPrompt } from '@/utils/aiPrompts';
+import { getEnhancedAnalysisPrompt, getDailySummaryPrompt } from '@/utils/enhancedAIPrompts';
+import { useProgramContext } from './ProgramContext';
 
-export interface AINote {
+interface Note {
   id: string;
-  user_id: string;
+  created_at: string;
+  updated_at: string;
   title: string;
   content: string;
-  program_id?: string;
-  tags: string[];
-  ai_summary?: string;
-  ai_categories: string[];
-  ai_insights: Record<string, any>;
-  priority_score: number;
   context_type: string;
-  rich_content?: Record<string, any>;
-  attachments: any[];
-  is_archived: boolean;
-  is_pinned: boolean;
-  shared_with?: string[];
-  folder_id?: string;
-  last_viewed_at?: string;
-  view_count: number;
-  created_at: string;
-  updated_at: string;
-  last_ai_analysis?: string;
-}
-
-export interface NoteFolder {
-  id: string;
-  user_id: string;
-  name: string;
-  color: string;
-  parent_id?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface NoteTemplate {
-  id: string;
-  user_id: string;
-  name: string;
-  description?: string;
-  template_content: Record<string, any>;
-  is_public: boolean;
-  category: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface NoteCollaboration {
-  id: string;
-  note_id: string;
-  user_id: string;
-  permission: 'read' | 'write' | 'admin';
-  invited_by?: string;
-  accepted_at?: string;
-  created_at: string;
-}
-
-export interface AIInsight {
-  id: string;
-  user_id: string;
-  insight_type: string;
-  title: string;
-  content: string;
-  related_notes: string[];
-  related_programs: string[];
-  confidence_score: number;
-  is_active: boolean;
-  created_at: string;
-  expires_at?: string;
-}
-
-export interface SmartReminder {
-  id: string;
-  user_id: string;
-  title: string;
-  description?: string;
-  reminder_type: string;
   program_id?: string;
-  due_date?: string;
-  is_completed: boolean;
-  ai_generated: boolean;
-  priority: number;
+  folder_id?: string;
+  tags?: string[];
+  is_pinned: boolean;
+  is_archived: boolean;
+  ai_summary?: string;
+  ai_insights?: any;
+  priority_score?: number;
+  is_generated?: boolean;
+}
+
+interface Folder {
+  id: string;
   created_at: string;
+  updated_at: string;
+  name: string;
 }
 
 interface AINotesContextType {
-  notes: AINote[];
-  folders: NoteFolder[];
-  templates: NoteTemplate[];
-  collaborations: NoteCollaboration[];
-  insights: AIInsight[];
-  reminders: SmartReminder[];
-  addNote: (note: Omit<AINote, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'ai_categories' | 'ai_insights' | 'priority_score' | 'attachments' | 'is_archived' | 'is_pinned' | 'view_count'>) => Promise<void>;
-  updateNote: (id: string, updates: Partial<AINote>) => Promise<void>;
+  notes: Note[];
+  folders: Folder[];
+  addNote: (note: Omit<Note, 'id' | 'created_at' | 'updated_at' | 'is_pinned' | 'is_archived'>) => Promise<void>;
+  updateNote: (id: string, updates: Partial<Omit<Note, 'id' | 'created_at' | 'updated_at'>>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
-  archiveNote: (id: string, archived: boolean) => Promise<void>;
-  pinNote: (id: string, pinned: boolean) => Promise<void>;
-  addFolder: (folder: Omit<NoteFolder, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  updateFolder: (id: string, updates: Partial<NoteFolder>) => Promise<void>;
+  addFolder: (folder: Omit<Folder, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateFolder: (id: string, updates: Partial<Omit<Folder, 'id' | 'created_at' | 'updated_at'>>) => Promise<void>;
   deleteFolder: (id: string) => Promise<void>;
-  addTemplate: (template: Omit<NoteTemplate, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  deleteTemplate: (id: string) => Promise<void>;
-  analyzeNote: (noteId: string) => Promise<void>;
-  summarizeAllNotes: () => Promise<void>;
-  getTodaysSummary: () => Promise<void>;
-  organizeNotes: () => Promise<void>;
-  completeReminder: (id: string) => Promise<void>;
+  pinNote: (noteId: string, isPinned: boolean) => Promise<void>;
+  archiveNote: (noteId: string, isArchived: boolean) => Promise<void>;
+  analyzeNote: (noteId: string) => Promise<any>;
+  summarizeAllNotes: () => Promise<any>;
   loading: boolean;
 }
 
@@ -119,540 +49,307 @@ const AINotesContext = createContext<AINotesContextType | undefined>(undefined);
 export const useAINotesContext = () => {
   const context = useContext(AINotesContext);
   if (!context) {
-    throw new Error('use AINotesContext must be used within an AINotesProvider');
+    throw new Error('useAINotesContext must be used within an AINotesProvider');
   }
   return context;
 };
 
-export const AINotesProvider = ({ children }: { children: ReactNode }) => {
-  const [notes, setNotes] = useState<AINote[]>([]);
-  const [folders, setFolders] = useState<NoteFolder[]>([]);
-  const [templates, setTemplates] = useState<NoteTemplate[]>([]);
-  const [collaborations, setCollaborations] = useState<NoteCollaboration[]>([]);
-  const [insights, setInsights] = useState<AIInsight[]>([]);
-  const [reminders, setReminders] = useState<SmartReminder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+export const AINotesProvider = ({ children }: { children: React.ReactNode }) => {
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch data when user changes
+  const { programs } = useProgramContext();
+
   useEffect(() => {
-    if (user) {
-      fetchAllData();
-    } else {
-      setNotes([]);
-      setFolders([]);
-      setTemplates([]);
-      setCollaborations([]);
-      setInsights([]);
-      setReminders([]);
-      setLoading(false);
-    }
-  }, [user]);
-
-  const fetchAllData = async () => {
-    if (!user) return;
-
-    try {
+    const fetchNotes = async () => {
       setLoading(true);
-      
-      // Fetch notes (including shared ones)
-      const { data: notesData, error: notesError } = await supabase
-        .from('ai_notes')
-        .select('*')
-        .order('is_pinned', { ascending: false })
-        .order('created_at', { ascending: false });
+      try {
+        const { data: notesData, error: notesError } = await supabase
+          .from('notes')
+          .select('*')
+          .order('updated_at', { ascending: false });
 
-      if (notesError) throw notesError;
-      setNotes(notesData || []);
+        if (notesError) {
+          console.error('Error fetching notes:', notesError);
+          return;
+        }
 
-      // Fetch folders
-      const { data: foldersData, error: foldersError } = await supabase
-        .from('note_folders')
-        .select('*')
-        .order('name');
+        setNotes(notesData || []);
 
-      if (foldersError) throw foldersError;
-      setFolders(foldersData || []);
+        const { data: foldersData, error: foldersError } = await supabase
+          .from('folders')
+          .select('*')
+          .order('updated_at', { ascending: false });
 
-      // Fetch templates
-      const { data: templatesData, error: templatesError } = await supabase
-        .from('note_templates')
-        .select('*')
-        .order('name');
+        if (foldersError) {
+          console.error('Error fetching folders:', foldersError);
+          return;
+        }
 
-      if (templatesError) throw templatesError;
-      setTemplates(templatesData || []);
+        setFolders(foldersData || []);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      // Fetch collaborations
-      const { data: collaborationsData, error: collaborationsError } = await supabase
-        .from('note_collaborations')
-        .select('*')
-        .order('created_at', { ascending: false });
+    fetchNotes();
 
-      if (collaborationsError) throw collaborationsError;
-      setCollaborations(collaborationsData || []);
+    const notesSubscription = supabase
+      .channel('notes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, async (payload) => {
+        console.log('Note change received!', payload);
+        const { data, event } = payload;
+        if (event === 'INSERT' || event === 'UPDATE' || event === 'DELETE') {
+          fetchNotes();
+        }
+      })
+      .subscribe();
 
-      // Fetch insights
-      const { data: insightsData, error: insightsError } = await supabase
-        .from('ai_insights')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+    const foldersSubscription = supabase
+      .channel('folders')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'folders' }, async (payload) => {
+        console.log('Folder change received!', payload);
+        const { data, event } = payload;
+        if (event === 'INSERT' || event === 'UPDATE' || event === 'DELETE') {
+          fetchNotes();
+        }
+      })
+      .subscribe();
 
-      if (insightsError) throw insightsError;
-      setInsights(insightsData || []);
+    return () => {
+      supabase.removeChannel(notesSubscription);
+      supabase.removeChannel(foldersSubscription);
+    };
+  }, []);
 
-      // Fetch reminders
-      const { data: remindersData, error: remindersError } = await supabase
-        .from('smart_reminders')
-        .select('*')
-        .eq('is_completed', false)
-        .order('due_date', { ascending: true });
+  const addNote = async (note: Omit<Note, 'id' | 'created_at' | 'updated_at' | 'is_pinned' | 'is_archived'>) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .insert([{ ...note, is_pinned: false, is_archived: false }])
+        .select()
+        .single();
 
-      if (remindersError) throw remindersError;
-      setReminders(remindersData || []);
+      if (error) throw error;
 
+      setNotes(prev => [data, ...prev]);
     } catch (error) {
-      console.error('Error fetching AI notes data:', error);
-      toast.error('Failed to load notes data');
+      console.error('Error adding note:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const addNote = async (noteData: Omit<AINote, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'ai_categories' | 'ai_insights' | 'priority_score' | 'attachments' | 'is_archived' | 'is_pinned' | 'view_count'>) => {
-    if (!user) return;
-
+  const updateNote = async (id: string, updates: Partial<Omit<Note, 'id' | 'created_at' | 'updated_at'>>) => {
+    setLoading(true);
     try {
-      // Clean the data to ensure proper null values for UUIDs
-      const cleanedNoteData = {
-        user_id: user.id,
-        title: noteData.title,
-        content: noteData.content,
-        program_id: noteData.program_id || null,
-        tags: noteData.tags,
-        context_type: noteData.context_type,
-        rich_content: noteData.rich_content,
-        folder_id: noteData.folder_id || null,
-        ai_categories: [],
-        ai_insights: {},
-        priority_score: 0,
-        attachments: [],
-        is_archived: false,
-        is_pinned: false,
-        view_count: 0
-      };
-
       const { data, error } = await supabase
-        .from('ai_notes')
-        .insert(cleanedNoteData)
+        .from('notes')
+        .update(updates)
+        .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
 
-      setNotes([data, ...notes]);
-      toast.success('Note added successfully');
-
-      // Automatically analyze the note
-      await analyzeNote(data.id);
-
-    } catch (error) {
-      console.error('Error adding note:', error);
-      toast.error('Failed to add note');
-    }
-  };
-
-  const updateNote = async (id: string, updates: Partial<AINote>) => {
-    try {
-      const { error } = await supabase
-        .from('ai_notes')
-        .update(updates)
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setNotes(notes.map(note => 
-        note.id === id ? { ...note, ...updates } : note
-      ));
-      toast.success('Note updated successfully');
-
+      setNotes(prev => prev.map(note => (note.id === id ? { ...note, ...data } : note)));
     } catch (error) {
       console.error('Error updating note:', error);
-      toast.error('Failed to update note');
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteNote = async (id: string) => {
+    setLoading(true);
     try {
       const { error } = await supabase
-        .from('ai_notes')
+        .from('notes')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
 
-      setNotes(notes.filter(note => note.id !== id));
-      toast.success('Note deleted successfully');
-
+      setNotes(prev => prev.filter(note => note.id !== id));
     } catch (error) {
       console.error('Error deleting note:', error);
-      toast.error('Failed to delete note');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const archiveNote = async (id: string, archived: boolean) => {
-    await updateNote(id, { is_archived: archived });
-    toast.success(archived ? 'Note archived' : 'Note unarchived');
-  };
-
-  const pinNote = async (id: string, pinned: boolean) => {
-    await updateNote(id, { is_pinned: pinned });
-    toast.success(pinned ? 'Note pinned' : 'Note unpinned');
-  };
-
-  const addFolder = async (folderData: Omit<NoteFolder, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    if (!user) return;
-
+  const addFolder = async (folder: Omit<Folder, 'id' | 'created_at' | 'updated_at'>) => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('note_folders')
-        .insert({
-          user_id: user.id,
-          ...folderData
-        })
+        .from('folders')
+        .insert([folder])
         .select()
         .single();
 
       if (error) throw error;
 
-      setFolders([...folders, data]);
-      toast.success('Folder created successfully');
-
+      setFolders(prev => [data, ...prev]);
     } catch (error) {
       console.error('Error adding folder:', error);
-      toast.error('Failed to create folder');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const updateFolder = async (id: string, updates: Partial<NoteFolder>) => {
+  const updateFolder = async (id: string, updates: Partial<Omit<Folder, 'id' | 'created_at' | 'updated_at'>>) => {
+    setLoading(true);
     try {
-      const { error } = await supabase
-        .from('note_folders')
+      const { data, error } = await supabase
+        .from('folders')
         .update(updates)
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) throw error;
 
-      setFolders(folders.map(folder => 
-        folder.id === id ? { ...folder, ...updates } : folder
-      ));
-      toast.success('Folder updated successfully');
-
+      setFolders(prev => prev.map(folder => (folder.id === id ? { ...folder, ...data } : folder)));
     } catch (error) {
       console.error('Error updating folder:', error);
-      toast.error('Failed to update folder');
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteFolder = async (id: string) => {
+    setLoading(true);
     try {
       const { error } = await supabase
-        .from('note_folders')
+        .from('folders')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
 
-      setFolders(folders.filter(folder => folder.id !== id));
-      toast.success('Folder deleted successfully');
-
+      setFolders(prev => prev.filter(folder => folder.id !== id));
     } catch (error) {
       console.error('Error deleting folder:', error);
-      toast.error('Failed to delete folder');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const addTemplate = async (templateData: Omit<NoteTemplate, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    if (!user) return;
-
+  const pinNote = async (noteId: string, isPinned: boolean) => {
     try {
-      const { data, error } = await supabase
-        .from('note_templates')
-        .insert({
-          user_id: user.id,
-          ...templateData
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setTemplates([...templates, data]);
-      toast.success('Template created successfully');
-
+      await updateNote(noteId, { is_pinned: isPinned });
     } catch (error) {
-      console.error('Error adding template:', error);
-      toast.error('Failed to create template');
+      console.error('Error pinning note:', error);
     }
   };
 
-  const deleteTemplate = async (id: string) => {
+  const archiveNote = async (noteId: string, isArchived: boolean) => {
     try {
-      const { error } = await supabase
-        .from('note_templates')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setTemplates(templates.filter(template => template.id !== id));
-      toast.success('Template deleted successfully');
-
+      await updateNote(noteId, { is_archived: isArchived });
     } catch (error) {
-      console.error('Error deleting template:', error);
-      toast.error('Failed to delete template');
+      console.error('Error archiving note:', error);
     }
   };
 
   const analyzeNote = async (noteId: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
-
-      toast.info('Analyzing your note... ✨ Gimme a sec!');
-      
-      const noteToAnalyze = notes.find(note => note.id === noteId);
+      const noteToAnalyze = notes.find(n => n.id === noteId);
       if (!noteToAnalyze) throw new Error('Note not found');
-      
-      const analysisPrompt = getAnalysisPrompt(noteToAnalyze, notes, []);
-      
+
+      const prompt = getEnhancedAnalysisPrompt(noteToAnalyze, notes, programs);
+
       const { data, error } = await supabase.functions.invoke('analyze-notes', {
         body: { 
-          noteId, 
-          action: 'analyze_single',
-          customPrompt: analysisPrompt
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          prompt,
+          noteId,
+          includeContext: true
         }
       });
 
       if (error) throw error;
 
-      const { data: updatedNote } = await supabase
-        .from('ai_notes')
-        .select('*')
-        .eq('id', noteId)
-        .single();
+      // Update the note with AI insights
+      const updatedNote = {
+        ...noteToAnalyze,
+        ai_summary: data.analysis.summary,
+        ai_insights: {
+          key_insights: data.analysis.key_insights,
+          next_steps: data.analysis.next_steps,
+          priority_score: data.analysis.priority_score,
+          connections: data.analysis.connections,
+          timeline_impact: data.analysis.timeline_impact
+        }
+      };
 
-      if (updatedNote) {
-        setNotes(notes.map(note => 
-          note.id === noteId ? updatedNote : note
-        ));
-      }
-
-      toast.success('Note analyzed successfully! 🧠✨');
-
+      setNotes(prev => prev.map(n => n.id === noteId ? updatedNote : n));
+      return data.analysis;
     } catch (error) {
       console.error('Error analyzing note:', error);
-      toast.error('Oops! Analysis failed. Try again?');
+      throw error;
     }
   };
 
   const summarizeAllNotes = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
-
-      toast.info('Creating summary of all notes... 📝');
-
-      const insightsPrompt = getInsightPrompt(notes, []);
+      const prompt = getDailySummaryPrompt(notes, programs);
 
       const { data, error } = await supabase.functions.invoke('analyze-notes', {
         body: { 
-          action: 'summarize_all',
-          insightsPrompt
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          prompt,
+          type: 'daily_summary',
+          includeAllNotes: true
         }
       });
 
       if (error) throw error;
 
-      // Create a new note with the summary content for editing
-      if (data?.summary) {
-        const summaryNoteData = {
-          title: `All Notes Summary - ${new Date().toLocaleDateString()}`,
-          content: data.summary,
-          context_type: 'general' as const,
-          tags: ['summary', 'ai-generated']
-        };
-
-        await addNote(summaryNoteData);
-        toast.success('Summary created as a new note! You can now edit it in the editor. 📋✨');
-      } else {
-        await fetchAllData();
-        toast.success('Summary complete! Check your insights for the overview! 📋✨');
-      }
-
-    } catch (error) {
-      console.error('Error summarizing notes:', error);
-      toast.error('Failed to create summary. Please try again!');
-    }
-  };
-
-  const getTodaysSummary = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
-
-      const today = new Date().toISOString().split('T')[0];
-      const todaysNotes = notes.filter(note => 
-        note.created_at.startsWith(today) || note.updated_at.startsWith(today)
-      );
-
-      if (todaysNotes.length === 0) {
-        toast.info("No notes from today to summarize! 📅");
-        return;
-      }
-
-      toast.info("Creating today's summary... 🌅");
-
-      const summaryPrompt = `Create a summary of today's notes and activities. Focus on key insights, important updates, and action items from today's notes: ${todaysNotes.map(note => `${note.title}: ${note.content}`).join('\n\n')}`;
-
-      const { data, error } = await supabase.functions.invoke('analyze-notes', {
-        body: { 
-          action: 'daily_summary',
-          customPrompt: summaryPrompt,
-          notes: todaysNotes
+      // Create a daily summary note
+      const summaryNote = {
+        title: `Daily Summary - ${new Date().toLocaleDateString()}`,
+        content: `Generated comprehensive daily summary based on ${notes.length} notes and ${programs.length} programs.`,
+        context_type: 'general',
+        ai_summary: data.analysis.summary,
+        ai_insights: {
+          key_insights: data.analysis.key_insights,
+          next_steps: data.analysis.next_steps,
+          priority_score: data.analysis.priority_score,
+          urgency_flags: data.analysis.urgency_flags,
+          progress_indicators: data.analysis.progress_indicators
         },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        }
-      });
+        is_generated: true
+      };
 
-      if (error) throw error;
-
-      // Create a new note with the daily summary content for editing
-      if (data?.summary) {
-        const dailySummaryNoteData = {
-          title: `Daily Summary - ${new Date().toLocaleDateString()}`,
-          content: data.summary,
-          context_type: 'general' as const,
-          tags: ['daily-summary', 'ai-generated']
-        };
-
-        await addNote(dailySummaryNoteData);
-        toast.success("Today's summary created as a new note! You can now edit it in the editor. 🎯");
-      } else {
-        await fetchAllData();
-        toast.success("Today's summary is ready! 🎯");
-      }
-
+      await addNote(summaryNote);
+      return data.analysis;
     } catch (error) {
-      console.error('Error creating today\'s summary:', error);
-      toast.error('Failed to create today\'s summary. Please try again!');
+      console.error('Error creating daily summary:', error);
+      throw error;
     }
   };
 
-  const organizeNotes = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
-
-      const today = new Date().toISOString().split('T')[0];
-      const todaysNotes = notes.filter(note => 
-        note.created_at.startsWith(today) || note.updated_at.startsWith(today)
-      );
-
-      if (todaysNotes.length === 0) {
-        toast.info("No notes from today to organize! 📅");
-        return;
-      }
-
-      toast.info("Organizing today's notes with AI... 🤖✨");
-
-      const { data, error } = await supabase.functions.invoke('organize-notes', {
-        body: { 
-          notes: todaysNotes
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        }
-      });
-
-      if (error) throw error;
-
-      // Create a new note with the organization content for editing
-      if (data?.organization) {
-        const organizationNoteData = {
-          title: `Notes Organization - ${new Date().toLocaleDateString()}`,
-          content: data.organization,
-          context_type: 'general' as const,
-          tags: ['organization', 'ai-generated']
-        };
-
-        await addNote(organizationNoteData);
-        toast.success("Notes organized! The organization summary is now available as a new note for editing. 📋✨");
-      } else {
-        await fetchAllData();
-        toast.success("Notes organized successfully! 📋✨ Check your insights for the detailed organization.");
-      }
-
-    } catch (error) {
-      console.error('Error organizing notes:', error);
-      toast.error('Failed to organize notes. Please try again!');
-    }
-  };
-
-  const completeReminder = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('smart_reminders')
-        .update({ is_completed: true })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setReminders(reminders.filter(reminder => reminder.id !== id));
-      toast.success('Reminder completed! 🎉');
-
-    } catch (error) {
-      console.error('Error completing reminder:', error);
-      toast.error('Failed to complete reminder');
-    }
+  const value = {
+    notes,
+    folders,
+    addNote,
+    updateNote,
+    deleteNote,
+    addFolder,
+    updateFolder,
+    deleteFolder,
+    pinNote,
+    archiveNote,
+    analyzeNote,
+    summarizeAllNotes,
+    loading
   };
 
   return (
-    <AINotesContext.Provider value={{
-      notes,
-      folders,
-      templates,
-      collaborations,
-      insights,
-      reminders,
-      addNote,
-      updateNote,
-      deleteNote,
-      archiveNote,
-      pinNote,
-      addFolder,
-      updateFolder,
-      deleteFolder,
-      addTemplate,
-      deleteTemplate,
-      analyzeNote,
-      summarizeAllNotes,
-      getTodaysSummary,
-      organizeNotes,
-      completeReminder,
-      loading
-    }}>
+    <AINotesContext.Provider value={value}>
       {children}
     </AINotesContext.Provider>
   );
 };
 
-export default AINotesProvider;
+export default AINotesContext;

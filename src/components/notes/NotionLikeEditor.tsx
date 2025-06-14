@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ import { useProgramContext } from "@/contexts/ProgramContext";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 import { useTagContext } from "@/contexts/TagContext";
 import { toast } from "sonner";
-import AISummaryRenderer from "./AISummaryRenderer";
+import EnhancedAISummary from "./EnhancedAISummary";
 
 interface NotionLikeEditorProps {
   selectedNote?: any;
@@ -241,7 +242,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
           {/* Enhanced AI Summary Display */}
           {(selectedNote?.ai_summary || selectedNote?.ai_insights) && (
             <div className="mt-16">
-              <AISummaryRenderer
+              <EnhancedAISummary
                 summary={selectedNote.ai_summary}
                 insights={selectedNote.ai_insights}
               />

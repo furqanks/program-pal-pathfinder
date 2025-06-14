@@ -1,20 +1,17 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
-  Grid3X3, 
-  List, 
-  Calendar, 
   Plus, 
   Search,
   Sparkles,
-  LayoutGrid,
-  Clock
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import NotionLikeEditor from "./NotionLikeEditor";
 import NotesGrid from "./NotesGrid";
-import NotesTimeline from "./NotesTimeline";
 import FilterBar from "./FilterBar";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
@@ -27,10 +24,10 @@ const NotionLikeInterface = () => {
   const [contextFilter, setContextFilter] = useState("all");
   const [folderFilter, setFolderFilter] = useState("all");
   const [sortBy, setSortBy] = useState("updated_at");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [showArchived, setShowArchived] = useState(false);
-  const [activeView, setActiveView] = useState<"grid" | "timeline">("grid");
   const [showEditor, setShowEditor] = useState(false);
+  const [isNotesCollapsed, setIsNotesCollapsed] = useState(false);
 
   const { notes, folders, summarizeAllNotes } = useAINotesContext();
   const { programs } = useProgramContext();
@@ -83,26 +80,6 @@ const NotionLikeInterface = () => {
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold">Notes</h1>
-            <div className="flex items-center gap-2">
-              <Button
-                variant={activeView === "grid" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setActiveView("grid")}
-                className="h-8"
-              >
-                <LayoutGrid className="h-4 w-4 mr-2" />
-                Grid
-              </Button>
-              <Button
-                variant={activeView === "timeline" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setActiveView("timeline")}
-                className="h-8"
-              >
-                <Clock className="h-4 w-4 mr-2" />
-                Timeline
-              </Button>
-            </div>
           </div>
           
           <div className="flex items-center gap-2">
@@ -146,26 +123,40 @@ const NotionLikeInterface = () => {
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
-          {/* Notes List Panel */}
-          <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
-            <div className="h-full border-r border-border bg-muted/20">
-              {activeView === "grid" ? (
-                <NotesGrid
-                  selectedNoteId={selectedNote?.id}
-                  onNoteSelect={handleNoteSelect}
-                  searchTerm={searchTerm}
-                  contextFilter={contextFilter}
-                  isCompact={true}
-                />
-              ) : (
-                <NotesTimeline
-                  selectedNoteId={selectedNote?.id}
-                  onNoteSelect={handleNoteSelect}
-                  searchTerm={searchTerm}
-                  contextFilter={contextFilter}
-                />
-              )}
-            </div>
+          {/* Notes List Panel - Now Collapsible */}
+          <ResizablePanel defaultSize={35} minSize={20} maxSize={60}>
+            <Collapsible open={!isNotesCollapsed} onOpenChange={setIsNotesCollapsed}>
+              <div className="h-full border-r border-border bg-muted/20 flex flex-col">
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between p-4 h-auto border-b border-border/50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Notes</span>
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                        {activeNotes.length}
+                      </span>
+                    </div>
+                    {isNotesCollapsed ? (
+                      <ChevronRight className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent className="flex-1 overflow-hidden">
+                  <NotesGrid
+                    selectedNoteId={selectedNote?.id}
+                    onNoteSelect={handleNoteSelect}
+                    searchTerm={searchTerm}
+                    contextFilter={contextFilter}
+                    isCompact={true}
+                  />
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
           </ResizablePanel>
 
           <ResizableHandle withHandle />
