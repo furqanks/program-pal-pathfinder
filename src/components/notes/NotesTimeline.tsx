@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
-import CompactAISummary from "./CompactAISummary";
 
 interface NotesTimelineProps {
   selectedNoteId?: string;
@@ -103,26 +102,24 @@ const NotesTimeline = ({ selectedNoteId, onNoteSelect, searchTerm = "", contextF
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-4 space-y-6">
+      <div className="p-6 space-y-8">
         {Object.entries(groupedNotes).map(([dateString, dateNotes]) => (
-          <div key={dateString} className="space-y-3">
-            <div className="flex items-center gap-3 text-sm font-semibold text-muted-foreground sticky top-0 bg-background/95 backdrop-blur-sm py-2 z-10">
+          <div key={dateString} className="space-y-4">
+            <div className="flex items-center gap-3 text-sm font-semibold text-muted-foreground sticky top-0 bg-white/95 backdrop-blur-sm py-2 z-10">
               <Calendar className="h-4 w-4" />
               {formatDate(dateString)}
               <div className="h-px flex-1 bg-border"></div>
               <span className="text-xs">{dateNotes.length} notes</span>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-3">
               {dateNotes.map((note) => (
                 <Card
                   key={note.id}
-                  className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.01] border-l-4 ${
+                  className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${
                     selectedNoteId === note.id 
-                      ? 'ring-2 ring-primary bg-primary/5 shadow-md border-l-primary' 
-                      : 'hover:bg-muted/30 border-l-muted border-l-4'
-                  } ${
-                    note.is_pinned ? 'bg-purple-50/50 border-l-purple-400' : ''
+                      ? 'ring-2 ring-primary bg-primary/5 shadow-md' 
+                      : 'hover:bg-muted/30 border-border/50'
                   }`}
                   onClick={() => onNoteSelect(note)}
                 >
@@ -130,11 +127,11 @@ const NotesTimeline = ({ selectedNoteId, onNoteSelect, searchTerm = "", contextF
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
-                          {note.is_pinned && <Pin className="h-3 w-3 text-purple-600 flex-shrink-0" />}
+                          {note.is_pinned && <Pin className="h-3 w-3 text-primary flex-shrink-0" />}
                           <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           <h4 className="font-semibold text-base truncate text-foreground">{note.title}</h4>
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
                           {getContentPreview(note.content)}
                         </p>
                       </div>
@@ -147,12 +144,15 @@ const NotesTimeline = ({ selectedNoteId, onNoteSelect, searchTerm = "", contextF
                       </div>
                     )}
 
-                    {/* Enhanced AI Summary Display */}
-                    {(note.ai_summary || note.ai_insights) && (
-                      <CompactAISummary
-                        summary={note.ai_summary}
-                        insights={note.ai_insights}
-                      />
+                    {/* AI Summary preview */}
+                    {note.ai_summary && (
+                      <div className="bg-gradient-to-r from-purple-50 to-purple-100/50 rounded-lg p-3 text-xs border border-purple-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Sparkles className="h-3 w-3 text-purple-600" />
+                          <span className="font-medium text-purple-800">AI Summary</span>
+                        </div>
+                        <p className="text-purple-700 line-clamp-2 leading-relaxed">{note.ai_summary}</p>
+                      </div>
                     )}
 
                     {/* Footer with metadata */}

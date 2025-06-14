@@ -1,195 +1,100 @@
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { 
-  Plus, 
-  Search,
-  Sparkles,
-  ChevronDown,
-  ChevronRight
-} from "lucide-react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import NotesHeader from "./NotesHeader";
+import NotesTimeline from "./NotesTimeline";
 import NotionLikeEditor from "./NotionLikeEditor";
-import NotesGrid from "./NotesGrid";
-import FilterBar from "./FilterBar";
-import { useAINotesContext } from "@/contexts/AINotesContext";
-import { useProgramContext } from "@/contexts/ProgramContext";
-import { useTagContext } from "@/contexts/TagContext";
-import { toast } from "sonner";
 
 const NotionLikeInterface = () => {
-  const [selectedNote, setSelectedNote] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [contextFilter, setContextFilter] = useState("all");
-  const [folderFilter, setFolderFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("updated_at");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
-  const [showArchived, setShowArchived] = useState(false);
-  const [showEditor, setShowEditor] = useState(false);
-  const [isNotesCollapsed, setIsNotesCollapsed] = useState(false);
-
-  const { notes, folders, summarizeAllNotes } = useAINotesContext();
-  const { programs } = useProgramContext();
-  const { tags } = useTagContext();
-
-  // Auto-select first note on load if none selected
-  useEffect(() => {
-    if (!selectedNote && notes.length > 0 && !showEditor) {
-      const firstNote = notes.find(note => !note.is_archived);
-      if (firstNote) {
-        setSelectedNote(firstNote);
-      }
-    }
-  }, [notes, selectedNote, showEditor]);
-
-  const handleNoteSelect = (note: any) => {
-    setSelectedNote(note);
-    setShowEditor(false);
-  };
+  const [selectedNote, setSelectedNote] = useState<any>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [viewMode, setViewMode] = useState<'timeline' | 'editor'>('timeline');
 
   const handleNewNote = () => {
     setSelectedNote(null);
-    setShowEditor(true);
+    setViewMode('editor');
+  };
+
+  const handleNoteSelect = (note: any) => {
+    setSelectedNote(note);
+    setViewMode('editor');
   };
 
   const handleNoteCreated = () => {
-    setShowEditor(false);
-    toast.success("Note created successfully!");
+    setSelectedNote(null);
+    setViewMode('timeline');
   };
 
   const handleNoteUpdated = () => {
-    toast.success("Note updated successfully!");
+    setViewMode('timeline');
   };
 
-  const handleAnalyzeAll = async () => {
-    try {
-      await summarizeAllNotes();
-      toast.success("All notes analyzed successfully!");
-    } catch (error) {
-      toast.error("Failed to analyze notes");
-    }
+  const handleBackToTimeline = () => {
+    setViewMode('timeline');
+    setSelectedNote(null);
   };
-
-  const activeNotes = notes.filter(note => note.is_archived === showArchived);
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Enhanced Header */}
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold">Notes</h1>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAnalyzeAll}
-              disabled={activeNotes.length === 0}
-              className="h-8"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Analyze All
-            </Button>
-            <Button onClick={handleNewNote} size="sm" className="h-8">
-              <Plus className="h-4 w-4 mr-2" />
-              New Note
-            </Button>
-          </div>
+      <NotesHeader
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        contextFilter={contextFilter}
+        onContextFilterChange={setContextFilter}
+        onNewNote={handleNewNote}
+        sidebarOpen={sidebarOpen}
+        onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar - Notes Timeline */}
+        <div className={cn(
+          "transition-all duration-300 border-r border-border bg-background",
+          sidebarOpen ? "w-80" : "w-0",
+          "overflow-hidden"
+        )}>
+          {sidebarOpen && (
+            <NotesTimeline
+              selectedNoteId={selectedNote?.id}
+              onNoteSelect={handleNoteSelect}
+              searchTerm={searchTerm}
+              contextFilter={contextFilter}
+            />
+          )}
         </div>
 
-        {/* Enhanced Filter Bar */}
-        <div className="px-6 pb-3">
-          <FilterBar
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            contextFilter={contextFilter}
-            onContextFilterChange={setContextFilter}
-            folderFilter={folderFilter}
-            onFolderFilterChange={setFolderFilter}
-            sortBy={sortBy}
-            onSortByChange={setSortBy}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            showArchived={showArchived}
-            onShowArchivedChange={setShowArchived}
-            folders={folders}
-          />
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal" className="h-full">
-          {/* Notes List Panel - Now Collapsible */}
-          <ResizablePanel defaultSize={35} minSize={20} maxSize={60}>
-            <Collapsible open={!isNotesCollapsed} onOpenChange={setIsNotesCollapsed}>
-              <div className="h-full border-r border-border bg-muted/20 flex flex-col">
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-4 h-auto border-b border-border/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Notes</span>
-                      <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                        {activeNotes.length}
-                      </span>
-                    </div>
-                    {isNotesCollapsed ? (
-                      <ChevronRight className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
-                
-                <CollapsibleContent className="flex-1 overflow-hidden">
-                  <NotesGrid
-                    selectedNoteId={selectedNote?.id}
-                    onNoteSelect={handleNoteSelect}
-                    searchTerm={searchTerm}
-                    contextFilter={contextFilter}
-                    isCompact={true}
-                  />
-                </CollapsibleContent>
-              </div>
-            </Collapsible>
-          </ResizablePanel>
-
-          <ResizableHandle withHandle />
-
-          {/* Editor/Viewer Panel */}
-          <ResizablePanel defaultSize={65}>
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-hidden bg-background">
+          {viewMode === 'timeline' && !sidebarOpen ? (
             <div className="h-full">
-              {showEditor || selectedNote ? (
-                <NotionLikeEditor
-                  selectedNote={showEditor ? null : selectedNote}
-                  onNoteCreated={handleNoteCreated}
-                  onNoteUpdated={handleNoteUpdated}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center bg-muted/10">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Search className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-lg font-medium mb-2">Select a note to view</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Choose a note from the sidebar or create a new one
-                    </p>
-                    <Button onClick={handleNewNote} variant="outline">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create New Note
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <NotesTimeline
+                selectedNoteId={selectedNote?.id}
+                onNoteSelect={handleNoteSelect}
+                searchTerm={searchTerm}
+                contextFilter={contextFilter}
+              />
             </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          ) : viewMode === 'timeline' ? (
+            <div className="h-full flex items-center justify-center bg-background">
+              <div className="text-center">
+                <div className="bg-card rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-sm border">
+                  <span className="text-3xl">📝</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Select a note to edit</h3>
+                <p className="text-muted-foreground mb-4">Choose a note from the sidebar or create a new one</p>
+              </div>
+            </div>
+          ) : (
+            <NotionLikeEditor
+              selectedNote={selectedNote}
+              onNoteCreated={handleNoteCreated}
+              onNoteUpdated={handleNoteUpdated}
+              onBackToTimeline={handleBackToTimeline}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

@@ -7,30 +7,44 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Brain, 
   Plus, 
+  Search, 
   Sparkles,
+  Edit2,
+  Trash2,
   Save,
+  X,
   Lightbulb,
   Target,
+  Clock,
+  Pin,
+  Archive,
+  Folder,
   FolderPlus,
   FileText,
-  Clock
+  Share2,
+  Filter,
+  SortAsc,
+  Grid,
+  List,
+  PinOff,
+  ArchiveRestore
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 import { useTagContext } from "@/contexts/TagContext";
 import { toast } from "sonner";
-import CompactNoteCard from "../notes/CompactNoteCard";
-import FilterBar from "../notes/FilterBar";
 
 const EnhancedNotesSection = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [contextFilter, setContextFilter] = useState<string>("all");
-  const [folderFilter, setFolderFilter] = useState<string>("all");
+  const [contextFilter, setContextFilter] = useState<string>("");
+  const [folderFilter, setFolderFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("updated_at");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showArchived, setShowArchived] = useState(false);
@@ -46,6 +60,7 @@ const EnhancedNotesSection = () => {
 
   const [newFolder, setNewFolder] = useState({
     name: "",
+    color: "#6366f1",
     parent_id: ""
   });
 
@@ -95,10 +110,11 @@ const EnhancedNotesSection = () => {
 
     await addFolder({
       name: newFolder.name.trim(),
+      color: newFolder.color,
       parent_id: newFolder.parent_id === "none" ? undefined : newFolder.parent_id
     });
 
-    setNewFolder({ name: "", parent_id: "" });
+    setNewFolder({ name: "", color: "#6366f1", parent_id: "" });
     setIsFolderDialogOpen(false);
   };
 
@@ -169,7 +185,7 @@ const EnhancedNotesSection = () => {
         case "created_at":
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case "priority":
-          return (b.priority_score || 0) - (a.priority_score || 0);
+          return b.priority_score - a.priority_score;
         default:
           return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       }
@@ -188,6 +204,20 @@ const EnhancedNotesSection = () => {
   const getTagName = (tagId: string) => {
     const tag = tags.find(t => t.id === tagId);
     return tag ? tag.name : "Unknown Tag";
+  };
+
+  const getPriorityColor = (score: number) => {
+    if (score >= 8) return "bg-red-100 text-red-800";
+    if (score >= 6) return "bg-orange-100 text-orange-800";
+    if (score >= 4) return "bg-yellow-100 text-yellow-800";
+    return "bg-green-100 text-green-800";
+  };
+
+  const getPriorityLabel = (score: number) => {
+    if (score >= 8) return "High Priority";
+    if (score >= 6) return "Medium Priority";
+    if (score >= 4) return "Low Priority";
+    return "Info";
   };
 
   if (loading) {
@@ -225,21 +255,91 @@ const EnhancedNotesSection = () => {
             </div>
           </div>
           
-          <FilterBar
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            contextFilter={contextFilter}
-            onContextFilterChange={setContextFilter}
-            folderFilter={folderFilter}
-            onFolderFilterChange={setFolderFilter}
-            sortBy={sortBy}
-            onSortByChange={setSortBy}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            showArchived={showArchived}
-            onShowArchivedChange={setShowArchived}
-            folders={folders}
-          />
+          {/* Enhanced Filters and Controls */}
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search notes..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+              <Select value={contextFilter} onValueChange={setContextFilter}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Context" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Contexts</SelectItem>
+                  <SelectItem value="general">General</SelectItem>
+                  <SelectItem value="academic">Academic</SelectItem>
+                  <SelectItem value="financial">Financial</SelectItem>
+                  <SelectItem value="application">Application</SelectItem>
+                  <SelectItem value="research">Research</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={folderFilter} onValueChange={setFolderFilter}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Folder" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Folders</SelectItem>
+                  <SelectItem value="no-folder">No Folder</SelectItem>
+                  {folders.map(folder => (
+                    <SelectItem key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2">
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="updated_at">Last Updated</SelectItem>
+                    <SelectItem value="created_at">Date Created</SelectItem>
+                    <SelectItem value="title">Title A-Z</SelectItem>
+                    <SelectItem value="priority">Priority</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Button
+                  variant={showArchived ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowArchived(!showArchived)}
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  {showArchived ? "Hide Archived" : "Show Archived"}
+                </Button>
+              </div>
+              
+              <div className="flex gap-1">
+                <Button
+                  variant={viewMode === "grid" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </CardHeader>
         
         <CardContent>
@@ -267,20 +367,107 @@ const EnhancedNotesSection = () => {
               : "space-y-3"
             }>
               {filteredNotes.map(note => (
-                <CompactNoteCard
-                  key={note.id}
-                  note={note}
-                  onSelect={() => {}} // You can implement note selection here
-                  onEdit={handleEditNote}
-                  onDelete={deleteNote}
-                  onPin={pinNote}
-                  onArchive={archiveNote}
-                  onAnalyze={analyzeNote}
-                  getProgramName={getProgramName}
-                  getFolderName={getFolderName}
-                  getTagName={getTagName}
-                  viewMode={viewMode}
-                />
+                <div 
+                  key={note.id} 
+                  className={`border rounded-lg p-4 space-y-3 hover:shadow-md transition-shadow ${
+                    note.is_pinned ? 'ring-2 ring-purple-200 bg-purple-50/50' : ''
+                  } ${
+                    note.is_archived ? 'opacity-75 bg-gray-50' : ''
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {note.is_pinned && <Pin className="h-3 w-3 text-purple-600" />}
+                        {note.is_archived && <Archive className="h-3 w-3 text-gray-500" />}
+                        <h4 className="font-medium text-sm line-clamp-2">{note.title}</h4>
+                      </div>
+                      {note.folder_id && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                          <Folder className="h-3 w-3" />
+                          {getFolderName(note.folder_id)}
+                        </div>
+                      )}
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <span className="h-4 w-4">⋮</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => analyzeNote(note.id)}>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Re-analyze
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditNote(note)}>
+                          <Edit2 className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => pinNote(note.id, !note.is_pinned)}>
+                          {note.is_pinned ? <PinOff className="mr-2 h-4 w-4" /> : <Pin className="mr-2 h-4 w-4" />}
+                          {note.is_pinned ? "Unpin" : "Pin"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => archiveNote(note.id, !note.is_archived)}>
+                          {note.is_archived ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
+                          {note.is_archived ? "Unarchive" : "Archive"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => deleteNote(note.id)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  
+                  <p className="text-sm text-muted-foreground line-clamp-3">{note.content}</p>
+                  
+                  {note.ai_summary && (
+                    <div className="bg-purple-50 p-2 rounded text-xs">
+                      <div className="flex items-center gap-1 mb-1">
+                        <Brain className="h-3 w-3 text-purple-600" />
+                        <span className="font-medium text-purple-800">AI Summary</span>
+                      </div>
+                      <p className="text-purple-700">{note.ai_summary}</p>
+                    </div>
+                  )}
+                  
+                  {note.program_id && (
+                    <p className="text-xs text-blue-600 font-medium">
+                      📚 {getProgramName(note.program_id)}
+                    </p>
+                  )}
+                  
+                  {note.tags && note.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {note.tags.map(tagId => (
+                        <Badge key={tagId} variant="outline" className="text-xs">
+                          {getTagName(tagId)}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-1">
+                      <Badge variant="outline" className="text-xs">
+                        {note.context_type}
+                      </Badge>
+                      {note.priority_score > 0 && (
+                        <Badge className={`text-xs ${getPriorityColor(note.priority_score)}`}>
+                          {getPriorityLabel(note.priority_score)}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(note.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -501,21 +688,32 @@ const EnhancedNotesSection = () => {
               />
             </div>
             
-            <div>
-              <label className="text-sm font-medium mb-2 block">Parent Folder (Optional)</label>
-              <Select 
-                value={newFolder.parent_id} 
-                onValueChange={(value) => setNewFolder({ ...newFolder, parent_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="No parent..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No Parent</SelectItem>
-                  {folders.map(folder => (
-                    <SelectItem key={folder.id} value={folder.id}>
-                      {folder.name}
-                    </SelectItem>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Color</label>
+                <Input
+                  type="color"
+                  value={newFolder.color}
+                  onChange={(e) => setNewFolder({ ...newFolder, color: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">Parent Folder (Optional)</label>
+                <Select 
+                  value={newFolder.parent_id} 
+                  onValueChange={(value) => setNewFolder({ ...newFolder, parent_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="No parent..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Parent</SelectItem>
+                    {folders.map(folder => (
+                      <SelectItem key={folder.id} value={folder.id}>
+                        {folder.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
