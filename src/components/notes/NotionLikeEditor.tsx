@@ -22,6 +22,7 @@ import { useProgramContext } from "@/contexts/ProgramContext";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 import { useTagContext } from "@/contexts/TagContext";
 import { toast } from "sonner";
+import AISummaryDisplay from "./AISummaryDisplay";
 
 interface NotionLikeEditorProps {
   selectedNote?: any;
@@ -238,67 +239,8 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Notion
             style={{ fontSize: '1rem', lineHeight: '1.6' }}
           />
 
-          {/* AI Summary Display */}
-          {selectedNote?.ai_summary && (
-            <Card className="mt-16 border border-purple-200 bg-purple-50/30 dark:border-purple-800 dark:bg-purple-950/30">
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                    <Brain className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-purple-800 dark:text-purple-200">AI Summary</h3>
-                    <p className="text-sm text-purple-600 dark:text-purple-400">Generated insights from your note</p>
-                  </div>
-                </div>
-                <p className="text-purple-700 dark:text-purple-300 leading-relaxed">{selectedNote.ai_summary}</p>
-              </div>
-            </Card>
-          )}
-
-          {selectedNote?.ai_insights && Object.keys(selectedNote.ai_insights).length > 0 && (
-            <Card className="mt-6 border border-amber-200 bg-amber-50/30 dark:border-amber-800 dark:bg-amber-950/30">
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-amber-100 dark:bg-amber-900 rounded-lg">
-                    <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-amber-800 dark:text-amber-200">Key Insights</h3>
-                    <p className="text-sm text-amber-600 dark:text-amber-400">AI-powered analysis and recommendations</p>
-                  </div>
-                </div>
-                <div className="space-y-4 text-amber-700 dark:text-amber-300">
-                  {selectedNote.ai_insights.key_insights && (
-                    <div>
-                      <h4 className="font-medium mb-2">Key Insights:</h4>
-                      <ul className="space-y-1">
-                        {selectedNote.ai_insights.key_insights.map((insight: string, index: number) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 flex-shrink-0"></span>
-                            <span>{insight}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {selectedNote.ai_insights.next_steps && (
-                    <div>
-                      <h4 className="font-medium mb-2">Recommended Next Steps:</h4>
-                      <ul className="space-y-1">
-                        {selectedNote.ai_insights.next_steps.map((step: string, index: number) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 flex-shrink-0"></span>
-                            <span>{step}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Card>
-          )}
+          {/* AI Summary and Insights Display */}
+          <AISummaryDisplay note={selectedNote} />
         </div>
       </div>
     </div>
