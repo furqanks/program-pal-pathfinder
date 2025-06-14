@@ -17,7 +17,8 @@ import {
   DollarSign,
   Archive,
   MoreHorizontal,
-  ArrowLeft
+  ArrowLeft,
+  Trash2
 } from "lucide-react";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { useAINotesContext } from "@/contexts/AINotesContext";
@@ -46,7 +47,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
   
   const { programs } = useProgramContext();
   const { tags } = useTagContext();
-  const { addNote, updateNote, analyzeNote } = useAINotesContext();
+  const { addNote, updateNote, analyzeNote, deleteNote } = useAINotesContext();
 
   useEffect(() => {
     if (selectedNote) {
@@ -129,6 +130,20 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
     }
   };
 
+  const handleDelete = async () => {
+    if (!selectedNote?.id) return;
+    
+    if (window.confirm('Are you sure you want to delete this note? This action cannot be undone.')) {
+      try {
+        await deleteNote(selectedNote.id);
+        onBackToTimeline?.();
+        toast.success('Note deleted successfully');
+      } catch (error) {
+        toast.error('Failed to delete note');
+      }
+    }
+  };
+
   const handleTagToggle = (tagId: string) => {
     setSelectedTags(prev => 
       prev.includes(tagId) 
@@ -175,41 +190,58 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
         </div>
         
         {/* Second row - Action buttons */}
-        <div className="flex items-center gap-2 justify-end">
-          {onBackToTimeline && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onBackToTimeline}
-              className="h-8 text-sm border-border hover:bg-accent md:hidden"
-            >
-              <ArrowLeft className="mr-2 h-3 w-3" />
-              Back
-            </Button>
-          )}
+        <div className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            {onBackToTimeline && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onBackToTimeline}
+                className="h-8 text-sm border-border hover:bg-accent md:hidden"
+              >
+                <ArrowLeft className="mr-2 h-3 w-3" />
+                Back
+              </Button>
+            )}
+          </div>
           
-          {selectedNote && (
-            <Button
-              variant="ghost"
+          <div className="flex items-center gap-2">
+            {selectedNote && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing}
+                  className="h-8 text-sm"
+                >
+                  <Sparkles className="mr-2 h-3 w-3" />
+                  <span className="hidden sm:inline">{isAnalyzing ? "Analyzing..." : "Analyze"}</span>
+                  <span className="sm:hidden">{isAnalyzing ? "..." : "AI"}</span>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDelete}
+                  className="h-8 text-sm text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="mr-2 h-3 w-3" />
+                  <span className="hidden sm:inline">Delete</span>
+                </Button>
+              </>
+            )}
+            
+            <Button 
+              onClick={handleSave} 
               size="sm"
-              onClick={handleAnalyze}
-              disabled={isAnalyzing}
-              className="h-8 text-sm"
+              disabled={isSaving}
+              className="h-8 bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
             >
-              <Sparkles className="mr-2 h-3 w-3" />
-              <span className="hidden sm:inline">{isAnalyzing ? "Analyzing..." : "Analyze"}</span>
-              <span className="sm:hidden">{isAnalyzing ? "..." : "AI"}</span>
+              <Save className="mr-2 h-3 w-3" />
+              {isSaving ? "Saving..." : "Save"}
             </Button>
-          )}
-          <Button 
-            onClick={handleSave} 
-            size="sm"
-            disabled={isSaving}
-            className="h-8 bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
-          >
-            <Save className="mr-2 h-3 w-3" />
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
+          </div>
         </div>
       </div>
 

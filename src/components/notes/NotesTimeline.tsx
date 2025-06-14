@@ -15,10 +15,18 @@ import {
   Pin,
   Sparkles,
   Plus,
-  FileText
+  FileText,
+  Trash2,
+  MoreVertical
 } from "lucide-react";
 import { useAINotesContext } from "@/contexts/AINotesContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface NotesTimelineProps {
   selectedNoteId?: string;
@@ -28,7 +36,7 @@ interface NotesTimelineProps {
 }
 
 const NotesTimeline = ({ selectedNoteId, onNoteSelect, searchTerm = "", contextFilter = "" }: NotesTimelineProps) => {
-  const { notes } = useAINotesContext();
+  const { notes, deleteNote, pinNote, archiveNote } = useAINotesContext();
   const { programs } = useProgramContext();
 
   const getContextIcon = (context: string) => {
@@ -100,6 +108,23 @@ const NotesTimeline = ({ selectedNoteId, onNoteSelect, searchTerm = "", contextF
     return content.length > 150 ? content.substring(0, 150) + "..." : content;
   };
 
+  const handleDeleteNote = async (e: React.MouseEvent, noteId: string) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this note?')) {
+      await deleteNote(noteId);
+    }
+  };
+
+  const handlePinNote = async (e: React.MouseEvent, noteId: string, currentlyPinned: boolean) => {
+    e.stopPropagation();
+    await pinNote(noteId, !currentlyPinned);
+  };
+
+  const handleArchiveNote = async (e: React.MouseEvent, noteId: string) => {
+    e.stopPropagation();
+    await archiveNote(noteId, true);
+  };
+
   return (
     <ScrollArea className="h-full">
       <div className="p-6 space-y-8">
@@ -134,6 +159,39 @@ const NotesTimeline = ({ selectedNoteId, onNoteSelect, searchTerm = "", contextF
                         <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
                           {getContentPreview(note.content)}
                         </p>
+                      </div>
+                      
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 hover:bg-muted"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreVertical className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={(e) => handlePinNote(e, note.id, note.is_pinned)}>
+                              <Pin className="mr-2 h-4 w-4" />
+                              {note.is_pinned ? 'Unpin note' : 'Pin note'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => handleArchiveNote(e, note.id)}>
+                              <Archive className="mr-2 h-4 w-4" />
+                              Archive note
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={(e) => handleDeleteNote(e, note.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete note
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
 
