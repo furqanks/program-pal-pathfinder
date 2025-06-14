@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { 
   Brain, 
   Calendar, 
@@ -19,9 +19,7 @@ import {
   Archive,
   MoreHorizontal,
   ArrowLeft,
-  Trash2,
-  Eye,
-  Edit
+  Trash2
 } from "lucide-react";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { useAINotesContext } from "@/contexts/AINotesContext";
@@ -44,10 +42,9 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
   
   const titleRef = useRef<HTMLInputElement>(null);
-  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   
   const { programs } = useProgramContext();
   const { tags } = useTagContext();
@@ -60,12 +57,20 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
       setContextType(selectedNote.context_type || "general");
       setProgramId(selectedNote.program_id || "");
       setSelectedTags(selectedNote.tags || []);
+      
+      // Set formatted content in the contentRef
+      if (contentRef.current && selectedNote.content) {
+        contentRef.current.innerHTML = processMarkdownContent(selectedNote.content);
+      }
     } else {
       setTitle("");
       setContent("");
       setContextType("general");
       setProgramId("");
       setSelectedTags([]);
+      if (contentRef.current) {
+        contentRef.current.innerHTML = "";
+      }
       setTimeout(() => titleRef.current?.focus(), 100);
     }
   }, [selectedNote]);
@@ -81,7 +86,10 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
   };
 
   const handleSave = async () => {
-    if (!title.trim() || !content.trim()) {
+    // Get content from the contentEditable div
+    const contentFromDiv = contentRef.current?.innerText || "";
+    
+    if (!title.trim() || !contentFromDiv.trim()) {
       toast.error("Please add both a title and content");
       return;
     }
@@ -90,7 +98,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
     try {
       const noteData = {
         title: title.trim(),
-        content: content.trim(),
+        content: contentFromDiv.trim(),
         context_type: contextType,
         program_id: programId === "none" ? undefined : programId || undefined,
         tags: selectedTags
@@ -106,6 +114,9 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
         toast.success("Note created");
         setTitle("");
         setContent("");
+        if (contentRef.current) {
+          contentRef.current.innerHTML = "";
+        }
         setContextType("general");
         setProgramId("");
         setSelectedTags([]);
@@ -322,39 +333,19 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
             </div>
           )}
 
-          {/* Content with tabs for edit/preview */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'edit' | 'preview')} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="edit" className="flex items-center gap-2">
-                <Edit className="h-4 w-4" />
-                Edit
-              </TabsTrigger>
-              <TabsTrigger value="preview" className="flex items-center gap-2">
-                <Eye className="h-4 w-4" />
-                Preview
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="edit" className="mt-0">
-              <Textarea
-                ref={contentRef}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Start writing..."
-                className="text-sm sm:text-base border-none shadow-none p-0 min-h-[400px] sm:min-h-[600px] resize-none focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/70 leading-relaxed"
-                style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)', lineHeight: '1.6' }}
-              />
-            </TabsContent>
-            
-            <TabsContent value="preview" className="mt-0">
-              <div className="prose dark:prose-invert max-w-none prose-sm sm:prose-base min-h-[400px] sm:min-h-[600px]">
-                <div 
-                  className="leading-relaxed text-sm sm:text-base"
-                  dangerouslySetInnerHTML={{ __html: processMarkdownContent(content) }}
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
+          {/* Content - WYSIWYG Editor */}
+          <div
+            ref={contentRef}
+            contentEditable
+            suppressContentEditableWarning={true}
+            className="min-h-[400px] sm:min-h-[600px] outline-none text-sm sm:text-base leading-relaxed focus:outline-none"
+            style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)', lineHeight: '1.6' }}
+            onInput={(e) => {
+              const target = e.target as HTMLDivElement;
+              setContent(target.innerText);
+            }}
+            data-placeholder="Start writing..."
+          />
 
           {/* AI Summary and Insights Display */}
           <AISummaryDisplay note={selectedNote} />

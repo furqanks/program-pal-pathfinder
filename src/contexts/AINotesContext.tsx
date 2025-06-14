@@ -470,12 +470,11 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       toast.info('Creating summary of all notes... 📝');
 
-      const insightsPrompt = getInsightPrompt(notes, []);
-
+      // Don't send insightsPrompt for summarize - let edge function use its text format
       const { data, error } = await supabase.functions.invoke('analyze-notes', {
         body: { 
-          action: 'summarize_all',
-          insightsPrompt
+          action: 'summarize_all'
+          // Removed insightsPrompt - edge function has proper text format prompt
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
