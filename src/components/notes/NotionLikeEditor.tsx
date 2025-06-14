@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Brain, 
   Calendar, 
@@ -18,7 +19,9 @@ import {
   Archive,
   MoreHorizontal,
   ArrowLeft,
-  Trash2
+  Trash2,
+  Eye,
+  Edit
 } from "lucide-react";
 import { useProgramContext } from "@/contexts/ProgramContext";
 import { useAINotesContext } from "@/contexts/AINotesContext";
@@ -41,6 +44,7 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
   
   const titleRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
@@ -150,6 +154,46 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
         ? prev.filter(id => id !== tagId)
         : [...prev, tagId]
     );
+  };
+
+  // Process markdown for preview
+  const processMarkdownContent = (text: string) => {
+    if (!text) return "";
+    
+    let processed = text
+      .replace(/^#+\s+(.+)$/gm, (match, content) => {
+        const level = match.match(/^#+/)?.[0].length || 3;
+        const className = level === 1 ? 'text-3xl font-bold mb-4 mt-6' : 
+                         level === 2 ? 'text-2xl font-bold mb-3 mt-5' : 
+                         level === 3 ? 'text-xl font-semibold mb-3 mt-4' :
+                         'text-lg font-semibold mb-2 mt-3';
+        return `<h${Math.min(level, 6)} class="${className}">${content.trim()}</h${Math.min(level, 6)}>`;
+      })
+      .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>')
+      .replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>')
+      .replace(/^[\s]*-[\s]+(.+)$/gm, '<li class="ml-4 mb-1">$1</li>')
+      .replace(/(<li[^>]*>.*?<\/li>\s*)+/g, (match) => {
+        return `<ul class="list-disc mb-4 space-y-1">${match}</ul>`;
+      })
+      .replace(/^[\s]*\d+\.[\s]+(.+)$/gm, '<li class="ml-4 mb-1">$1</li>')
+      .replace(/(<li[^>]*>.*?<\/li>\s*)+/g, (match) => {
+        if (!match.includes('list-disc')) {
+          return `<ol class="list-decimal mb-4 space-y-1">${match}</ol>`;
+        }
+        return match;
+      });
+
+    // Split into paragraphs and wrap them
+    const paragraphs = processed.split(/\n\s*\n/);
+    processed = paragraphs.map(para => {
+      para = para.trim();
+      if (para && !para.includes('<h') && !para.includes('<ul') && !para.includes('<ol')) {
+        return `<p class="mb-4 leading-relaxed">${para.replace(/\n/g, '<br>')}</p>`;
+      }
+      return para;
+    }).join('\n');
+    
+    return processed;
   };
 
   return (
@@ -278,17 +322,39 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
             </div>
           )}
 
-          {/* Content */}
-          <div className="relative">
-            <Textarea
-              ref={contentRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Start writing..."
-              className="text-sm sm:text-base border-none shadow-none p-0 min-h-[400px] sm:min-h-[600px] resize-none focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/70 leading-relaxed"
-              style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)', lineHeight: '1.6' }}
-            />
-          </div>
+          {/* Content with tabs for edit/preview */}
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'edit' | 'preview')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="edit" className="flex items-center gap-2">
+                <Edit className="h-4 w-4" />
+                Edit
+              </TabsTrigger>
+              <TabsTrigger value="preview" className="flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                Preview
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="edit" className="mt-0">
+              <Textarea
+                ref={contentRef}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Start writing..."
+                className="text-sm sm:text-base border-none shadow-none p-0 min-h-[400px] sm:min-h-[600px] resize-none focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/70 leading-relaxed"
+                style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)', lineHeight: '1.6' }}
+              />
+            </TabsContent>
+            
+            <TabsContent value="preview" className="mt-0">
+              <div className="prose dark:prose-invert max-w-none prose-sm sm:prose-base min-h-[400px] sm:min-h-[600px]">
+                <div 
+                  className="leading-relaxed text-sm sm:text-base"
+                  dangerouslySetInnerHTML={{ __html: processMarkdownContent(content) }}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
 
           {/* AI Summary and Insights Display */}
           <AISummaryDisplay note={selectedNote} />
