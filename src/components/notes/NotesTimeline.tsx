@@ -105,7 +105,18 @@ const NotesTimeline = ({ selectedNoteId, onNoteSelect, searchTerm = "", contextF
   };
 
   const getContentPreview = (content: string) => {
-    return content.length > 150 ? content.substring(0, 150) + "..." : content;
+    // Clean up markdown syntax for preview
+    let cleaned = content
+      .replace(/^#+\s+/gm, '') // Remove headers
+      .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold syntax
+      .replace(/\*([^*]+)\*/g, '$1') // Remove italic syntax
+      .replace(/^[\s]*-[\s]+/gm, '• ') // Convert bullet points
+      .replace(/^\d+\.[\s]+/gm, '') // Remove numbered list syntax
+      .replace(/\n\s*\n/g, ' ') // Replace double newlines with space
+      .replace(/\n/g, ' ') // Replace single newlines with space
+      .trim();
+    
+    return cleaned.length > 150 ? cleaned.substring(0, 150) + "..." : cleaned;
   };
 
   const handleDeleteNote = async (e: React.MouseEvent, noteId: string) => {

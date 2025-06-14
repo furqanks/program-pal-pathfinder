@@ -279,14 +279,16 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onBackTo
           )}
 
           {/* Content */}
-          <Textarea
-            ref={contentRef}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Start writing..."
-            className="text-sm sm:text-base border-none shadow-none p-0 min-h-[400px] sm:min-h-[600px] resize-none focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/70 leading-relaxed"
-            style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)', lineHeight: '1.6' }}
-          />
+          <div className="relative">
+            <Textarea
+              ref={contentRef}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Start writing..."
+              className="text-sm sm:text-base border-none shadow-none p-0 min-h-[400px] sm:min-h-[600px] resize-none focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/70 leading-relaxed"
+              style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)', lineHeight: '1.6' }}
+            />
+          </div>
 
           {/* AI Summary and Insights Display */}
           <AISummaryDisplay note={selectedNote} />
