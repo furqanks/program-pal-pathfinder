@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,7 +10,7 @@ import {
   Search,
   Sparkles,
   LayoutGrid,
-  Timeline
+  Clock
 } from "lucide-react";
 import NotionLikeEditor from "./NotionLikeEditor";
 import NotesGrid from "./NotesGrid";
@@ -100,7 +99,7 @@ const NotionLikeInterface = () => {
                 onClick={() => setActiveView("timeline")}
                 className="h-8"
               >
-                <Timeline className="h-4 w-4 mr-2" />
+                <Clock className="h-4 w-4 mr-2" />
                 Timeline
               </Button>
             </div>
