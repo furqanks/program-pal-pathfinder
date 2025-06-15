@@ -44,26 +44,26 @@ const NotesHeader = ({
             variant="ghost"
             size="icon"
             onClick={onSidebarToggle}
-            className="h-7 w-7 hover:bg-accent"
+            className="h-8 w-8 hover:bg-accent"
           >
-            {sidebarOpen ? <SidebarClose className="h-3 w-3" /> : <SidebarOpen className="h-3 w-3" />}
+            {sidebarOpen ? <SidebarClose className="h-4 w-4" /> : <SidebarOpen className="h-4 w-4" />}
           </Button>
           
           <h1 className="text-sm font-semibold mr-2">Notes</h1>
           
           <div className="relative flex-1">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
             <Input
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-7 pr-2 h-7 text-xs bg-background border-border focus:border-primary focus:ring-1 focus:ring-primary"
+              className="pl-8 pr-2 h-8 text-sm bg-background border-border focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </div>
 
           <Select value={contextFilter} onValueChange={onContextFilterChange}>
-            <SelectTrigger className="w-12 h-7 bg-background border-border px-1">
-              <Filter className="h-3 w-3" />
+            <SelectTrigger className="w-14 h-8 bg-background border-border px-2">
+              <Filter className="h-4 w-4" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
@@ -78,9 +78,9 @@ const NotesHeader = ({
           <Button 
             onClick={onNewNote} 
             size="sm" 
-            className="h-7 w-7 p-0 bg-primary text-primary-foreground hover:bg-primary/90"
+            className="h-8 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-4 w-4" />
           </Button>
         </div>
 

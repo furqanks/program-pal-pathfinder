@@ -19,16 +19,13 @@ const Layout = () => {
         "flex-1 overflow-auto transition-all duration-300 ease-in-out bg-background", 
         sidebarOpen ? (isMobile ? "ml-0" : "ml-56") : "ml-0 md:ml-14"
       )}>
-        {(isMobile || !sidebarOpen) && (
-          <div className={cn(
-            "sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border",
-            isMobile ? "p-4" : "p-6"
-          )}>
+        {isMobile && !sidebarOpen && (
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border p-3">
             <Button 
               variant="outline" 
               size="icon" 
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="h-10 w-10 bg-card/80 backdrop-blur-sm border-border/50 hover:bg-accent"
+              className="h-8 w-8 bg-card/80 backdrop-blur-sm border-border/50 hover:bg-accent"
             >
               <Menu className="h-4 w-4" />
             </Button>
