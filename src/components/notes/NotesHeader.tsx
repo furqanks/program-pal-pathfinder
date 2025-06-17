@@ -7,12 +7,14 @@ import {
   Plus, 
   FileText,
   Calendar,
-  SidebarClose,
-  SidebarOpen,
   Filter,
-  FolderOpen
+  FolderOpen,
+  ChevronDown
 } from "lucide-react";
 import { useAINotesContext } from "@/contexts/AINotesContext";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useState } from "react";
 
 interface NotesHeaderProps {
   searchTerm: string;
@@ -22,6 +24,8 @@ interface NotesHeaderProps {
   onNewNote: () => void;
   sidebarOpen: boolean;
   onSidebarToggle: () => void;
+  onNoteSelect: (note: any) => void;
+  selectedNote?: any;
 }
 
 const NotesHeader = ({
@@ -30,123 +34,100 @@ const NotesHeader = ({
   contextFilter,
   onContextFilterChange,
   onNewNote,
-  sidebarOpen,
-  onSidebarToggle
+  onNoteSelect,
+  selectedNote
 }: NotesHeaderProps) => {
   const { summarizeAllNotes, getTodaysSummary, organizeNotes, notes } = useAINotesContext();
+  const [notesPopoverOpen, setNotesPopoverOpen] = useState(false);
+
+  // Filter notes based on search and context
+  const filteredNotes = notes.filter(note => {
+    const matchesSearch = !searchTerm || 
+      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.content.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesContext = contextFilter === 'all' || note.context_type === contextFilter;
+    
+    return matchesSearch && matchesContext;
+  }).slice(0, 10); // Limit to recent 10 notes
 
   return (
     <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-20">
-      <div className="px-3 py-2 md:px-4 md:py-3">
-        {/* Mobile: Single compact row */}
-        <div className="flex items-center gap-2 md:hidden">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onSidebarToggle}
-            className="h-8 w-8 hover:bg-accent"
-          >
-            {sidebarOpen ? <SidebarClose className="h-4 w-4" /> : <SidebarOpen className="h-4 w-4" />}
-          </Button>
-          
-          <h1 className="text-sm font-semibold mr-2">Notes</h1>
-          
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-            <Input
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-8 pr-2 h-8 text-sm bg-background border-border focus:border-primary focus:ring-1 focus:ring-primary"
-            />
-          </div>
+      <div className="px-3 py-2 md:px-6 md:py-4">
+        {/* Main header row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-semibold">Notes</h1>
+              <Badge variant="outline" className="text-xs">
+                {notes.length} notes
+              </Badge>
+            </div>
 
-          <Select value={contextFilter} onValueChange={onContextFilterChange}>
-            <SelectTrigger className="w-14 h-8 bg-background border-border px-2">
-              <Filter className="h-4 w-4" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="general">General</SelectItem>
-              <SelectItem value="academic">Academic</SelectItem>
-              <SelectItem value="financial">Financial</SelectItem>
-              <SelectItem value="application">Application</SelectItem>
-              <SelectItem value="research">Research</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button 
-            onClick={onNewNote} 
-            size="sm" 
-            className="h-8 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Mobile: Second row with compact action buttons */}
-        <div className="flex items-center gap-1 mt-2 md:hidden">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={getTodaysSummary}
-            className="h-6 px-2 text-xs bg-background border-border hover:bg-accent flex-1"
-          >
-            <Calendar className="mr-1 h-3 w-3" />
-            Today
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={organizeNotes}
-            className="h-6 px-2 text-xs bg-background border-border hover:bg-accent flex-1"
-          >
-            <FolderOpen className="mr-1 h-3 w-3" />
-            Sort
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={summarizeAllNotes}
-            disabled={notes.length === 0}
-            className="h-6 px-2 text-xs bg-background border-border hover:bg-accent flex-1"
-          >
-            <FileText className="mr-1 h-3 w-3" />
-            Sum
-          </Button>
-        </div>
-
-        {/* Desktop: Original layout */}
-        <div className="hidden md:flex md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onSidebarToggle}
-              className="h-8 w-8 hover:bg-accent"
-            >
-              {sidebarOpen ? <SidebarClose className="h-4 w-4" /> : <SidebarOpen className="h-4 w-4" />}
-            </Button>
-            
-            <h1 className="text-lg font-semibold">Notes</h1>
+            {/* Current note selector */}
+            <Popover open={notesPopoverOpen} onOpenChange={setNotesPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="max-w-64 justify-between">
+                  <span className="truncate">
+                    {selectedNote ? selectedNote.title : "Select a note..."}
+                  </span>
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0">
+                <div className="p-3 border-b">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search notes..."
+                      value={searchTerm}
+                      onChange={(e) => onSearchChange(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {filteredNotes.length === 0 ? (
+                    <div className="p-4 text-center text-muted-foreground">
+                      No notes found
+                    </div>
+                  ) : (
+                    filteredNotes.map(note => (
+                      <button
+                        key={note.id}
+                        onClick={() => {
+                          onNoteSelect(note);
+                          setNotesPopoverOpen(false);
+                        }}
+                        className="w-full text-left p-3 hover:bg-accent border-b last:border-b-0 transition-colors"
+                      >
+                        <div className="font-medium text-sm truncate">
+                          {note.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate mt-1">
+                          {note.content.substring(0, 100)}...
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="outline" className="text-xs">
+                            {note.context_type}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(note.updated_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  className="pl-9 h-8 w-48 bg-background border-border focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-
+            {/* Search and filters */}
+            <div className="hidden md:flex items-center gap-2">
               <Select value={contextFilter} onValueChange={onContextFilterChange}>
-                <SelectTrigger className="w-32 h-8 bg-background border-border">
+                <SelectTrigger className="w-32 h-9 bg-background border-border">
                   <Filter className="mr-2 h-3 w-3" />
                   <SelectValue placeholder="All" />
                 </SelectTrigger>
@@ -161,25 +142,26 @@ const NotesHeader = ({
               </Select>
             </div>
 
+            {/* Quick actions */}
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={getTodaysSummary}
-                className="h-8 bg-background border-border hover:bg-accent"
+                className="hidden md:flex h-9 bg-background border-border hover:bg-accent"
               >
                 <Calendar className="mr-2 h-3 w-3" />
-                Today's Summary
+                Today
               </Button>
 
               <Button
                 variant="outline"
                 size="sm"
                 onClick={organizeNotes}
-                className="h-8 bg-background border-border hover:bg-accent"
+                className="hidden md:flex h-9 bg-background border-border hover:bg-accent"
               >
                 <FolderOpen className="mr-2 h-3 w-3" />
-                Organise
+                Organize
               </Button>
 
               <Button
@@ -187,7 +169,7 @@ const NotesHeader = ({
                 size="sm"
                 onClick={summarizeAllNotes}
                 disabled={notes.length === 0}
-                className="h-8 bg-background border-border hover:bg-accent"
+                className="hidden lg:flex h-9 bg-background border-border hover:bg-accent"
               >
                 <FileText className="mr-2 h-3 w-3" />
                 Summarize
@@ -196,13 +178,49 @@ const NotesHeader = ({
               <Button 
                 onClick={onNewNote} 
                 size="sm" 
-                className="h-8 bg-primary text-primary-foreground hover:bg-primary/90"
+                className="h-9 bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <Plus className="mr-2 h-3 w-3" />
-                New
+                <span className="hidden sm:inline">New Note</span>
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* Mobile filters row */}
+        <div className="flex md:hidden items-center gap-2 mt-3">
+          <Select value={contextFilter} onValueChange={onContextFilterChange}>
+            <SelectTrigger className="flex-1 h-8 bg-background border-border">
+              <Filter className="mr-2 h-3 w-3" />
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="general">General</SelectItem>
+              <SelectItem value="academic">Academic</SelectItem>
+              <SelectItem value="financial">Financial</SelectItem>
+              <SelectItem value="application">Application</SelectItem>
+              <SelectItem value="research">Research</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={getTodaysSummary}
+            className="h-8 px-3 bg-background border-border hover:bg-accent"
+          >
+            <Calendar className="h-3 w-3" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={organizeNotes}
+            className="h-8 px-3 bg-background border-border hover:bg-accent"
+          >
+            <FolderOpen className="h-3 w-3" />
+          </Button>
         </div>
       </div>
     </div>
