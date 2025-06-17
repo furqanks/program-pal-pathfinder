@@ -36,26 +36,26 @@ serve(async (req) => {
       )
     }
 
-    // Completely plain text prompt - no markdown formatting instructions
     const prompt = `Find university programs that match this search: "${query}"
 
-Please provide detailed information about at least 8-10 different university programs that match this search criteria. Include programs from different universities and countries where possible.
+Please provide detailed information about at least 8-10 or more different university programs that match this search criteria. Include a mix of programs from different universities where possible.
+
+Please ensure all information is from official university sources and include verification notes where appropriate.
 
 For each program, please provide:
 - Program name and university
 - Location (country and city)
 - Degree level and duration
-- Tuition fees (with currency)
+- Tuition fees for both domestic and international students (with currency)
 - Application deadlines
 - Entry requirements
 - Program highlights
 - Official website links when available
 
-Please provide the information in plain text format without any special formatting or markdown syntax.
 
-If the search mentions budget-friendly, affordable, or low-cost options, prioritize programs under £20,000 per year and public universities with lower fees.
+If the search mentions budget-friendly, affordable, or low-cost options, prioritize public universities with lower fees.
 
-Please ensure all information is from official university sources and include verification notes where appropriate.`
+Please also provide brief advice based on the search query.`
 
     console.log('Sending search query to Perplexity:', query)
 
