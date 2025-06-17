@@ -36,83 +36,26 @@ serve(async (req) => {
       )
     }
 
-    // Original prompt without asterisk removal
-    const prompt = `Hey there! 👋 I'm here to help you find amazing university programs that match your search criteria.
+    // Simple, direct prompt for university program search
+    const prompt = `Find university programs that match this search: "${query}"
 
-You're looking for: "${query}"
+Please provide detailed information about at least 8-10 different university programs that match this search criteria. Include programs from different universities and countries where possible.
 
-I'll structure my findings in a way that's easy to read and actionable. Think of me as your university research buddy who knows all the best programs!
+For each program, please provide:
+- Program name and university
+- Location (country and city)
+- Degree level and duration
+- Tuition fees (with currency)
+- Application deadlines
+- Entry requirements
+- Program highlights
+- Official website links when available
 
-IMPORTANT: I must provide AT LEAST 8-10 different program options from different universities. If I can't find enough exact matches, I'll include closely related programs to give you more options.
+Format your response in clear, readable markdown with proper sections and structure.
 
-CRITICAL FOR BUDGET SEARCHES: If the search mentions "budget-friendly", "affordable", "cheap", or "low cost", I must prioritize:
-- Public universities with lower fees
-- Programs under £20,000 per year for international students
-- Universities known for value-for-money education
-- Programs with good scholarship opportunities
-- Avoid expensive private institutions and elite universities unless they offer exceptional financial aid
+If the search mentions budget-friendly, affordable, or low-cost options, prioritize programs under £20,000 per year and public universities with lower fees.
 
-Format everything in clean markdown with sections, tables, and bullet points.
-
-Organize into these sections:
-
-# 🎓 Featured Programs
-
-For each program, provide:
-
-**Program Name:** [Full Program Title]
-**University:** [University Name]
-**Location:** [Country and City]
-**Degree Level:** [Bachelor's/Master's/PhD]
-**Duration:** [Program length]
-**Tuition Fees:** [Fee information with currency - be realistic about costs]
-**Application Deadline:** [Current deadline or next intake]
-**Entry Requirements:** [Key admission requirements]
-**Program Highlights:** [What makes this program special]
-**Official Website:** [Direct link to program page]
-
-# 📋 Requirements Overview
-
-- Common Prerequisites: What most programs need
-- Language Requirements: IELTS/TOEFL scores typically required
-- Academic Requirements: GPA or grade equivalents
-- Additional Requirements: Work experience, portfolios, etc.
-
-# ⏰ Application Timeline
-
-| University | Program | Application Deadline | Start Date | Status |
-| ---------- | ------- | ------------------- | ---------- | ------ |
-
-# 💰 Fee Comparison
-
-| University | Program | Annual Tuition | Total Cost | Scholarships Available |
-| ---------- | ------- | -------------- | ---------- | --------------------- |
-
-# 💡 My Recommendations for You
-
-Based on your search, here's what I think you should focus on:
-
-- **Top Picks:** The programs I think are perfect matches
-- **Budget-Friendly Options:** Great programs that won't break the bank
-- **Prestigious Choices:** Elite programs if you're aiming high
-- **Quick Applications:** Programs with rolling admissions or upcoming deadlines
-
-# ✅ Next Steps
-
-- Things you should do this week
-- Research tasks to complete
-- Documents to prepare
-- People to contact
-
-CRITICAL REQUIREMENTS:
-- Provide AT LEAST 8-10 different programs from different universities
-- Use real, currently offered programs only
-- Include working university website URLs when possible
-- All information must be from official university sources
-- If exact fees are unknown, state "Verify with University"
-- Include clear disclaimers about verifying information
-
-Please provide detailed, accurate information about university programs matching this search query.`
+Please ensure all information is from official university sources and include verification notes where appropriate.`
 
     console.log('Sending search query to Perplexity:', query)
 
@@ -127,7 +70,7 @@ Please provide detailed, accurate information about university programs matching
         messages: [
           {
             role: 'system',
-            content: 'You are a friendly, helpful AI assistant who specializes in finding university programs. You speak in a casual, encouraging tone like a knowledgeable friend. Always provide at least 8-10 different program options from different universities. Focus on being genuinely helpful rather than overly formal. When users search for budget-friendly options, prioritize affordable universities and programs under £20,000 per year, avoiding expensive elite institutions unless they offer exceptional financial aid.'
+            content: 'You are a helpful assistant that finds university programs. Provide accurate, detailed information from official sources in clear markdown format.'
           },
           {
             role: 'user',
@@ -170,7 +113,7 @@ Please provide detailed, accurate information about university programs matching
     const content = data.choices[0].message.content
     console.log('Report content length:', content.length)
 
-    // Create a single comprehensive result for report display
+    // Return the Perplexity output directly without any modifications
     const searchResults = [{
       programName: 'University Program Search Report',
       university: 'Comprehensive Analysis',
@@ -200,7 +143,7 @@ Please provide detailed, accurate information about university programs matching
           model: data.model || 'llama-3.1-sonar-large-128k-online',
           hasStructuredData: false,
           reportFormat: true,
-          disclaimer: 'Search report generated by Perplexity AI with 8-10 program options. Always verify all details directly with universities.'
+          disclaimer: 'Search results generated by Perplexity AI. Always verify details directly with universities.'
         }
       }),
       { 
