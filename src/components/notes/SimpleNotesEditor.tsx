@@ -132,9 +132,10 @@ const SimpleNotesEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Simpl
     
     // Simple markdown rendering for headers, tables, and lists
     const lines = text.split('\n');
-    const rendered = [];
+    const rendered: JSX.Element[] = [];
     let inTable = false;
-    let tableHeaders = [];
+    let tableHeaders: string[] = [];
+    let tableRows: JSX.Element[] = [];
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -152,24 +153,11 @@ const SimpleNotesEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Simpl
         if (!inTable) {
           inTable = true;
           tableHeaders = line.split('|').map(h => h.trim()).filter(h => h);
-          rendered.push(
-            <div key={`table-${i}`} className="my-4 overflow-x-auto">
-              <table className="w-full border border-border rounded-lg">
-                <thead>
-                  <tr className="bg-muted/50">
-                    {tableHeaders.map((header, idx) => (
-                      <th key={idx} className="border border-border px-3 py-2 text-left font-medium">
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-        );
+          tableRows = [];
         } else if (!line.includes('---')) {
           const cells = line.split('|').map(c => c.trim()).filter(c => c);
           if (cells.length > 0) {
-            rendered.push(
+            tableRows.push(
               <tr key={`row-${i}`}>
                 {cells.map((cell, idx) => (
                   <td key={idx} className="border border-border px-3 py-2">
@@ -181,12 +169,28 @@ const SimpleNotesEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Simpl
           }
         }
       } else if (inTable && (!line.includes('|') || line.trim() === '')) {
-        inTable = false;
+        // End table and render it
         rendered.push(
-                </tbody>
-              </table>
-            </div>
+          <div key={`table-${i}`} className="my-4 overflow-x-auto">
+            <table className="w-full border border-border rounded-lg">
+              <thead>
+                <tr className="bg-muted/50">
+                  {tableHeaders.map((header, idx) => (
+                    <th key={idx} className="border border-border px-3 py-2 text-left font-medium">
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {tableRows}
+              </tbody>
+            </table>
+          </div>
         );
+        inTable = false;
+        tableHeaders = [];
+        tableRows = [];
       }
       // Bullet points
       else if (line.startsWith('* ')) {
@@ -203,11 +207,24 @@ const SimpleNotesEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: Simpl
     }
     
     // Close any open table
-    if (inTable) {
+    if (inTable && tableHeaders.length > 0) {
       rendered.push(
-              </tbody>
-            </table>
-          </div>
+        <div key="final-table" className="my-4 overflow-x-auto">
+          <table className="w-full border border-border rounded-lg">
+            <thead>
+              <tr className="bg-muted/50">
+                {tableHeaders.map((header, idx) => (
+                  <th key={idx} className="border border-border px-3 py-2 text-left font-medium">
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tableRows}
+            </tbody>
+          </table>
+        </div>
       );
     }
     
