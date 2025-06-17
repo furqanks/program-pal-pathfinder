@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -113,14 +112,14 @@ const Search = () => {
   const handleGuidedSearch = async () => {
     const query = buildQueryFromAnswers();
     if (query.trim()) {
-      await searchPrograms(query.trim(), 8);
+      await searchPrograms(query.trim(), 10);
     }
   };
 
   const handleCustomSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (customQuery.trim()) {
-      await searchPrograms(customQuery.trim(), 8);
+      await searchPrograms(customQuery.trim(), 10);
     }
   };
 
