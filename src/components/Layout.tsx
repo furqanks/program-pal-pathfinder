@@ -19,20 +19,25 @@ const Layout = () => {
         "flex-1 overflow-auto transition-all duration-300 ease-in-out bg-background", 
         sidebarOpen ? (isMobile ? "ml-0" : "ml-56") : "ml-0 md:ml-14"
       )}>
-        {/* Always show menu button on mobile when sidebar is closed */}
+        {/* Mobile menu button - always visible on mobile when sidebar closed */}
         {isMobile && !sidebarOpen && (
-          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border p-3">
+          <div className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border p-3">
             <Button 
               variant="outline" 
               size="icon" 
               onClick={() => setSidebarOpen(true)}
-              className="h-8 w-8 bg-card/80 backdrop-blur-sm border-border/50 hover:bg-accent"
+              className="h-9 w-9 bg-card/80 backdrop-blur-sm border-border/50 hover:bg-accent shadow-sm"
             >
-              <Menu className="h-4 w-4" />
+              <Menu className="h-5 w-5" />
             </Button>
           </div>
         )}
-        <div className="w-full">
+        
+        {/* Content with proper top padding when menu button is shown */}
+        <div className={cn(
+          "w-full h-full",
+          isMobile && !sidebarOpen && "pt-16"
+        )}>
           <Outlet />
         </div>
       </main>

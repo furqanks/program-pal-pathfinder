@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,15 +99,11 @@ const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onNoteSe
 
       if (selectedNote) {
         await updateNote(selectedNote.id, noteData);
-        if (onNoteUpdated) {
-          onNoteUpdated();
-        }
+        onNoteUpdated?.();
         toast.success("Note updated");
       } else {
         const newNote = await addNote(noteData);
-        if (onNoteCreated) {
-          onNoteCreated();
-        }
+        onNoteCreated?.();
         toast.success("Note created");
         // Keep the new note in the editor
         if (onNoteSelect && newNote) {
