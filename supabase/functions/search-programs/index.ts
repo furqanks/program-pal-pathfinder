@@ -36,7 +36,7 @@ serve(async (req) => {
       )
     }
 
-    // Simple, direct prompt for university program search
+    // Completely plain text prompt - no markdown formatting instructions
     const prompt = `Find university programs that match this search: "${query}"
 
 Please provide detailed information about at least 8-10 different university programs that match this search criteria. Include programs from different universities and countries where possible.
@@ -51,7 +51,7 @@ For each program, please provide:
 - Program highlights
 - Official website links when available
 
-Format your response in clear, readable markdown with proper sections and structure.
+Please provide the information in plain text format without any special formatting or markdown syntax.
 
 If the search mentions budget-friendly, affordable, or low-cost options, prioritize programs under £20,000 per year and public universities with lower fees.
 
@@ -70,7 +70,7 @@ Please ensure all information is from official university sources and include ve
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful assistant that finds university programs. Provide accurate, detailed information from official sources in clear markdown format.'
+            content: 'You are a helpful assistant that finds university programs. Provide accurate, detailed information from official sources in plain text format without any markdown or special formatting.'
           },
           {
             role: 'user',
@@ -113,7 +113,7 @@ Please ensure all information is from official university sources and include ve
     const content = data.choices[0].message.content
     console.log('Report content length:', content.length)
 
-    // Return the Perplexity output directly without any modifications
+    // Return the exact Perplexity output with zero modifications
     const searchResults = [{
       programName: 'University Program Search Report',
       university: 'Comprehensive Analysis',
