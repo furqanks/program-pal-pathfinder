@@ -36,7 +36,7 @@ serve(async (req) => {
       )
     }
 
-    // Updated prompt to better handle budget-friendly searches and remove asterisks
+    // Original prompt without asterisk removal
     const prompt = `Hey there! 👋 I'm here to help you find amazing university programs that match your search criteria.
 
 You're looking for: "${query}"
@@ -52,7 +52,7 @@ CRITICAL FOR BUDGET SEARCHES: If the search mentions "budget-friendly", "afforda
 - Programs with good scholarship opportunities
 - Avoid expensive private institutions and elite universities unless they offer exceptional financial aid
 
-Format everything in clean markdown with sections, tables, and bullet points. DO NOT use asterisks for bold text - use proper markdown formatting instead.
+Format everything in clean markdown with sections, tables, and bullet points.
 
 Organize into these sections:
 
@@ -60,16 +60,16 @@ Organize into these sections:
 
 For each program, provide:
 
-Program Name: [Full Program Title]
-University: [University Name]
-Location: [Country and City]
-Degree Level: [Bachelor's/Master's/PhD]
-Duration: [Program length]
-Tuition Fees: [Fee information with currency - be realistic about costs]
-Application Deadline: [Current deadline or next intake]
-Entry Requirements: [Key admission requirements]
-Program Highlights: [What makes this program special]
-Official Website: [Direct link to program page]
+**Program Name:** [Full Program Title]
+**University:** [University Name]
+**Location:** [Country and City]
+**Degree Level:** [Bachelor's/Master's/PhD]
+**Duration:** [Program length]
+**Tuition Fees:** [Fee information with currency - be realistic about costs]
+**Application Deadline:** [Current deadline or next intake]
+**Entry Requirements:** [Key admission requirements]
+**Program Highlights:** [What makes this program special]
+**Official Website:** [Direct link to program page]
 
 # 📋 Requirements Overview
 
@@ -92,10 +92,10 @@ Official Website: [Direct link to program page]
 
 Based on your search, here's what I think you should focus on:
 
-- Top Picks: The programs I think are perfect matches
-- Budget-Friendly Options: Great programs that won't break the bank
-- Prestigious Choices: Elite programs if you're aiming high
-- Quick Applications: Programs with rolling admissions or upcoming deadlines
+- **Top Picks:** The programs I think are perfect matches
+- **Budget-Friendly Options:** Great programs that won't break the bank
+- **Prestigious Choices:** Elite programs if you're aiming high
+- **Quick Applications:** Programs with rolling admissions or upcoming deadlines
 
 # ✅ Next Steps
 
@@ -111,12 +111,10 @@ CRITICAL REQUIREMENTS:
 - All information must be from official university sources
 - If exact fees are unknown, state "Verify with University"
 - Include clear disclaimers about verifying information
-- DO NOT use asterisks for formatting - use proper markdown headers, lists, and emphasis
-- For budget searches, prioritize affordable options and avoid expensive elite institutions
 
 Please provide detailed, accurate information about university programs matching this search query.`
 
-    console.log('Sending enhanced search query to Perplexity:', query)
+    console.log('Sending search query to Perplexity:', query)
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -129,7 +127,7 @@ Please provide detailed, accurate information about university programs matching
         messages: [
           {
             role: 'system',
-            content: 'You are a friendly, helpful AI assistant who specializes in finding university programs. You speak in a casual, encouraging tone like a knowledgeable friend. Always provide at least 8-10 different program options from different universities. Use proper markdown formatting without asterisks for bold text. Focus on being genuinely helpful rather than overly formal. When users search for budget-friendly options, prioritize affordable universities and programs under £20,000 per year, avoiding expensive elite institutions unless they offer exceptional financial aid.'
+            content: 'You are a friendly, helpful AI assistant who specializes in finding university programs. You speak in a casual, encouraging tone like a knowledgeable friend. Always provide at least 8-10 different program options from different universities. Focus on being genuinely helpful rather than overly formal. When users search for budget-friendly options, prioritize affordable universities and programs under £20,000 per year, avoiding expensive elite institutions unless they offer exceptional financial aid.'
           },
           {
             role: 'user',
@@ -157,7 +155,7 @@ Please provide detailed, accurate information about university programs matching
     }
 
     const data = await response.json()
-    console.log('Perplexity response received for enhanced search')
+    console.log('Perplexity response received')
 
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       return new Response(
@@ -170,13 +168,7 @@ Please provide detailed, accurate information about university programs matching
     }
 
     const content = data.choices[0].message.content
-    console.log('Enhanced report content length:', content.length)
-
-    // Clean up any remaining asterisks from the content
-    const cleanedContent = content
-      .replace(/\*\*([^*]+)\*\*/g, '**$1**') // Keep markdown bold but clean up any malformed asterisks
-      .replace(/\*\*([^*]+):\*\*/g, '**$1:**') // Fix colon formatting
-      .replace(/\*([^*]+)\*/g, '*$1*') // Keep markdown italic but clean up malformed asterisks
+    console.log('Report content length:', content.length)
 
     // Create a single comprehensive result for report display
     const searchResults = [{
@@ -184,7 +176,7 @@ Please provide detailed, accurate information about university programs matching
       university: 'Comprehensive Analysis',
       degreeType: 'Multiple Programs',
       country: 'Global Search Results', 
-      description: cleanedContent,
+      description: content,
       tuition: 'Varies by program - see report details',
       deadline: 'Multiple deadlines - see report details',
       duration: 'Varies by program type',
@@ -200,7 +192,7 @@ Please provide detailed, accurate information about university programs matching
       JSON.stringify({ 
         searchResults: searchResults,
         citations: data.citations || [],
-        rawContent: cleanedContent,
+        rawContent: content,
         searchMetadata: {
           query: query,
           resultCount: 1,
@@ -208,7 +200,7 @@ Please provide detailed, accurate information about university programs matching
           model: data.model || 'llama-3.1-sonar-large-128k-online',
           hasStructuredData: false,
           reportFormat: true,
-          disclaimer: 'Enhanced search report generated by Perplexity AI with 8-10 program options. Always verify all details directly with universities.'
+          disclaimer: 'Search report generated by Perplexity AI with 8-10 program options. Always verify all details directly with universities.'
         }
       }),
       { 
