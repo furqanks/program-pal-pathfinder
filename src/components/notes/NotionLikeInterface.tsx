@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import NotesHeader from "./NotesHeader";
@@ -45,6 +46,8 @@ const NotionLikeInterface = () => {
         onNewNote={handleNewNote}
         sidebarOpen={sidebarOpen}
         onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+        onNoteSelect={handleNoteSelect}
+        selectedNote={selectedNote}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -99,6 +102,7 @@ const NotionLikeInterface = () => {
               selectedNote={selectedNote}
               onNoteCreated={handleNoteCreated}
               onNoteUpdated={handleNoteUpdated}
+              onNoteSelect={handleNoteSelect}
               onBackToTimeline={handleBackToTimeline}
             />
           )}

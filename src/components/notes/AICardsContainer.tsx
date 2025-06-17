@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Sparkles, 
-  Timeline, 
+  Clock, 
   Target, 
   Lightbulb, 
   FileText, 
@@ -103,7 +102,7 @@ const AICardsContainer = ({ selectedNote }: AICardsContainerProps) => {
           title: 'Application Timeline',
           content: 'I can create a timeline for your application process with key milestones.',
           priority: 'high',
-          icon: <Timeline className="h-4 w-4" />,
+          icon: <Clock className="h-4 w-4" />,
           actionLabel: 'Build Timeline',
           onAction: () => createApplicationTimeline()
         });

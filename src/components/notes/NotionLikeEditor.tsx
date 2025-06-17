@@ -26,9 +26,10 @@ interface NotionLikeEditorProps {
   onNoteCreated?: () => void;
   onNoteUpdated?: () => void;
   onNoteSelect?: (note: any) => void;
+  onBackToTimeline?: () => void;
 }
 
-const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onNoteSelect }: NotionLikeEditorProps) => {
+const NotionLikeEditor = ({ selectedNote, onNoteCreated, onNoteUpdated, onNoteSelect, onBackToTimeline }: NotionLikeEditorProps) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [contextType, setContextType] = useState("general");
