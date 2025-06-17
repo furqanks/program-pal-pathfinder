@@ -3,7 +3,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import NotesHeader from "./NotesHeader";
 import NotesTimeline from "./NotesTimeline";
-import NotionLikeEditor from "./NotionLikeEditor";
+import SimpleNotesEditor from "./SimpleNotesEditor";
 
 const NotionLikeInterface = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -96,11 +96,10 @@ const NotionLikeInterface = () => {
               </div>
             </div>
           ) : (
-            <NotionLikeEditor
+            <SimpleNotesEditor
               selectedNote={selectedNote}
               onNoteCreated={handleNoteCreated}
               onNoteUpdated={handleNoteUpdated}
-              onBackToTimeline={handleBackToTimeline}
             />
           )}
         </div>
