@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import NotesHeader from "./NotesHeader";
 import NotesTimeline from "./NotesTimeline";
 import NotionLikeEditor from "./NotionLikeEditor";
@@ -11,6 +12,7 @@ const NotionLikeInterface = () => {
   const [selectedNote, setSelectedNote] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'timeline' | 'editor'>('timeline');
+  const isMobile = useIsMobile();
 
   const handleNewNote = () => {
     setSelectedNote(null);
@@ -37,7 +39,11 @@ const NotionLikeInterface = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className={cn(
+      "flex flex-col bg-background",
+      // On mobile, account for the main layout's hamburger menu
+      isMobile ? "h-full" : "h-screen"
+    )}>
       <NotesHeader
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
