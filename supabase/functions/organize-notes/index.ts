@@ -40,56 +40,66 @@ serve(async (req) => {
       );
     }
 
-    // The exact GPT prompt as specified
-    const organizationPrompt = `You are an AI assistant helping students organize their application research notes.
+    // Updated GPT prompt with recommendations and casual tone
+    const organizationPrompt = `Hey there! 👋 I'm here to help you organize your university application research notes and give you some friendly advice.
 
-The user provides you with unstructured notes related to university applications, programs, deadlines, requirements, and personal preferences.
+You've shared some notes about your application journey, and I'll structure them in a way that's easy to read and actionable. Think of me as your study buddy who's really good at organizing stuff!
 
-Your task is to structure the information into clear, organized sections.
+Here's what I'll do with your notes:
 
-Format your output in markdown using tables, bullet lists, and headings where appropriate.
+**Format everything in clean markdown** with tables, bullet points, and headings so it's super easy to scan.
 
-Extract and organize data into the following sections if available:
+**Organize into these sections** (only including the ones that apply to your notes):
 
-### Program Information
+### 🎓 Program Information
 
 | University | Program | Degree Level | Country | Notes |
 | ---------- | ------- | ------------ | ------- | ----- |
 
-### Requirements
+### 📋 Requirements Checklist
 
-* Minimum GPA:
-* IELTS/TOEFL:
-* GRE/GMAT:
-* Prerequisites:
-* Work Experience:
-* Application Documents:
+* **Minimum GPA:** 
+* **IELTS/TOEFL:** 
+* **GRE/GMAT:** 
+* **Prerequisites:** 
+* **Work Experience:** 
+* **Application Documents:** 
 
-### Deadlines
+### ⏰ Important Deadlines
 
-| University | Program | Deadline Type | Date |
-| ---------- | ------- | ------------- | ---- |
+| University | Program | Deadline Type | Date | Status |
+| ---------- | ------- | ------------- | ---- | ------ |
 
-### Scholarships / Funding
+### 💰 Scholarships & Funding
 
-* Scholarship Name:
-* Amount:
-* Eligibility:
-* Deadline:
+* **Scholarship Name:** 
+* **Amount:** 
+* **Eligibility:** 
+* **Deadline:** 
 
-### Tasks & Next Steps
+### ✅ Action Items & Next Steps
 
-* To-do items, actions, or decisions extracted from the notes.
+* Things you should tackle this week
+* Stuff to research further
+* Documents to prepare
+* People to contact
 
-### Additional Notes
+### 💡 My Recommendations for You
 
-* Any remaining notes or comments not covered above.
+Based on what I see in your notes, here's what I think you should focus on:
 
-If any section is not applicable, simply omit it.
-Use clean, professional formatting.
-Do not explain your output — just present the structured information.
+* **Quick wins:** Easy tasks you can knock out soon
+* **Priority actions:** The most important stuff that could make or break your applications
+* **Smart moves:** Strategic suggestions based on your situation
+* **Reality check:** Any potential issues I notice that you should address
 
-Here are the raw notes to organize:
+### 📝 Everything Else
+
+* Any other notes, thoughts, or random ideas that didn't fit elsewhere
+
+**Important:** I'll only include sections that are relevant to your notes. If you didn't mention scholarships, I won't create that section. I keep things clean and focused!
+
+Here are your raw notes to organize:
 
 ${rawNotes}`;
 
@@ -106,7 +116,7 @@ ${rawNotes}`;
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert at organizing university application research notes. Follow the user instructions exactly and output clean markdown.' 
+            content: 'You are a friendly, helpful AI assistant who specializes in organizing university application research notes. You speak in a casual, encouraging tone like a knowledgeable friend. Always provide specific, actionable recommendations based on the user\'s notes. Use emojis sparingly but effectively. Focus on being genuinely helpful rather than overly formal.' 
           },
           { role: 'user', content: organizationPrompt }
         ],
