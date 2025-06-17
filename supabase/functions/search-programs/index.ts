@@ -36,48 +36,82 @@ serve(async (req) => {
       )
     }
 
-    // Enhanced prompt for comprehensive report-style results
-    const prompt = `Create a comprehensive university program search report for: "${query}"
+    // Updated prompt to match the Smart Notes organization style
+    const prompt = `Hey there! 👋 I'm here to help you find amazing university programs that match your search criteria.
 
-Structure your response as a detailed research report covering:
+You're looking for: "${query}"
 
-## Program Overview
-Provide a summary of the search criteria and what types of programs match this query.
+I'll structure my findings in a way that's easy to read and actionable. Think of me as your university research buddy who knows all the best programs!
 
-## Available Programs
-List specific programs found, organized by country/region. For each program include:
-- **Program Name**: Full official program title
-- **University**: Complete university name  
-- **Location**: Country and city
-- **Degree Level**: Bachelor's, Master's, PhD, etc.
-- **Duration**: Program length
-- **Tuition Fees**: Exact fees as stated by universities (specify currency and student status)
-- **Application Deadline**: Current deadline information
-- **Entry Requirements**: Key admission requirements
-- **Program Highlights**: Brief description of unique features
+**IMPORTANT:** I must provide AT LEAST 5 different program options from different universities. If I can't find 5 exact matches, I'll include closely related programs to give you more options.
 
-## Key Insights
-- Common fee ranges across programs
-- Popular locations for this field
-- Typical admission requirements
-- Notable program features or specializations
+Here's what I'll do with your search:
 
-## Application Considerations
-- Important deadlines to note
-- Documentation typically required
-- Tips for international students (if relevant)
+**Format everything in clean markdown** with sections, tables, and bullet points so it's super easy to scan.
 
-CRITICAL INSTRUCTIONS:
-- Only include real, currently offered programs from accredited universities
-- Report fees exactly as found on official university websites
-- Include direct links to program pages when possible: [Program Name](URL)
-- If exact information is unavailable, clearly state "Contact university for current details"
-- Focus on official university sources only
-- Prioritize accuracy over quantity
+**Organize into these sections:**
 
-Format links as: [Program Title](university-program-url) for easy access to official pages.`
+### 🎓 Featured Programs
 
-    console.log('Sending comprehensive search query to Perplexity:', query)
+For each program, I'll provide:
+
+**Program Name:** [Full Program Title]
+**University:** [University Name]
+**Location:** [Country and City]
+**Degree Level:** [Bachelor's/Master's/PhD]
+**Duration:** [Program length]
+**Tuition Fees:** [Fee information with currency]
+**Application Deadline:** [Current deadline or next intake]
+**Entry Requirements:** [Key admission requirements]
+**Program Highlights:** [What makes this program special]
+**Official Website:** [Direct link to program page]
+
+### 📋 Requirements Overview
+
+* **Common Prerequisites:** What most programs need
+* **Language Requirements:** IELTS/TOEFL scores typically required
+* **Academic Requirements:** GPA or grade equivalents
+* **Additional Requirements:** Work experience, portfolios, etc.
+
+### ⏰ Application Timeline
+
+| University | Program | Application Deadline | Start Date | Status |
+| ---------- | ------- | ------------------- | ---------- | ------ |
+
+### 💰 Fee Comparison
+
+| University | Program | Annual Tuition | Total Cost | Scholarships Available |
+| ---------- | ------- | -------------- | ---------- | --------------------- |
+
+### 💡 My Recommendations for You
+
+Based on your search, here's what I think you should focus on:
+
+* **Top Picks:** The programs I think are perfect matches
+* **Budget-Friendly Options:** Great programs that won't break the bank
+* **Prestigious Choices:** Elite programs if you're aiming high
+* **Quick Applications:** Programs with rolling admissions or upcoming deadlines
+
+### ✅ Next Steps
+
+* Things you should do this week
+* Research tasks to complete
+* Documents to prepare
+* People to contact
+
+**Important:** I'll only include sections that are relevant to your search. I keep things focused and helpful!
+
+CRITICAL REQUIREMENTS:
+- Provide AT LEAST 5 different programs from different universities
+- Use real, currently offered programs only
+- Include working university website URLs when possible
+- All information must be from official university sources
+- If exact fees are unknown, state "Verify with University"
+- Include clear disclaimers about verifying information
+
+Please provide detailed, accurate information about university programs matching this search query.`
+
+    console.log('Sending enhanced search query to Perplexity:', query)
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -90,7 +124,7 @@ Format links as: [Program Title](university-program-url) for easy access to offi
         messages: [
           {
             role: 'system',
-            content: 'You are a university program research specialist. Create comprehensive, accurate reports from official university sources. Always verify information from university websites and provide direct links when possible. Format responses as structured reports with clear sections and actionable information.'
+            content: 'You are a friendly, helpful AI assistant who specializes in finding university programs. You speak in a casual, encouraging tone like a knowledgeable friend. Always provide at least 5 different program options from different universities. Use emojis sparingly but effectively. Focus on being genuinely helpful rather than overly formal. Format responses as structured reports with clear sections and actionable information.'
           },
           {
             role: 'user',
@@ -118,7 +152,7 @@ Format links as: [Program Title](university-program-url) for easy access to offi
     }
 
     const data = await response.json()
-    console.log('Perplexity response received for comprehensive search')
+    console.log('Perplexity response received for enhanced search')
 
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       return new Response(
@@ -131,7 +165,7 @@ Format links as: [Program Title](university-program-url) for easy access to offi
     }
 
     const content = data.choices[0].message.content
-    console.log('Report content length:', content.length)
+    console.log('Enhanced report content length:', content.length)
 
     // Create a single comprehensive result for report display
     const searchResults = [{
@@ -163,7 +197,7 @@ Format links as: [Program Title](university-program-url) for easy access to offi
           model: data.model || 'llama-3.1-sonar-large-128k-online',
           hasStructuredData: false,
           reportFormat: true,
-          disclaimer: 'Comprehensive search report generated by Perplexity AI. Always verify all details directly with universities.'
+          disclaimer: 'Enhanced search report generated by Perplexity AI with at least 5 program options. Always verify all details directly with universities.'
         }
       }),
       { 
