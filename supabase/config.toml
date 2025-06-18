@@ -78,3 +78,6 @@ verify_jwt = false
 
 [functions.analyze-notes]
 verify_jwt = true
+
+[functions.organize-search-results]
+verify_jwt = false

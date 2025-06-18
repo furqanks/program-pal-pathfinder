@@ -24,7 +24,7 @@ const SearchReportView = ({ rawContent, query, citations }: SearchReportViewProp
         onSearchGoogle={handleSearchGoogle}
       />
 
-      <SearchReportContent rawContent={rawContent} />
+      <SearchReportContent rawContent={rawContent} query={query} />
       
       <SearchReportVerification />
 
