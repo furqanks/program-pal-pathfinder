@@ -52,10 +52,11 @@ For each program, please provide:
 - Program highlights
 - Official website links when available
 
-
 If the search mentions budget-friendly, affordable, or low-cost options, prioritize public universities with lower fees.
 
-Please also provide brief advice based on the search query.`
+Please also provide brief advice based on the search query.
+
+Please format your response using markdown with proper headers, tables, and bullet points to make the information clear and well-organized. Use tables where appropriate to compare programs, and include clear section headers.`
 
     console.log('Sending search query to Perplexity:', query)
 
@@ -70,7 +71,7 @@ Please also provide brief advice based on the search query.`
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful assistant that finds university programs. Provide accurate, detailed information from official sources in plain text format without any markdown or special formatting.'
+            content: 'You are a helpful assistant that finds university programs. Provide accurate, detailed information from official sources using proper markdown formatting with headers, tables, and bullet points for clear organization.'
           },
           {
             role: 'user',

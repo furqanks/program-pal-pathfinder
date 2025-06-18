@@ -1,10 +1,14 @@
 
+import { useMarkdownRenderer } from "./MarkdownRenderer";
+
 interface SearchReportContentProps {
   rawContent: string;
   query?: string;
 }
 
 const SearchReportContent = ({ rawContent }: SearchReportContentProps) => {
+  const { renderMarkdown } = useMarkdownRenderer();
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -12,9 +16,7 @@ const SearchReportContent = ({ rawContent }: SearchReportContentProps) => {
       </div>
       
       <div className="prose prose-sm max-w-none dark:prose-invert">
-        <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
-          {rawContent}
-        </pre>
+        {renderMarkdown(rawContent)}
       </div>
     </div>
   );
