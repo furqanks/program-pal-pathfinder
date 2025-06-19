@@ -1,15 +1,18 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Search as SearchIcon, X, Info, ArrowRight, GraduationCap, MapPin, DollarSign } from "lucide-react";
-import { usePerplexityContext } from "@/contexts/PerplexityContext";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import SearchReportView from "@/components/search/SearchReportView";
+import { useMarkdownRenderer } from "@/components/search/MarkdownRenderer";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Search = () => {
-  const { searchPrograms, searchResults, isLoading, clearResults, searchMetadata, citations, rawContent } = usePerplexityContext();
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchResponse, setSearchResponse] = useState("");
   const [customQuery, setCustomQuery] = useState("");
   const [selectedAnswers, setSelectedAnswers] = useState({
     field: "",
@@ -18,6 +21,8 @@ const Search = () => {
     budget: "",
     format: ""
   });
+
+  const { renderMarkdown } = useMarkdownRenderer();
 
   const questions = [
     {
@@ -109,17 +114,51 @@ const Search = () => {
     return parts.join(" ");
   };
 
+  const searchPrograms = async (query: string) => {
+    if (!query.trim()) {
+      toast.error("Please enter a search query");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('search-programs', {
+        body: { query, resultCount: 10 },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Error searching programs');
+      }
+
+      // Extract the raw content from the response
+      const rawContent = data?.rawContent || data?.searchResults?.[0]?.description || '';
+      
+      if (rawContent) {
+        setSearchResponse(rawContent);
+        toast.success("Search completed successfully");
+      } else {
+        throw new Error('No content received from search');
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      toast.error(error instanceof Error ? error.message : 'Failed to search programs. Please try again.');
+      setSearchResponse("");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleGuidedSearch = async () => {
     const query = buildQueryFromAnswers();
     if (query.trim()) {
-      await searchPrograms(query.trim(), 10);
+      await searchPrograms(query.trim());
     }
   };
 
   const handleCustomSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (customQuery.trim()) {
-      await searchPrograms(customQuery.trim(), 10);
+      await searchPrograms(customQuery.trim());
     }
   };
 
@@ -132,7 +171,7 @@ const Search = () => {
       budget: "",
       format: ""
     });
-    clearResults();
+    setSearchResponse("");
   };
 
   const hasAnswers = Object.values(selectedAnswers).some(answer => answer);
@@ -204,7 +243,7 @@ const Search = () => {
               )}
               Search Programs
             </Button>
-            {(searchResults.length > 0 || hasAnswers) && (
+            {(searchResponse || hasAnswers) && (
               <Button variant="outline" onClick={handleClearSearch}>
                 <X className="h-4 w-4 mr-2" />
                 Clear
@@ -264,40 +303,31 @@ const Search = () => {
                 </PopoverContent>
               </Popover>
 
-              {searchMetadata && (
-                <div className="text-xs text-muted-foreground flex items-center gap-2">
-                  <span>Powered by Perplexity AI</span>
-                  {citations.length > 0 && (
-                    <>
-                      <span>•</span>
-                      <span>{citations.length} sources</span>
-                    </>
-                  )}
-                </div>
-              )}
+              <div className="text-xs text-muted-foreground">
+                <span>Powered by Perplexity AI</span>
+              </div>
             </div>
           </form>
         </CardContent>
       </Card>
 
-      {/* Search Results - Always use report view */}
-      {searchResults.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">
-              Search Results
-            </h2>
-            <Badge variant="secondary">
-              {citations.length} sources referenced
-            </Badge>
-          </div>
-
-          <SearchReportView 
-            rawContent={rawContent} 
-            query={searchMetadata?.query || customQuery || generatedQuery}
-            citations={citations}
-          />
-        </div>
+      {/* Markdown Response Display */}
+      {searchResponse && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Search Results</CardTitle>
+              <Badge variant="secondary">
+                Powered by Perplexity AI
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              {renderMarkdown(searchResponse)}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Loading State */}
@@ -313,7 +343,7 @@ const Search = () => {
       )}
 
       {/* Empty State */}
-      {!isLoading && searchResults.length === 0 && !hasAnswers && !customQuery && (
+      {!isLoading && !searchResponse && !hasAnswers && !customQuery && (
         <Card>
           <CardContent className="py-12 text-center">
             <div className="flex justify-center mb-4">
