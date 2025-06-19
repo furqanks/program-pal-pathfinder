@@ -6,11 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Search as SearchIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import SearchReportHeader from "@/components/search/SearchReportHeader";
+import SearchReportContent from "@/components/search/SearchReportContent";
+import SearchReportSources from "@/components/search/SearchReportSources";
 
 const UpdatedSearch = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [citations, setCitations] = useState([]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,16 +26,22 @@ const UpdatedSearch = () => {
 
     setIsLoading(true);
     try {
+      console.log('Starting updated search with query:', searchQuery);
+      
       const { data, error } = await supabase.functions.invoke('updated-search', {
         body: { query: searchQuery },
       });
 
       if (error) {
+        console.error('Updated search error:', error);
         throw new Error(error.message || 'Error searching programs');
       }
 
+      console.log('Updated search response:', data);
+
       if (data?.results) {
         setSearchResults(data.results);
+        setCitations(data.citations || []);
         toast.success("Search completed successfully");
       } else {
         throw new Error('No results received from search');
@@ -40,6 +50,7 @@ const UpdatedSearch = () => {
       console.error("Updated search error:", error);
       toast.error(error instanceof Error ? error.message : 'Failed to search programs. Please try again.');
       setSearchResults("");
+      setCitations([]);
     } finally {
       setIsLoading(false);
     }
@@ -48,6 +59,12 @@ const UpdatedSearch = () => {
   const handleClear = () => {
     setSearchQuery("");
     setSearchResults("");
+    setCitations([]);
+  };
+
+  const handleSearchGoogle = () => {
+    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + " university programs")}`;
+    window.open(googleSearchUrl, '_blank');
   };
 
   return (
@@ -107,16 +124,23 @@ const UpdatedSearch = () => {
 
       {/* Search Results */}
       {searchResults && !isLoading && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Search Results</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
-              {searchResults}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <SearchReportHeader 
+            query={searchQuery}
+            citations={citations}
+            onSearchGoogle={handleSearchGoogle}
+          />
+          
+          <Card>
+            <CardContent className="p-6">
+              <SearchReportContent rawContent={searchResults} query={searchQuery} />
+            </CardContent>
+          </Card>
+          
+          {citations.length > 0 && (
+            <SearchReportSources citations={citations} />
+          )}
+        </div>
       )}
 
       {/* Empty State */}
