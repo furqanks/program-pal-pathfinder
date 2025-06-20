@@ -7,6 +7,9 @@ import { Loader2, Search as SearchIcon, X, Info, ArrowRight, GraduationCap, MapP
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useMarkdownRenderer } from "@/components/search/MarkdownRenderer";
+import SearchReportHeader from "@/components/search/SearchReportHeader";
+import SearchReportContent from "@/components/search/SearchReportContent";
+import SearchReportSources from "@/components/search/SearchReportSources";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -14,6 +17,8 @@ const Search = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchResponse, setSearchResponse] = useState("");
   const [customQuery, setCustomQuery] = useState("");
+  const [citations, setCitations] = useState([]);
+  const [searchMetadata, setSearchMetadata] = useState(null);
   const [selectedAnswers, setSelectedAnswers] = useState({
     field: "",
     level: "",
@@ -122,27 +127,45 @@ const Search = () => {
 
     setIsLoading(true);
     try {
+      console.log('Starting search with query:', query);
+      
       const { data, error } = await supabase.functions.invoke('search-programs', {
         body: { query, resultCount: 10 },
       });
 
       if (error) {
+        console.error('Search error:', error);
         throw new Error(error.message || 'Error searching programs');
       }
 
-      // Extract the raw content from the response
-      const rawContent = data?.rawContent || data?.searchResults?.[0]?.description || '';
-      
-      if (rawContent) {
-        setSearchResponse(rawContent);
+      console.log('Search response received:', data);
+
+      if (data?.rawContent) {
+        setSearchResponse(data.rawContent);
+        setCitations(data.citations || []);
+        setSearchMetadata(data.searchMetadata || null);
+        console.log('Citations:', data.citations);
+        console.log('Search metadata:', data.searchMetadata);
         toast.success("Search completed successfully");
       } else {
-        throw new Error('No content received from search');
+        // Fallback to old format for backward compatibility
+        const rawContent = data?.searchResults?.[0]?.description || '';
+        if (rawContent) {
+          setSearchResponse(rawContent);
+          setCitations([]);
+          setSearchMetadata(null);
+          console.log('Using fallback content extraction');
+          toast.success("Search completed successfully");
+        } else {
+          throw new Error('No content received from search');
+        }
       }
     } catch (error) {
       console.error("Search error:", error);
       toast.error(error instanceof Error ? error.message : 'Failed to search programs. Please try again.');
       setSearchResponse("");
+      setCitations([]);
+      setSearchMetadata(null);
     } finally {
       setIsLoading(false);
     }
@@ -172,6 +195,14 @@ const Search = () => {
       format: ""
     });
     setSearchResponse("");
+    setCitations([]);
+    setSearchMetadata(null);
+  };
+
+  const handleSearchGoogle = () => {
+    const searchQuery = customQuery || buildQueryFromAnswers();
+    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + " university programs")}`;
+    window.open(googleSearchUrl, '_blank');
   };
 
   const hasAnswers = Object.values(selectedAnswers).some(answer => answer);
@@ -311,25 +342,6 @@ const Search = () => {
         </CardContent>
       </Card>
 
-      {/* Markdown Response Display */}
-      {searchResponse && (
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Search Results</CardTitle>
-              <Badge variant="secondary">
-                Powered by Perplexity AI
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="prose prose-sm max-w-none dark:prose-invert">
-              {renderMarkdown(searchResponse)}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Loading State */}
       {isLoading && (
         <Card>
@@ -340,6 +352,44 @@ const Search = () => {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Search Results */}
+      {searchResponse && !isLoading && (
+        <div className="space-y-6">
+          <SearchReportHeader 
+            query={customQuery || generatedQuery}
+            citations={citations}
+            onSearchGoogle={handleSearchGoogle}
+          />
+          
+          <Card>
+            <CardContent className="p-6">
+              <SearchReportContent rawContent={searchResponse} query={customQuery || generatedQuery} />
+            </CardContent>
+          </Card>
+          
+          {citations.length > 0 && (
+            <SearchReportSources citations={citations} />
+          )}
+
+          {/* Debug Information */}
+          {searchMetadata && (
+            <Card className="border-orange-200 bg-orange-50/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm text-orange-800">Debug Information</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-xs text-orange-700 space-y-1">
+                  <p><strong>Content Length:</strong> {searchResponse.length} characters</p>
+                  <p><strong>Citations Found:</strong> {searchMetadata.citationCount}</p>
+                  <p><strong>Model Used:</strong> {searchMetadata.model}</p>
+                  <p><strong>Content Preview:</strong> {searchMetadata.contentPreview}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Empty State */}

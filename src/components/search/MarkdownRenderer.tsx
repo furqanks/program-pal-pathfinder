@@ -28,18 +28,64 @@ export const useMarkdownRenderer = () => {
   const renderMarkdown = (text: string) => {
     if (!text) return null;
     
+    console.log('Rendering markdown, content length:', text.length);
+    console.log('First 500 characters:', text.substring(0, 500));
+    
     // Simple markdown rendering for headers, tables, and lists
     const lines = text.split('\n');
     const rendered: JSX.Element[] = [];
     let inTable = false;
     let tableHeaders: string[] = [];
     let tableRows: JSX.Element[] = [];
+    let inList = false;
+    let listItems: JSX.Element[] = [];
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       
+      // Handle numbered lists
+      if (line.match(/^\d+\.\s/)) {
+        if (!inList) {
+          inList = true;
+          listItems = [];
+        }
+        listItems.push(
+          <li key={`list-${i}`} className="ml-4 mb-1 list-decimal">
+            {formatTextWithLinks(line.replace(/^\d+\.\s/, ''))}
+          </li>
+        );
+        continue;
+      }
+      
+      // Handle bullet lists
+      if (line.startsWith('- ') || line.startsWith('* ')) {
+        if (!inList) {
+          inList = true;
+          listItems = [];
+        }
+        listItems.push(
+          <li key={`list-${i}`} className="ml-4 mb-1 list-disc">
+            {formatTextWithLinks(line.replace(/^[-*]\s/, ''))}
+          </li>
+        );
+        continue;
+      }
+      
+      // End list if we're not in a list item anymore
+      if (inList && !line.match(/^\d+\.\s/) && !line.startsWith('- ') && !line.startsWith('* ')) {
+        rendered.push(
+          <ul key={`list-container-${i}`} className="my-3">
+            {listItems}
+          </ul>
+        );
+        inList = false;
+        listItems = [];
+      }
+      
       // Headers
-      if (line.startsWith('### ')) {
+      if (line.startsWith('#### ')) {
+        rendered.push(<h4 key={i} className="text-base font-semibold mt-4 mb-2">{line.replace('#### ', '')}</h4>);
+      } else if (line.startsWith('### ')) {
         rendered.push(<h3 key={i} className="text-lg font-semibold mt-6 mb-3">{line.replace('### ', '')}</h3>);
       } else if (line.startsWith('## ')) {
         rendered.push(<h2 key={i} className="text-xl font-bold mt-8 mb-4">{line.replace('## ', '')}</h2>);
@@ -90,22 +136,44 @@ export const useMarkdownRenderer = () => {
         tableHeaders = [];
         tableRows = [];
       }
-      // Bullet points
-      else if (line.startsWith('* ')) {
-        rendered.push(
-          <li key={i} className="ml-4 mb-1 list-disc">
-            {formatTextWithLinks(line.replace('* ', ''))}
-          </li>
-        );
+      // Bold text patterns - handle **text** format
+      else if (line.includes('**') && !line.startsWith('**') && !line.endsWith('**')) {
+        const boldRegex = /\*\*(.*?)\*\*/g;
+        const parts = line.split(boldRegex);
+        const formattedParts = parts.map((part, idx) => {
+          if (idx % 2 === 1) { // Odd indices are the bold parts
+            return <strong key={idx}>{part}</strong>;
+          }
+          return formatTextWithLinks(part);
+        });
+        rendered.push(<p key={i} className="mb-2">{formattedParts}</p>);
       }
-      // Bold text patterns
+      // Bold headings
       else if (line.startsWith('**') && line.endsWith('**')) {
         rendered.push(<p key={i} className="font-semibold mb-2">{formatTextWithLinks(line.replace(/\*\*/g, ''))}</p>);
+      }
+      // Code blocks
+      else if (line.startsWith('```')) {
+        // Skip code block markers for now, could be enhanced later
+        continue;
       }
       // Regular paragraphs
       else if (line.trim() && !line.includes('---')) {
         rendered.push(<p key={i} className="mb-2">{formatTextWithLinks(line)}</p>);
       }
+      // Empty lines for spacing
+      else if (line.trim() === '') {
+        rendered.push(<div key={i} className="h-2"></div>);
+      }
+    }
+    
+    // Close any open list
+    if (inList && listItems.length > 0) {
+      rendered.push(
+        <ul key="final-list" className="my-3">
+          {listItems}
+        </ul>
+      );
     }
     
     // Close any open table
@@ -129,6 +197,8 @@ export const useMarkdownRenderer = () => {
         </div>
       );
     }
+    
+    console.log('Rendered elements count:', rendered.length);
     
     return <div className="prose prose-sm max-w-none">{rendered}</div>;
   };
