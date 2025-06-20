@@ -79,8 +79,7 @@ Format the response clearly with proper headings and structure.`
         temperature: 0.1,
         top_p: 0.9,
         return_citations: true,
-        search_recency_filter: "month",
-        search_domain_filter: ["edu"]
+        search_recency_filter: "month"
       }),
     })
 
