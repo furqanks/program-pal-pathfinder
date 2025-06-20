@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Search, GraduationCap, FileText, BarChart, X, Target, StickyNote, User } from "lucide-react";
+import { Search, GraduationCap, FileText, BarChart, X, Target, StickyNote, User, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const navItems = [
   { path: '/', label: 'My Applications', icon: Target },
   { path: '/search', label: 'Discover Programs', icon: Search },
+  { path: '/updated-search', label: 'Updated Search', icon: Sparkles },
   { path: '/us-search', label: 'US Universities', icon: GraduationCap },
   { path: '/documents', label: 'Application Documents', icon: FileText },
   { path: '/notes', label: 'My Notes', icon: StickyNote },
