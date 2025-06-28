@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
@@ -22,113 +23,58 @@ function createErrorResponse(message: string, status: number) {
 
 // Function to check if content is too short for proper analysis
 function isContentTooShort(content: string): boolean {
-  // Check if content is less than 100 characters or 20 words
   return content.length < 100 || content.split(/\s+/).length < 20;
 }
 
-// Generate mock feedback for development or when content is too short
-function generateMockFeedback() {
+// Generate casual, relatable mock feedback
+function generateCasualMockFeedback() {
   return {
-    summary: "The document is too short for a comprehensive evaluation. A strong academic document should include detailed background information, clear objectives, specific examples, and compelling reasoning. Please expand your content to include: your academic/professional background, specific goals, why you're interested in this particular program, relevant experiences with concrete examples, and how this opportunity aligns with your career trajectory.",
+    summary: "Hey! I can see you're getting started, which is awesome. Right now though, your draft is pretty brief and could use some more substance to really shine. Think of your SOP like telling a friend about your dreams and goals - you want to share your story, your 'why', and what makes you excited about this path. Add some personal experiences, specific examples of what you've done, and paint a picture of where you want to go. The admissions team wants to get to know the real you!",
     improvementPoints: [
-      "Expand your opening with a compelling hook that immediately captures the reader's attention",
-      "Add specific examples and quantifiable achievements from your background",
-      "Include detailed reasoning for why you're interested in this particular program/opportunity",
-      "Demonstrate knowledge of the institution and how it aligns with your goals",
-      "Strengthen your conclusion with concrete next steps and long-term vision",
-      "Improve sentence variety and transition between paragraphs",
-      "Add more sophisticated vocabulary while maintaining clarity"
+      "Start with a hook that shows your personality - maybe a moment that sparked your interest",
+      "Share specific stories and examples that show (don't just tell) your qualities",
+      "Explain why this particular program excites you - show you've done your research",
+      "Connect your past experiences to your future goals in a natural way",
+      "Let your authentic voice shine through - be professional but personable",
+      "End with a vision that gets the reader excited about your potential",
+      "Use varied sentence structures to keep it engaging and conversational"
     ],
     quotedImprovements: [
       {
         originalText: "Want to do this mba",
-        improvedText: "I am passionate about pursuing an MBA at [Institution Name] because it perfectly aligns with my career goals in strategic business leadership and my commitment to driving innovation in the technology sector",
-        explanation: "This revision provides specific motivation, shows research about the program, and demonstrates clear career direction with professional language"
+        improvedText: "I'm excited to pursue an MBA at [University Name] because I've discovered that my passion for solving complex business challenges aligns perfectly with your program's focus on innovative leadership and social impact",
+        explanation: "This version shows genuine enthusiasm, demonstrates research about the specific program, and connects personal interests with the school's strengths. It sounds like a real person talking about their goals, not a robot."
       }
     ],
-    score: 3
+    score: 4
   };
 }
 
-// Function to get the system prompt based on document type and preferences
-function getSystemPrompt(documentType: string, fileName?: string, tone?: string, style?: string) {
+// Function to get the system prompt with casual, conversational tone
+function getSystemPrompt(documentType: string, fileName?: string) {
   let systemPrompt = '';
   
-  // Base prompt by document type
+  // Base prompt by document type with casual approach
   switch(documentType) {
     case 'SOP':
-      systemPrompt = `You are an expert academic application reviewer with 15+ years of experience reviewing Statements of Purpose for top-tier universities worldwide. You understand what admissions committees look for and can identify both strengths and areas for improvement in academic writing.
+      systemPrompt = `You are a friendly, experienced admissions consultant who gives helpful, honest feedback on Statements of Purpose. You understand that writing about yourself can be tough, so you provide encouraging but constructive advice that helps students tell their authentic stories in compelling ways.
 
-Your task is to provide comprehensive, actionable feedback on this Statement of Purpose that will help the applicant create a compelling narrative that stands out to admissions committees.`;
+Your feedback should feel like advice from a knowledgeable friend - supportive, specific, and actionable. Use a conversational tone that puts the writer at ease while still providing professional guidance.`;
       break;
     case 'CV':
-      systemPrompt = `You are an expert academic application reviewer specializing in CVs and resumes for university applications, graduate programs, and academic positions. You understand how to present academic achievements, research experience, and professional accomplishments effectively.
+      systemPrompt = `You are a supportive career advisor who helps students and professionals present their experiences effectively. You provide friendly, practical feedback that helps people showcase their achievements without sounding boastful.
 
-Your task is to provide detailed feedback on this CV/resume to help the applicant present their qualifications in the most compelling way possible.`;
+Your advice should be encouraging and specific, helping the writer understand how to present their story in the most compelling way.`;
       break;
     case 'Essay':
-      systemPrompt = `You are an expert academic writing coach with extensive experience in reviewing application essays for universities, scholarships, and competitive programs. You understand how to craft compelling narratives that showcase personality, achievements, and potential.
+      systemPrompt = `You are an encouraging writing coach who specializes in helping students craft compelling application essays. You understand that finding your voice can be challenging, so you provide warm, constructive feedback that builds confidence.
 
-Your task is to provide comprehensive feedback on this essay to help the writer create a memorable and impactful piece.`;
-      break;
-    case 'LOR':
-      systemPrompt = `You are an expert academic application reviewer specializing in Letters of Recommendation for university applications and academic programs. You understand what makes recommendation letters effective and persuasive to admissions committees.
-
-Your task is to provide detailed feedback on this Letter of Recommendation to help strengthen its impact and credibility.`;
-      break;
-    case 'PersonalEssay':
-      systemPrompt = `You are an expert writing coach specializing in personal essays for academic applications. You understand how to help applicants tell their personal stories in compelling ways that reveal character, growth, and potential.
-
-Your task is to provide comprehensive feedback on this personal essay to help the writer craft a memorable and authentic narrative.`;
-      break;
-    case 'ScholarshipEssay':
-      systemPrompt = `You are an expert scholarship application reviewer with experience in evaluating essays for competitive scholarship programs. You understand what scholarship committees look for in terms of merit, need, and potential impact.
-
-Your task is to provide detailed feedback on this scholarship essay to help the applicant make a compelling case for funding.`;
+Your tone should be supportive and conversational, like a mentor who genuinely wants to see the writer succeed.`;
       break;
     default:
-      systemPrompt = `You are an expert academic application reviewer with extensive experience in evaluating ${documentType}s for university applications and academic programs.
+      systemPrompt = `You are a supportive writing coach who provides friendly, constructive feedback on ${documentType}s. Your goal is to help writers improve while maintaining their authentic voice.
 
-Your task is to provide comprehensive, actionable feedback on this ${documentType}.`;
-  }
-  
-  // Add tone preference guidance
-  if (tone) {
-    switch(tone) {
-      case 'formal':
-        systemPrompt += `\n\nTONE PREFERENCE: Focus feedback on achieving a formal, professional, and academic tone. Emphasize sophisticated vocabulary, proper academic structure, and professional language conventions.`;
-        break;
-      case 'conversational':
-        systemPrompt += `\n\nTONE PREFERENCE: Focus feedback on achieving a natural, engaging, and conversational tone while maintaining professionalism. Balance authenticity with academic appropriateness.`;
-        break;
-      case 'confident':
-        systemPrompt += `\n\nTONE PREFERENCE: Focus feedback on achieving a confident, assertive, and self-assured tone. Help strengthen statements and eliminate tentative language.`;
-        break;
-      case 'humble':
-        systemPrompt += `\n\nTONE PREFERENCE: Focus feedback on achieving a modest, respectful, and humble tone while still showcasing achievements effectively.`;
-        break;
-      case 'persuasive':
-        systemPrompt += `\n\nTONE PREFERENCE: Focus feedback on achieving a compelling, convincing, and persuasive tone that effectively argues the applicant's case.`;
-        break;
-    }
-  }
-  
-  // Add style preference guidance
-  if (style) {
-    switch(style) {
-      case 'detailed':
-        systemPrompt += `\n\nSTYLE PREFERENCE: Provide comprehensive, detailed analysis with extensive examples and specific guidance for improvement.`;
-        break;
-      case 'concise':
-        systemPrompt += `\n\nSTYLE PREFERENCE: Provide brief, focused feedback with the most essential improvement points. Be direct and to-the-point.`;
-        break;
-      case 'developmental':
-        systemPrompt += `\n\nSTYLE PREFERENCE: Focus on growth-oriented suggestions that help the writer develop their skills and understanding progressively.`;
-        break;
-      case 'competitive':
-        systemPrompt += `\n\nSTYLE PREFERENCE: Focus on strategies that will help the document stand out in competitive application pools. Emphasize differentiation and memorable elements.`;
-        break;
-    }
+Use an encouraging, conversational tone that feels like helpful advice from a knowledgeable friend.`;
   }
   
   // Add information about file if it's an uploaded document
@@ -136,194 +82,111 @@ Your task is to provide comprehensive, actionable feedback on this ${documentTyp
     systemPrompt += `\n\nNote: This content was extracted from the uploaded file "${fileName}". Focus your feedback on the actual content from this file.`;
   }
   
-  // Add comprehensive instructions for detailed feedback
+  // Add comprehensive instructions for casual, helpful feedback
   systemPrompt += `
 
-COMPREHENSIVE ANALYSIS FRAMEWORK:
+FEEDBACK APPROACH:
 
-1. CONTENT ANALYSIS:
-   - Evaluate the clarity and coherence of the main message
-   - Assess the logical flow and structure of arguments
-   - Analyze the depth and specificity of examples provided
-   - Review the balance between personal narrative and professional achievements
+1. BE ENCOURAGING: Start with what's working well, then provide constructive suggestions
+2. BE CONVERSATIONAL: Write like you're talking to a friend who asked for help
+3. BE SPECIFIC: Give concrete examples and actionable advice
+4. BE AUTHENTIC: Help the writer find and express their genuine voice
+5. BE PRACTICAL: Focus on changes that will make a real difference
 
-2. TONE AND STYLE ANALYSIS:
-   - Assess whether the tone is appropriate for the target audience
-   - Evaluate the level of formality and professionalism
-   - Analyze sentence variety and writing sophistication
-   - Consider the authenticity and personality conveyed
+ANALYSIS FRAMEWORK:
 
-3. PURPOSE-SPECIFIC EVALUATION:
-   - For academic applications: focus on intellectual curiosity, research potential, and academic fit
-   - For scholarship applications: emphasize merit, need, and potential impact
-   - For professional programs: highlight leadership potential, career trajectory, and practical experience
-   - For personal essays: evaluate authenticity, growth narrative, and character revelation
+1. STORY & AUTHENTICITY:
+   - Does the writer's personality come through?
+   - Are they telling their unique story?
+   - Do they sound genuine and passionate?
 
-4. COMPETITIVE POSITIONING:
-   - Consider how this document would stand out among thousands of similar applications
-   - Identify unique selling points and areas where the applicant differentiates themselves
-   - Assess memorability and lasting impression
+2. CLARITY & FLOW:
+   - Is the main message clear?
+   - Does it flow naturally from point to point?
+   - Are the examples specific and relevant?
 
-FEEDBACK REQUIREMENTS:
+3. CONNECTION & PURPOSE:
+   - Do they show why they're excited about this opportunity?
+   - Have they connected their past to their future goals?
+   - Will the reader remember them after reading?
 
-You MUST provide detailed feedback that includes:
+FEEDBACK STYLE:
+- Use "you" to speak directly to the writer
+- Include encouraging phrases like "I can see that..." or "You're on the right track with..."
+- Avoid overly formal academic language
+- Make suggestions feel doable, not overwhelming
+- Include specific examples of how to improve
 
-1. A comprehensive summary (2-3 paragraphs) that covers:
-   - Overall impression and main strengths
-   - Key areas for improvement
-   - Tone and style assessment
-   - Competitive positioning analysis
-
-2. 5-7 specific improvement points that include:
-   - Structural improvements (organization, flow, transitions)
-   - Content enhancements (specificity, examples, depth)
-   - Tone and style refinements
-   - Purpose-specific optimizations
-   - Competitive differentiation strategies
-
-3. 3-5 quoted improvements that demonstrate:
-   - How to transform weak passages into strong ones
-   - Different tone options (formal vs. conversational, confident vs. humble)
-   - Examples of adding specificity and impact
-   - Ways to better align with the document's purpose
-
-IMPORTANT ANALYSIS GUIDELINES:
-
-- Analyze ONLY the provided document content - do not create examples or content
-- Quote text EXACTLY as it appears in the document
-- Provide alternative phrasings that demonstrate different approaches:
-  * More formal vs. more personal tone
-  * More confident vs. more humble approach  
-  * More specific vs. more general language
-  * Better alignment with target audience expectations
-
-- For each quoted improvement, explain:
-  * Why the original is weak or could be stronger
-  * How the improvement addresses specific concerns
-  * What tone or style change is being demonstrated
-  * How it better serves the document's purpose
-
-RESPONSE FORMAT (JSON only, no markdown):
+RESPONSE FORMAT (JSON only):
 
 {
-  "summary": "Comprehensive 2-3 paragraph analysis covering overall impression, main strengths, key improvement areas, tone assessment, and competitive positioning. Include specific observations about writing style, content depth, and alignment with purpose.",
-  "score": [Number 1-10 with detailed reasoning],
+  "summary": "Write 2-3 paragraphs of friendly, encouraging feedback that feels like advice from a mentor. Start with strengths, then address areas for improvement. Use a warm, conversational tone that builds confidence while being honest about what needs work.",
+  "score": [Number 1-10 with encouraging context],
   "improvementPoints": [
-    "Structural improvement with specific guidance",
-    "Content enhancement with examples of what to add",
-    "Tone/style refinement with specific techniques",
-    "Purpose-specific optimization advice", 
-    "Competitive differentiation strategy",
-    "Technical writing improvement",
-    "Audience alignment enhancement"
+    "Specific, actionable advice written in friendly tone",
+    "Suggestions that help the writer's authentic voice shine",
+    "Concrete examples of what to add or change",
+    "Encouraging guidance on structure and flow",
+    "Tips for making the writing more engaging",
+    "Advice on connecting experiences to goals",
+    "Suggestions for memorable, authentic touches"
   ],
   "quotedImprovements": [
     {
       "originalText": "Exact quote from document",
-      "improvedText": "Improved version demonstrating specific technique or tone",
-      "explanation": "Detailed explanation of the improvement strategy, tone change, and why it's more effective for the target audience and purpose"
+      "improvedText": "Improved version that sounds more natural and engaging",
+      "explanation": "Friendly explanation of why this version works better, focusing on authenticity and impact"
     }
   ]
 }
 
 CRITICAL REQUIREMENTS:
-- The originalText MUST be exact quotes from the provided document
-- DO NOT invent quotes that don't exist in the document
-- Provide multiple improvement approaches when possible (different tones, styles, purposes)
-- Focus on actionable, specific guidance rather than general advice
-- Consider the competitive landscape and what makes applications memorable
-- Return ONLY the JSON object with no additional text or formatting`;
+- Use only exact quotes from the provided document
+- Keep the tone conversational and encouraging throughout
+- Focus on helping the writer express their authentic self
+- Make suggestions feel achievable and specific
+- Return ONLY the JSON object with no additional formatting`;
 
   return systemPrompt;
 }
 
-// Function to get the system prompt for generating an improved draft
-function getImprovedDraftPrompt(documentType: string, tone?: string) {
-  let systemPrompt = '';
-  
-  // Base prompt by document type
-  switch(documentType) {
-    case 'SOP':
-      systemPrompt = `You are an expert academic application writer with extensive experience crafting compelling Statements of Purpose for top-tier universities. You understand how to transform good content into exceptional narratives that capture admissions committees' attention.`;
-      break;
-    case 'CV':
-      systemPrompt = `You are an expert academic application writer specializing in creating impactful CVs and resumes for university applications. You know how to present qualifications in the most compelling and professional manner.`;
-      break;
-    case 'Essay':
-      systemPrompt = `You are an expert academic application writer with a talent for crafting memorable and impactful essays. You understand how to enhance narrative structure, improve flow, and strengthen the overall impact.`;
-      break;
-    case 'LOR':
-      systemPrompt = `You are an expert academic application writer specializing in Letters of Recommendation. You know how to enhance credibility, strengthen endorsements, and improve the overall persuasiveness of recommendations.`;
-      break;
-    case 'PersonalEssay':
-      systemPrompt = `You are an expert writing coach specializing in personal narratives for academic applications. You excel at helping applicants tell their stories in authentic yet compelling ways.`;
-      break;
-    case 'ScholarshipEssay':
-      systemPrompt = `You are an expert scholarship application writer with experience creating compelling cases for funding. You understand how to effectively communicate merit, need, and potential impact.`;
-      break;
-    default:
-      systemPrompt = `You are an expert academic application writer specializing in ${documentType}s for university applications and academic programs.`;
-  }
-  
-  // Add tone-specific guidance for draft generation
-  if (tone) {
-    switch(tone) {
-      case 'formal':
-        systemPrompt += `\n\nTONE GUIDANCE: Ensure the improved draft maintains a formal, professional, and academic tone throughout. Use sophisticated vocabulary and proper academic structure.`;
-        break;
-      case 'conversational':
-        systemPrompt += `\n\nTONE GUIDANCE: Create an improved draft with a natural, engaging, and conversational tone while maintaining professionalism and appropriateness.`;
-        break;
-      case 'confident':
-        systemPrompt += `\n\nTONE GUIDANCE: Strengthen the draft with confident, assertive language that showcases achievements without hesitation or tentative phrasing.`;
-        break;
-      case 'humble':
-        systemPrompt += `\n\nTONE GUIDANCE: Maintain a modest, respectful tone while still effectively highlighting accomplishments and potential.`;
-        break;
-      case 'persuasive':
-        systemPrompt += `\n\nTONE GUIDANCE: Enhance the draft with compelling, convincing language that persuasively argues the applicant's case for admission or selection.`;
-        break;
-    }
-  }
-  
-  // Add instructions for applying feedback
-  systemPrompt += `
+// Function to get the system prompt for generating an improved draft with casual tone
+function getImprovedDraftPrompt(documentType: string) {
+  return `You are a skilled writing coach who helps students improve their application documents while keeping their authentic voice. You excel at making writing more engaging, specific, and compelling without losing the writer's personality.
 
 IMPROVEMENT STRATEGY:
 
-1. MAINTAIN AUTHENTICITY:
-   - Preserve the author's unique voice and personal experiences
-   - Keep all factual information and achievements unchanged
-   - Maintain the same overall structure and key message points
+1. PRESERVE AUTHENTICITY:
+   - Keep the writer's unique voice and personal experiences
+   - Maintain all factual information unchanged
+   - Preserve the writer's natural personality and enthusiasm
 
-2. ENHANCE IMPACT:
-   - Strengthen opening and closing statements for maximum impact
-   - Improve transitions between paragraphs and ideas
-   - Add sophistication to language while maintaining clarity
-   - Increase specificity and concrete examples where appropriate
-
-3. OPTIMIZE FOR PURPOSE:
-   - Ensure alignment with the target audience and institution
+2. ENHANCE ENGAGEMENT:
+   - Make the opening more compelling and personal
+   - Improve flow between ideas and paragraphs
+   - Add specific details and concrete examples where appropriate
    - Strengthen the connection between experiences and goals
-   - Improve the logical flow of arguments and narratives
-   - Enhance competitive positioning
+
+3. IMPROVE CLARITY:
+   - Ensure the main message is clear and memorable
+   - Smooth transitions between different topics
+   - Make the language more natural and conversational
+   - Eliminate awkward phrasing while maintaining professionalism
 
 4. APPLY FEEDBACK:
-   - Address all specific improvement points mentioned in the feedback
-   - Implement the suggested text improvements
-   - Incorporate tone and style enhancements
-   - Strengthen areas identified as weak
+   - Address all improvement points from the feedback
+   - Implement suggested text improvements naturally
+   - Enhance areas identified as needing work
+   - Maintain appropriate length and structure
 
-INSTRUCTIONS:
-- Apply ALL the feedback provided while maintaining the author's authentic voice
-- Make the document more compelling, specific, and impactful
-- Ensure the improved version flows naturally and reads seamlessly
-- Maintain the same general length and structure
-- Do not add fictional details or experiences not mentioned in the original
+TONE GUIDELINES:
+- Keep it conversational but professional
+- Let personality shine through
+- Use natural, engaging language
+- Avoid overly formal or stilted phrasing
+- Make it sound like the writer talking about their passion
 
 Return ONLY the improved document text, ready for immediate use.`;
-
-  return systemPrompt;
 }
 
 // Function to call OpenAI API
@@ -350,7 +213,7 @@ async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: s
             content
           }
         ],
-        temperature: 0.5,
+        temperature: 0.7, // Slightly higher temperature for more conversational tone
       }),
     });
 
@@ -368,23 +231,23 @@ async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: s
 }
 
 // Function to generate an improved draft based on original content and feedback
-async function generateImprovedDraft(originalContent: string, feedbackData: any, documentType: string, openaiApiKey: string, tone?: string) {
-  console.log(`Generating improved draft for ${documentType} (length: ${originalContent.length}) with tone: ${tone || 'default'}`);
+async function generateImprovedDraft(originalContent: string, feedbackData: any, documentType: string, openaiApiKey: string) {
+  console.log(`Generating improved draft for ${documentType} (length: ${originalContent.length})`);
   
   // Prepare the feedback in a readable format for the AI
   const feedbackForAI = `
-  The original document received the following comprehensive feedback:
+  The original document received the following feedback:
   
   Overall assessment: ${feedbackData.summary}
   
-  Key improvement points:
+  Key improvement areas:
   ${feedbackData.improvementPoints.map((point: string) => `- ${point}`).join('\n')}
   
   Specific text improvements suggested:
   ${feedbackData.quotedImprovements.map((improvement: any) => 
     `Original: "${improvement.originalText}"
     Suggested improvement: "${improvement.improvedText}"
-    Reason: ${improvement.explanation}`
+    Why it's better: ${improvement.explanation}`
   ).join('\n\n')}
   `;
   
@@ -393,14 +256,14 @@ async function generateImprovedDraft(originalContent: string, feedbackData: any,
   ORIGINAL DOCUMENT:
   ${originalContent}
   
-  COMPREHENSIVE FEEDBACK:
+  FEEDBACK TO ADDRESS:
   ${feedbackForAI}
   
-  Please generate an improved version of this document that addresses all the feedback points while maintaining the author's authentic voice and the document's core purpose.
+  Please generate an improved version that addresses all the feedback while maintaining the writer's authentic voice and making it more engaging and compelling.
   `;
   
   try {
-    const systemPrompt = getImprovedDraftPrompt(documentType, tone);
+    const systemPrompt = getImprovedDraftPrompt(documentType);
     const improvedContent = await callOpenAI(promptContent, systemPrompt, openaiApiKey);
     return improvedContent;
   } catch (error) {
@@ -409,37 +272,31 @@ async function generateImprovedDraft(originalContent: string, feedbackData: any,
   }
 }
 
-// Helper function to parse OpenAI response that might be wrapped in markdown code blocks
+// Helper function to parse OpenAI response
 function parseJsonResponse(response: string) {
   try {
-    // First try to parse it directly (if it's already valid JSON)
     return JSON.parse(response);
   } catch (e) {
-    // If direct parsing fails, try to extract JSON from markdown code blocks
     const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
     if (jsonMatch && jsonMatch[1]) {
       try {
         return JSON.parse(jsonMatch[1]);
       } catch (innerError) {
         console.error('Failed to parse JSON from markdown block:', innerError);
-        console.error('Extracted content:', jsonMatch[1]);
         throw new Error('Failed to parse JSON from OpenAI response');
       }
     }
     
-    // If we couldn't find a code block, try to find anything that looks like JSON
     const possibleJson = response.match(/(\{[\s\S]*\})/);
     if (possibleJson && possibleJson[1]) {
       try {
         return JSON.parse(possibleJson[1]);
       } catch (innerError) {
         console.error('Failed to parse JSON from possible JSON match:', innerError);
-        console.error('Extracted content:', possibleJson[1]);
         throw new Error('Failed to parse JSON from OpenAI response');
       }
     }
     
-    // If all else fails, throw the original error
     console.error('Original parsing error:', e);
     console.error('Raw response:', response);
     throw new Error('Failed to parse JSON from OpenAI response');
@@ -456,7 +313,7 @@ serve(async (req) => {
   try {
     // Get request data
     const requestData = await req.json();
-    const { content, documentType, programId, testMode, fileName, action, originalContent, feedback, tone, style } = requestData;
+    const { content, documentType, programId, testMode, fileName, action, originalContent, feedback } = requestData;
     
     // Validate request data
     if (!content && !originalContent) {
@@ -477,8 +334,8 @@ serve(async (req) => {
       }
       
       try {
-        console.log(`Generating improved draft for ${documentType} with tone: ${tone || 'default'}`);
-        const improvedDraft = await generateImprovedDraft(originalContent, feedback, documentType, openaiApiKey, tone);
+        console.log(`Generating improved draft for ${documentType}`);
+        const improvedDraft = await generateImprovedDraft(originalContent, feedback, documentType, openaiApiKey);
         
         return new Response(
           JSON.stringify({ improvedDraft }),
@@ -493,10 +350,9 @@ serve(async (req) => {
       
       // Check if content is too short for proper analysis and we're in test mode
       if (testMode && isContentTooShort(content)) {
-        console.log('Content is too short, returning enhanced mock feedback');
+        console.log('Content is too short, returning casual mock feedback');
         
-        // Return enhanced mock feedback for content that is too short to analyze properly
-        const mockFeedback = generateMockFeedback();
+        const mockFeedback = generateCasualMockFeedback();
         
         return new Response(
           JSON.stringify(mockFeedback),
@@ -505,30 +361,28 @@ serve(async (req) => {
       }
       
       // Log request information
-      console.log(`Processing comprehensive ${documentType} review ${testMode ? 'in test mode' : 'for saving to DB'}${fileName ? ` (file: ${fileName})` : ''} with tone: ${tone || 'default'}, style: ${style || 'default'}`);
+      console.log(`Processing casual ${documentType} review ${testMode ? 'in test mode' : 'for saving to DB'}${fileName ? ` (file: ${fileName})` : ''}`);
       console.log(`Content length: ${content.length} characters`);
-      console.log(`Content sample: ${content.substring(0, 100)}...`);
 
       try {
-        // Get enhanced system prompt with tone and style preferences
-        const systemPrompt = getSystemPrompt(documentType, fileName, tone, style);
+        // Get casual, friendly system prompt
+        const systemPrompt = getSystemPrompt(documentType, fileName);
         
         // Call OpenAI API
         const aiResponse = await callOpenAI(content, systemPrompt, openaiApiKey);
         
-        // Parse the AI response using our enhanced parsing function
+        // Parse the AI response
         let feedbackData;
         try {
           feedbackData = parseJsonResponse(aiResponse);
         } catch (parseError) {
           console.error('Error parsing AI response:', parseError);
-          console.error('Raw AI response:', aiResponse);
           
           // If in test mode, return mock data when parsing fails
           if (testMode) {
-            console.log('Parsing failed in test mode, returning enhanced mock feedback');
+            console.log('Parsing failed in test mode, returning casual mock feedback');
             return new Response(
-              JSON.stringify(generateMockFeedback()),
+              JSON.stringify(generateCasualMockFeedback()),
               { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           }
@@ -551,9 +405,9 @@ serve(async (req) => {
         
         // If in test mode, return mock data when API call fails
         if (testMode) {
-          console.log('API call failed in test mode, returning enhanced mock feedback');
+          console.log('API call failed in test mode, returning casual mock feedback');
           return new Response(
-            JSON.stringify(generateMockFeedback()),
+            JSON.stringify(generateCasualMockFeedback()),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }

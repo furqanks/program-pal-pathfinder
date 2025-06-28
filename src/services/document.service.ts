@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Document, QuotedImprovement } from "@/types/document.types";
@@ -44,12 +45,17 @@ export const addDocument = async (
   doc: Omit<Document, "id" | "versionNumber" | "createdAt">
 ): Promise<Document | undefined> => {
   try {
+    console.log("addDocument service called with:", doc);
+    
     const currentUser = await supabase.auth.getUser();
     
     if (!currentUser.data.user) {
+      console.error("No authenticated user found");
       toast.error("You must be logged in to save documents");
       return;
     }
+    
+    console.log("User authenticated:", currentUser.data.user.id);
     
     const { data: versionNumber, error: versionError } = await supabase.rpc(
       'get_next_version_number',
@@ -60,28 +66,43 @@ export const addDocument = async (
       }
     );
 
-    if (versionError) throw versionError;
+    if (versionError) {
+      console.error("Version number error:", versionError);
+      throw versionError;
+    }
+
+    console.log("Got version number:", versionNumber);
+
+    const insertData = {
+      document_type: doc.documentType,
+      program_id: doc.linkedProgramId,
+      original_text: doc.contentRaw,
+      file_name: doc.fileName || null,
+      version_number: versionNumber || 1
+    };
+
+    console.log("Inserting document with data:", insertData);
 
     const { data, error } = await supabase
       .from('user_documents')
-      .insert({
-        document_type: doc.documentType,
-        program_id: doc.linkedProgramId,
-        original_text: doc.contentRaw,
-        file_name: doc.fileName || null,
-        version_number: versionNumber || 1
-      })
+      .insert(insertData)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Database insert error:", error);
+      throw error;
+    }
+
+    console.log("Document inserted successfully:", data);
 
     const newDocument = formatDocumentFromDb(data);
     toast.success("Document saved successfully");
     return newDocument;
   } catch (error) {
-    console.error("Error adding document:", error);
+    console.error("Error in addDocument service:", error);
     toast.error("Failed to save document");
+    throw error; // Re-throw to allow proper error handling
   }
 };
 
@@ -115,7 +136,9 @@ export const generateDocumentFeedback = async (documentId: string): Promise<{
         content: document.original_text,
         documentType: document.document_type,
         programId: document.program_id,
-        fileName: document.file_name
+        fileName: document.file_name,
+        tone: "conversational", // Always use conversational tone
+        style: "detailed"
       }
     });
 
@@ -154,7 +177,7 @@ export const generateImprovedDraft = async (
   originalContent: string,
   feedback: any,
   documentType: string,
-  tone: string = "formal"
+  tone: string = "conversational" // Default to conversational tone
 ): Promise<string> => {
   console.log("generateImprovedDraft called with:", { 
     originalContentLength: originalContent.length, 
@@ -195,7 +218,7 @@ export const generateTestFeedback = async (
   content: string, 
   documentType: string, 
   programId: string | null = null,
-  tone: string = "formal",
+  tone: string = "conversational", // Default to conversational
   style: string = "detailed"
 ): Promise<{
   summary: string;
