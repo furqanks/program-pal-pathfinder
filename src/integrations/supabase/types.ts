@@ -361,6 +361,8 @@ export type Database = {
           improvement_points: string[] | null
           original_text: string
           program_id: string | null
+          quoted_improvements: Json | null
+          score: number | null
           user_id: string
           version_number: number
         }
@@ -373,6 +375,8 @@ export type Database = {
           improvement_points?: string[] | null
           original_text: string
           program_id?: string | null
+          quoted_improvements?: Json | null
+          score?: number | null
           user_id: string
           version_number: number
         }
@@ -385,6 +389,8 @@ export type Database = {
           improvement_points?: string[] | null
           original_text?: string
           program_id?: string | null
+          quoted_improvements?: Json | null
+          score?: number | null
           user_id?: string
           version_number?: number
         }
