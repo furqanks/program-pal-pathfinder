@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -178,8 +177,8 @@ const Search = () => {
   const generatedQuery = buildQueryFromAnswers();
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="space-y-8">
+    <div className="w-full max-w-none px-4 py-8">
+      <div className="max-w-8xl mx-auto space-y-8">
         {/* Header Section with improved spacing */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold tracking-tight">University Program Search</h1>
@@ -203,14 +202,14 @@ const Search = () => {
             {questions.map((question) => (
               <div key={question.id} className="space-y-4">
                 <h4 className="font-medium text-foreground text-lg">{question.question}</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
                   {question.options.map((option) => (
                     <Button
                       key={option}
                       variant={selectedAnswers[question.id as keyof typeof selectedAnswers] === option ? "default" : "outline"}
                       size="sm"
                       onClick={() => handleAnswerSelect(question.id, option)}
-                      className="text-sm px-4 py-2 h-auto min-h-[40px] whitespace-normal text-left justify-start"
+                      className="text-sm px-3 py-2 h-auto min-h-[44px] whitespace-normal text-left justify-start leading-tight"
                     >
                       {option}
                     </Button>
