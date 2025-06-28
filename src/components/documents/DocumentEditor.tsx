@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { toast } from "sonner";
 import { useDocumentContext } from "@/contexts/DocumentContext";
@@ -75,6 +74,8 @@ const DocumentEditor = ({
       if (savedDoc) {
         console.log("Document saved successfully:", savedDoc.id);
         onSaveSuccess(savedDoc.id);
+        // Clear the content after successful save
+        setDocumentContent("");
         toast.success("Document saved successfully");
       } else {
         throw new Error("No document returned from save operation");
@@ -82,7 +83,19 @@ const DocumentEditor = ({
       
     } catch (error) {
       console.error("Error creating document:", error);
-      toast.error("Failed to save document. Please try again.");
+      
+      // Provide more specific error messages based on error type
+      if (error && typeof error === 'object' && 'code' in error) {
+        if ((error as any).code === '42501') {
+          toast.error("Permission denied. Please make sure you're logged in and try again.");
+        } else if ((error as any).code === '23503') {
+          toast.error("Invalid program reference. Please check your program selection.");
+        } else {
+          toast.error(`Failed to save document: ${(error as any).message || 'Unknown error'}`);
+        }
+      } else {
+        toast.error("Failed to save document. Please try again.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -149,13 +162,25 @@ const DocumentEditor = ({
       if (savedDoc) {
         console.log("Document saved, generating feedback");
         onSaveSuccess(savedDoc.id);
+        // Clear the content after successful save
+        setDocumentContent("");
         toast.success("Document saved successfully");
         setIsGeneratingFeedback(true);
         await generateFeedback(savedDoc.id);
       }
     } catch (error) {
       console.error("Error creating document and generating feedback:", error);
-      toast.error("Failed to save document and generate feedback");
+      
+      // Provide more specific error messages
+      if (error && typeof error === 'object' && 'code' in error) {
+        if ((error as any).code === '42501') {
+          toast.error("Permission denied. Please make sure you're logged in and try again.");
+        } else {
+          toast.error("Failed to save document and generate feedback. Please try again.");
+        }
+      } else {
+        toast.error("Failed to save document and generate feedback");
+      }
     } finally {
       setIsSaving(false);
       setIsGeneratingFeedback(false);

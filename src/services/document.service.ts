@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Document, QuotedImprovement } from "@/types/document.types";
@@ -74,6 +73,7 @@ export const addDocument = async (
     console.log("Got version number:", versionNumber);
 
     const insertData = {
+      user_id: currentUser.data.user.id, // FIX: Add missing user_id field
       document_type: doc.documentType,
       program_id: doc.linkedProgramId,
       original_text: doc.contentRaw,
@@ -91,6 +91,15 @@ export const addDocument = async (
 
     if (error) {
       console.error("Database insert error:", error);
+      
+      // Provide more specific error messages
+      if (error.code === '42501') {
+        toast.error("Permission denied. Please make sure you're logged in.");
+      } else if (error.code === '23503') {
+        toast.error("Invalid program reference. Please try again.");
+      } else {
+        toast.error(`Failed to save document: ${error.message}`);
+      }
       throw error;
     }
 
@@ -101,7 +110,13 @@ export const addDocument = async (
     return newDocument;
   } catch (error) {
     console.error("Error in addDocument service:", error);
-    toast.error("Failed to save document");
+    
+    // Only show toast if we haven't already shown one above
+    if (error && typeof error === 'object' && 'code' in error) {
+      // Error handling already done above with specific messages
+    } else {
+      toast.error("Failed to save document. Please try again.");
+    }
     throw error; // Re-throw to allow proper error handling
   }
 };
