@@ -85,7 +85,7 @@ const Sidebar = ({
       <div className="flex-1 overflow-auto py-3">
         <nav className="grid gap-1 px-2 my-0 py-0">
           {navItems.map(item => <Link key={item.path} to={item.path} className="my-[9px]">
-              <div className={cn("p-1.5 rounded-md transition-colors", location.pathname === item.path ? "bg-primary/20 text-primary" : "bg-secondary/50 text-muted-foreground group-hover:text-foreground")}>
+              <div className="my-[2px] mx-[7px]">
                 <item.icon className="h-4 w-4" />
               </div>
               <span className={cn("truncate", !open && "md:hidden")}>
