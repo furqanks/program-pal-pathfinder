@@ -178,205 +178,209 @@ const Search = () => {
   const generatedQuery = buildQueryFromAnswers();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-2">University Program Search</h1>
-        <p className="text-muted-foreground">
-          Find university programs worldwide with accurate information from official sources
-        </p>
-      </div>
-
-      {/* Guided Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <GraduationCap className="h-5 w-5" />
-            Find Your Perfect Program
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Answer a few questions to get personalized program recommendations
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="space-y-8">
+        {/* Header Section with improved spacing */}
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-bold tracking-tight">University Program Search</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Find university programs worldwide with accurate information from official sources
           </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {questions.map((question) => (
-            <div key={question.id} className="space-y-3">
-              <h4 className="font-medium text-foreground">{question.question}</h4>
-              <div className="flex flex-wrap gap-2">
-                {question.options.map((option) => (
-                  <Button
-                    key={option}
-                    variant={selectedAnswers[question.id as keyof typeof selectedAnswers] === option ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleAnswerSelect(question.id, option)}
-                    className="text-xs"
-                  >
-                    {option}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          ))}
+        </div>
 
-          {/* Generated Query Preview */}
-          {generatedQuery && (
-            <div className="p-4 bg-muted/50 rounded-lg border">
-              <div className="flex items-start gap-3">
-                <SearchIcon className="h-4 w-4 mt-1 text-muted-foreground" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium mb-1">Search query:</p>
-                  <p className="text-sm text-muted-foreground italic">"{generatedQuery}"</p>
+        {/* Guided Search Card with improved spacing */}
+        <Card className="shadow-lg">
+          <CardHeader className="pb-6">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <GraduationCap className="h-6 w-6" />
+              Find Your Perfect Program
+            </CardTitle>
+            <p className="text-muted-foreground">
+              Answer a few questions to get personalized program recommendations
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            {questions.map((question) => (
+              <div key={question.id} className="space-y-4">
+                <h4 className="font-medium text-foreground text-lg">{question.question}</h4>
+                <div className="flex flex-wrap gap-3">
+                  {question.options.map((option) => (
+                    <Button
+                      key={option}
+                      variant={selectedAnswers[question.id as keyof typeof selectedAnswers] === option ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleAnswerSelect(question.id, option)}
+                      className="text-sm px-4 py-2"
+                    >
+                      {option}
+                    </Button>
+                  ))}
                 </div>
               </div>
-            </div>
-          )}
+            ))}
 
-          <div className="flex gap-3">
-            <Button 
-              onClick={handleGuidedSearch} 
-              disabled={isLoading || !hasAnswers}
-              className="flex-1"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <ArrowRight className="h-4 w-4 mr-2" />
-              )}
-              Search Programs
-            </Button>
-            {(searchResponse || hasAnswers) && (
-              <Button variant="outline" onClick={handleClearSearch}>
-                <X className="h-4 w-4 mr-2" />
-                Clear
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Custom Search Option */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <SearchIcon className="h-5 w-5" />
-            Custom Search
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Or describe your requirements in your own words
-          </p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleCustomSearch} className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="e.g., Clinical Psychology Masters in UK with funding opportunities..."
-                value={customQuery}
-                onChange={(e) => setCustomQuery(e.target.value)}
-                className="flex-1"
-              />
-              <Button type="submit" disabled={isLoading || !customQuery.trim()}>
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <SearchIcon className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    <Info className="h-3 w-3 mr-1" />
-                    Search Tips
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Search Tips</h4>
-                    <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
-                      <li>Be specific: "Clinical Psychology Masters"</li>
-                      <li>Include location: "in UK", "Canada", "Europe"</li>
-                      <li>Mention budget: "budget-friendly", "scholarships"</li>
-                      <li>Add format: "online", "part-time", "2025 intake"</li>
-                    </ul>
+            {/* Generated Query Preview */}
+            {generatedQuery && (
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <div className="flex items-start gap-3">
+                  <SearchIcon className="h-4 w-4 mt-1 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium mb-1">Search query:</p>
+                    <p className="text-sm text-muted-foreground italic">"{generatedQuery}"</p>
                   </div>
-                </PopoverContent>
-              </Popover>
-
-              <div className="text-xs text-muted-foreground">
-                <span>Powered by Perplexity AI</span>
+                </div>
               </div>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            )}
 
-      {/* Markdown Response Display */}
-      {searchResponse && (
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Search Results</CardTitle>
-              <Badge variant="secondary">
-                Powered by Perplexity AI
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="prose prose-sm max-w-none dark:prose-invert">
-              {renderMarkdown(searchResponse)}
+            <div className="flex gap-3 pt-4">
+              <Button 
+                onClick={handleGuidedSearch} 
+                disabled={isLoading || !hasAnswers}
+                className="flex-1"
+                size="lg"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                )}
+                Search Programs
+              </Button>
+              {(searchResponse || hasAnswers) && (
+                <Button variant="outline" onClick={handleClearSearch} size="lg">
+                  <X className="h-4 w-4 mr-2" />
+                  Clear
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Loading State */}
-      {isLoading && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+        {/* Custom Search Option */}
+        <Card className="shadow-lg">
+          <CardHeader className="pb-6">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <SearchIcon className="h-6 w-6" />
+              Custom Search
+            </CardTitle>
             <p className="text-muted-foreground">
-              Searching official university sources for accurate information...
+              Or describe your requirements in your own words
             </p>
-          </CardContent>
-        </Card>
-      )}
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <form onSubmit={handleCustomSearch} className="space-y-4">
+              <div className="flex gap-3">
+                <Input
+                  placeholder="e.g., Clinical Psychology Masters in UK with funding opportunities..."
+                  value={customQuery}
+                  onChange={(e) => setCustomQuery(e.target.value)}
+                  className="flex-1 h-12"
+                />
+                <Button type="submit" disabled={isLoading || !customQuery.trim()} size="lg">
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <SearchIcon className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
 
-      {/* Empty State */}
-      {!isLoading && !searchResponse && !hasAnswers && !customQuery && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <div className="flex justify-center mb-4">
-              <div className="flex items-center gap-4">
-                <GraduationCap className="h-8 w-8 text-primary" />
-                <MapPin className="h-6 w-6 text-muted-foreground" />
-                <DollarSign className="h-6 w-6 text-muted-foreground" />
+              <div className="flex items-center justify-between pt-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-sm">
+                      <Info className="h-4 w-4 mr-2" />
+                      Search Tips
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Search Tips</h4>
+                      <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
+                        <li>Be specific: "Clinical Psychology Masters"</li>
+                        <li>Include location: "in UK", "Canada", "Europe"</li>
+                        <li>Mention budget: "budget-friendly", "scholarships"</li>
+                        <li>Add format: "online", "part-time", "2025 intake"</li>
+                      </ul>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                <div className="text-sm text-muted-foreground">
+                  <span>Powered by Perplexity AI</span>
+                </div>
               </div>
-            </div>
-            <h3 className="text-lg font-medium mb-2">Find Your Ideal University Program</h3>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Answer the questions above or use custom search to discover programs that match your goals, budget, and preferences.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground max-w-2xl mx-auto">
-              <div className="text-center">
-                <GraduationCap className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p><strong>Comprehensive</strong></p>
-                <p>Programs from universities worldwide</p>
-              </div>
-              <div className="text-center">
-                <MapPin className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p><strong>Accurate</strong></p>
-                <p>Information from official sources</p>
-              </div>
-              <div className="text-center">
-                <DollarSign className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p><strong>Budget-Aware</strong></p>
-                <p>Find programs within your budget</p>
-              </div>
-            </div>
+            </form>
           </CardContent>
         </Card>
-      )}
+
+        {/* Markdown Response Display */}
+        {searchResponse && (
+          <Card className="shadow-lg">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-xl">Search Results</CardTitle>
+                <Badge variant="secondary">
+                  Powered by Perplexity AI
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                {renderMarkdown(searchResponse)}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <Card className="shadow-lg">
+            <CardContent className="py-12 text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+              <p className="text-muted-foreground">
+                Searching official university sources for accurate information...
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !searchResponse && !hasAnswers && !customQuery && (
+          <Card className="shadow-lg">
+            <CardContent className="py-16 text-center">
+              <div className="flex justify-center mb-6">
+                <div className="flex items-center gap-4">
+                  <GraduationCap className="h-12 w-12 text-primary" />
+                  <MapPin className="h-8 w-8 text-muted-foreground" />
+                  <DollarSign className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-medium mb-4">Find Your Ideal University Program</h3>
+              <p className="text-muted-foreground mb-8 max-w-md mx-auto text-lg">
+                Answer the questions above or use custom search to discover programs that match your goals, budget, and preferences.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-muted-foreground max-w-2xl mx-auto">
+                <div className="text-center">
+                  <GraduationCap className="h-8 w-8 mx-auto mb-3 text-primary" />
+                  <p className="font-semibold text-foreground">Comprehensive</p>
+                  <p className="text-sm">Programs from universities worldwide</p>
+                </div>
+                <div className="text-center">
+                  <MapPin className="h-8 w-8 mx-auto mb-3 text-primary" />
+                  <p className="font-semibold text-foreground">Accurate</p>
+                  <p className="text-sm">Information from official sources</p>
+                </div>
+                <div className="text-center">
+                  <DollarSign className="h-8 w-8 mx-auto mb-3 text-primary" />
+                  <p className="font-semibold text-foreground">Budget-Aware</p>
+                  <p className="text-sm">Find programs within your budget</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };
