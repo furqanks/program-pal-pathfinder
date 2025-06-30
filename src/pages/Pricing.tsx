@@ -1,25 +1,25 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Star, Zap } from "lucide-react";
+import { Check, Star, Zap, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
 
 const Pricing = () => {
+  const navigate = useNavigate();
   const { user, session, subscription, checkSubscription } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
   const handleSubscribe = async () => {
     if (!user || !session) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to subscribe.",
-        variant: "destructive",
-      });
+      // Redirect to auth page instead of showing error
+      navigate("/auth?redirect=pricing");
       return;
     }
 
@@ -98,6 +98,16 @@ const Pricing = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12 px-4">
       <div className="max-w-4xl mx-auto">
+        {/* Header with back button */}
+        <div className="flex items-center mb-8">
+          <Link to="/home">
+            <Button variant="ghost" size="sm" className="mr-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Home
+            </Button>
+          </Link>
+        </div>
+
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Choose Your Plan</h1>
           <p className="text-xl text-muted-foreground">
@@ -191,7 +201,7 @@ const Pricing = () => {
                   onClick={handleSubscribe}
                   disabled={loading}
                 >
-                  {loading ? "Processing..." : "Subscribe Now"}
+                  {loading ? "Processing..." : user ? "Subscribe Now" : "Sign Up to Subscribe"}
                 </Button>
               )}
             </CardFooter>

@@ -22,6 +22,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import Pricing from "./pages/Pricing";
+import Account from "./pages/Account";
 
 // Create the query client instance
 const queryClient = new QueryClient();
@@ -67,6 +68,7 @@ const AppRoutes = () => {
         <Route path="documents" element={<Documents />} />
         <Route path="notes" element={<Notes />} />
         <Route path="insights" element={<Insights />} />
+        <Route path="account" element={<Account />} />
         <Route path="*" element={<NotFound />} />
       </Route>
       <Route path="*" element={<Navigate to="/home" replace />} />

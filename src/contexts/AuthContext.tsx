@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         // Check subscription after auth state change
-        if (session?.user && event === 'SIGNED_IN') {
+        if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
           setTimeout(() => {
             checkSubscription();
           }, 0);

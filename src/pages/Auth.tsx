@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,8 @@ import {
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -42,7 +43,18 @@ export default function Auth() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
+  const [searchParams] = useSearchParams();
   const location = useLocation();
+
+  // Check for redirect parameter
+  const redirectParam = searchParams.get("redirect");
+  
+  useEffect(() => {
+    // If redirect is "pricing", default to signup tab
+    if (redirectParam === "pricing") {
+      setActiveTab("signup");
+    }
+  }, [redirectParam]);
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -102,8 +114,11 @@ export default function Auth() {
           title: "Sign up successful",
           description: data.user ? "Welcome to UniApp Space!" : "Please check your email for verification.",
         });
-        // Switch to login tab if email verification is required
-        if (!data.user) {
+        // If user is created immediately (no email verification), stay to redirect to pricing
+        if (data.user) {
+          // The useEffect in App.tsx will handle the redirect based on the redirect param
+        } else {
+          // Switch to login tab if email verification is required
           setActiveTab("login");
         }
       }
@@ -118,8 +133,11 @@ export default function Auth() {
     }
   };
 
-  // Redirect if already logged in
+  // Redirect logic for authenticated users
   if (user && !authLoading) {
+    if (redirectParam === "pricing") {
+      return <Navigate to="/pricing" replace />;
+    }
     const from = location.state?.from?.pathname || "/";
     return <Navigate to={from} replace />;
   }
@@ -127,6 +145,16 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-slate-50">
       <div className="w-full max-w-md">
+        {/* Back button */}
+        <div className="mb-6">
+          <Link to="/home">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Home
+            </Button>
+          </Link>
+        </div>
+
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold">UniApp Space</h1>
           <p className="text-slate-600 mt-2">Manage your university applications with AI</p>
@@ -136,7 +164,10 @@ export default function Auth() {
           <CardHeader>
             <CardTitle>Welcome</CardTitle>
             <CardDescription>
-              Sign in to manage your university applications or create a new account
+              {redirectParam === "pricing" 
+                ? "Create an account to subscribe to our premium features" 
+                : "Sign in to manage your university applications or create a new account"
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
