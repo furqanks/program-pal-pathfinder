@@ -21,6 +21,7 @@ import { AINotesProvider } from "./contexts/AINotesContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
+import Pricing from "./pages/Pricing";
 
 // Create the query client instance
 const queryClient = new QueryClient();
@@ -53,6 +54,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/auth" element={<Auth />} />
       <Route path="/home" element={<Home />} />
+      <Route path="/pricing" element={<Pricing />} />
       <Route path="/" element={
         <ProtectedRoute>
           <Layout />
