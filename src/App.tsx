@@ -49,6 +49,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Public Documents route - accessible without login
+const PublicDocuments = () => {
+  return <Documents />;
+};
+
 // App routes component that has access to all contexts
 const AppRoutes = () => {
   return (
@@ -56,6 +61,7 @@ const AppRoutes = () => {
       <Route path="/auth" element={<Auth />} />
       <Route path="/home" element={<Home />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/documents" element={<PublicDocuments />} />
       <Route path="/" element={
         <ProtectedRoute>
           <Layout />
@@ -65,7 +71,6 @@ const AppRoutes = () => {
         <Route path="search" element={<Search />} />
         <Route path="updated-search" element={<UpdatedSearch />} />
         <Route path="us-search" element={<USSearch />} />
-        <Route path="documents" element={<Documents />} />
         <Route path="notes" element={<Notes />} />
         <Route path="insights" element={<Insights />} />
         <Route path="account" element={<Account />} />

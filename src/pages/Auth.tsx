@@ -111,16 +111,10 @@ export default function Auth() {
         });
       } else {
         toast({
-          title: "Sign up successful",
-          description: data.user ? "Welcome to UniApp Space!" : "Please check your email for verification.",
+          title: "Account created successfully!",
+          description: "Redirecting you to complete your subscription...",
         });
-        // If user is created immediately (no email verification), stay to redirect to pricing
-        if (data.user) {
-          // The useEffect in App.tsx will handle the redirect based on the redirect param
-        } else {
-          // Switch to login tab if email verification is required
-          setActiveTab("login");
-        }
+        // Small delay to show the success message, then redirect will happen via useEffect
       }
     } catch (error) {
       toast({
@@ -133,7 +127,7 @@ export default function Auth() {
     }
   };
 
-  // Redirect logic for authenticated users
+  // Enhanced redirect logic for authenticated users
   if (user && !authLoading) {
     if (redirectParam === "pricing") {
       return <Navigate to="/pricing" replace />;
@@ -143,41 +137,46 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-slate-50">
+    <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="w-full max-w-md">
         {/* Back button */}
         <div className="mb-6">
           <Link to="/home">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Button>
           </Link>
         </div>
 
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold">UniApp Space</h1>
-          <p className="text-slate-600 mt-2">Manage your university applications with AI</p>
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <div className="h-8 w-8 bg-black rounded"></div>
+            <h1 className="text-3xl font-bold text-gray-900">UniApp Space</h1>
+          </div>
+          <p className="text-gray-600 text-lg">Your AI-powered university application assistant</p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome</CardTitle>
-            <CardDescription>
+        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-2xl text-gray-900">
+              {redirectParam === "pricing" ? "Get Started" : "Welcome Back"}
+            </CardTitle>
+            <CardDescription className="text-gray-600 text-base">
               {redirectParam === "pricing" 
-                ? "Create an account to subscribe to our premium features" 
-                : "Sign in to manage your university applications or create a new account"
+                ? "Create your account to unlock premium features" 
+                : "Sign in to continue your university application journey"
               }
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "login" | "signup")}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100">
+                <TabsTrigger value="login" className="data-[state=active]:bg-white">Sign In</TabsTrigger>
+                <TabsTrigger value="signup" className="data-[state=active]:bg-white">Create Account</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="login">
+              <TabsContent value="login" className="space-y-4">
                 <Form {...loginForm}>
                   <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                     <FormField
@@ -185,9 +184,13 @@ export default function Auth() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel className="text-gray-700">Email Address</FormLabel>
                           <FormControl>
-                            <Input placeholder="your@email.com" {...field} />
+                            <Input 
+                              placeholder="Enter your email" 
+                              className="h-11 border-gray-300 focus:border-gray-900"
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -198,29 +201,38 @@ export default function Auth() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel className="text-gray-700">Password</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="••••••" {...field} />
+                            <Input 
+                              type="password" 
+                              placeholder="Enter your password" 
+                              className="h-11 border-gray-300 focus:border-gray-900"
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button 
+                      type="submit" 
+                      className="w-full h-11 bg-gray-900 hover:bg-gray-800 text-white font-medium" 
+                      disabled={isLoading}
+                    >
                       {isLoading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Logging in...
+                          Signing in...
                         </>
                       ) : (
-                        "Login"
+                        "Sign In"
                       )}
                     </Button>
                   </form>
                 </Form>
               </TabsContent>
               
-              <TabsContent value="signup">
+              <TabsContent value="signup" className="space-y-4">
                 <Form {...signupForm}>
                   <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
                     <FormField
@@ -228,9 +240,13 @@ export default function Auth() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel className="text-gray-700">Email Address</FormLabel>
                           <FormControl>
-                            <Input placeholder="your@email.com" {...field} />
+                            <Input 
+                              placeholder="Enter your email" 
+                              className="h-11 border-gray-300 focus:border-gray-900"
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -241,15 +257,24 @@ export default function Auth() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel className="text-gray-700">Password</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="••••••" {...field} />
+                            <Input 
+                              type="password" 
+                              placeholder="Create a password (min. 6 characters)" 
+                              className="h-11 border-gray-300 focus:border-gray-900"
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button 
+                      type="submit" 
+                      className="w-full h-11 bg-gray-900 hover:bg-gray-800 text-white font-medium" 
+                      disabled={isLoading}
+                    >
                       {isLoading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -264,24 +289,42 @@ export default function Auth() {
               </TabsContent>
             </Tabs>
           </CardContent>
-          <CardFooter className="flex justify-center text-sm text-muted-foreground">
-            {activeTab === "login" ? (
-              <p>
-                Don't have an account?{" "}
-                <Button variant="link" className="p-0 h-auto" onClick={() => setActiveTab("signup")}>
-                  Sign up
-                </Button>
-              </p>
-            ) : (
-              <p>
-                Already have an account?{" "}
-                <Button variant="link" className="p-0 h-auto" onClick={() => setActiveTab("login")}>
-                  Login
-                </Button>
-              </p>
-            )}
+          <CardFooter className="flex justify-center pt-4 border-t border-gray-100">
+            <p className="text-sm text-gray-600">
+              {activeTab === "login" ? (
+                <>
+                  Don't have an account?{" "}
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-gray-900 font-medium" 
+                    onClick={() => setActiveTab("signup")}
+                  >
+                    Create one here
+                  </Button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{" "}
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-gray-900 font-medium" 
+                    onClick={() => setActiveTab("login")}
+                  >
+                    Sign in
+                  </Button>
+                </>
+              )}
+            </p>
           </CardFooter>
         </Card>
+
+        {redirectParam === "pricing" && (
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              After creating your account, you'll be redirected to complete your subscription
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
