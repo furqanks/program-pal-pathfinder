@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,7 +43,6 @@ export default function Auth() {
   const { user, signIn, signUp, loading: authLoading, session } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [waitingForSession, setWaitingForSession] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -100,13 +100,13 @@ export default function Auth() {
     }
   };
 
-  const createCheckoutSession = async (userSession: any) => {
+  const createCheckoutSession = async () => {
     try {
-      console.log('Creating checkout session for user:', userSession.user.email);
+      console.log('Creating checkout session...');
       
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         headers: {
-          Authorization: `Bearer ${userSession.access_token}`,
+          Authorization: `Bearer ${session?.access_token}`,
         },
       });
 
@@ -141,37 +141,8 @@ export default function Auth() {
     }
   };
 
-  const waitForSession = (email: string): Promise<any> => {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('Session timeout - please try logging in manually'));
-      }, 30000); // 30 second timeout
-
-      const checkSession = async () => {
-        try {
-          const { data: { session: currentSession } } = await supabase.auth.getSession();
-          
-          if (currentSession?.user?.email === email) {
-            clearTimeout(timeout);
-            console.log('Session established for user:', email);
-            resolve(currentSession);
-          } else {
-            // Keep checking every 500ms
-            setTimeout(checkSession, 500);
-          }
-        } catch (error) {
-          clearTimeout(timeout);
-          reject(error);
-        }
-      };
-
-      checkSession();
-    });
-  };
-
   const handleSignup = async (values: SignupFormValues) => {
     setIsLoading(true);
-    setWaitingForSession(false);
     
     try {
       console.log('Starting signup process for:', values.email);
@@ -190,47 +161,34 @@ export default function Auth() {
 
       console.log('Signup successful, data:', data);
       
-      toast({
-        title: "Account created successfully!",
-        description: "Setting up your subscription...",
-      });
-
-      // Wait for the session to be established
-      setWaitingForSession(true);
-      console.log('Waiting for session to be established...');
-      
-      try {
-        const userSession = await waitForSession(values.email);
-        console.log('Session established, proceeding to checkout');
-        
-        setWaitingForSession(false);
-        
-        // Create checkout session immediately
-        const checkoutSuccess = await createCheckoutSession(userSession);
-        
-        if (!checkoutSuccess) {
-          toast({
-            title: "Account created",
-            description: "Your account was created successfully. You can now subscribe to access premium features.",
-          });
-        }
-        
-      } catch (sessionError) {
-        console.error('Session wait error:', sessionError);
-        setWaitingForSession(false);
-        
+      // If we have a session immediately after signup, create checkout
+      if (data.session) {
+        console.log('Session available immediately, creating checkout...');
         toast({
-          title: "Account created",
-          description: "Your account was created successfully. Please log in to complete your subscription.",
+          title: "Account created successfully!",
+          description: "Redirecting to checkout...",
         });
         
-        // Switch to login tab
-        setActiveTab("login");
+        // Wait a moment for auth context to update
+        setTimeout(async () => {
+          const checkoutSuccess = await createCheckoutSession();
+          if (!checkoutSuccess) {
+            toast({
+              title: "Account created",
+              description: "Your account was created successfully. Please visit the pricing page to subscribe.",
+            });
+          }
+        }, 1000);
+      } else {
+        // No immediate session - likely email confirmation required
+        toast({
+          title: "Account created successfully!",
+          description: "Please check your email to confirm your account, then return to complete your subscription.",
+        });
       }
       
     } catch (error) {
       console.error('Unexpected signup error:', error);
-      setWaitingForSession(false);
       toast({
         title: "Sign up failed",
         description: "An unexpected error occurred. Please try again.",
@@ -242,7 +200,7 @@ export default function Auth() {
   };
 
   // Enhanced redirect logic for authenticated users
-  if (user && !authLoading && !waitingForSession) {
+  if (user && !authLoading) {
     if (redirectParam === "pricing") {
       return <Navigate to="/pricing" replace />;
     }
@@ -387,12 +345,12 @@ export default function Auth() {
                     <Button 
                       type="submit" 
                       className="w-full h-11 bg-gray-900 hover:bg-gray-800 text-white font-medium" 
-                      disabled={isLoading || waitingForSession}
+                      disabled={isLoading}
                     >
-                      {isLoading || waitingForSession ? (
+                      {isLoading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {waitingForSession ? "Setting up your account..." : "Creating account..."}
+                          Creating account...
                         </>
                       ) : (
                         "Create Account & Subscribe"
@@ -435,10 +393,7 @@ export default function Auth() {
         {redirectParam === "pricing" && (
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              {waitingForSession 
-                ? "Setting up your account and preparing checkout..." 
-                : "After creating your account, you'll be redirected to complete your subscription"
-              }
+              After creating your account, you'll be redirected to complete your subscription
             </p>
           </div>
         )}
