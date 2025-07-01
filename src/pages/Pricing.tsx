@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Star, Zap, ArrowLeft } from "lucide-react";
+import { Check, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 
@@ -18,7 +18,6 @@ const Pricing = () => {
 
   const handleSubscribe = async () => {
     if (!user || !session) {
-      // Redirect to auth page instead of showing error
       navigate("/auth?redirect=pricing");
       return;
     }
@@ -40,7 +39,6 @@ const Pricing = () => {
         return;
       }
 
-      // Open Stripe checkout in a new tab
       window.open(data.url, '_blank');
     } catch (error) {
       toast({
@@ -73,7 +71,6 @@ const Pricing = () => {
         return;
       }
 
-      // Open Stripe customer portal in a new tab
       window.open(data.url, '_blank');
     } catch (error) {
       toast({
@@ -96,54 +93,53 @@ const Pricing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header with back button */}
-        <div className="flex items-center mb-8">
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="border-b border-gray-100">
+        <div className="max-w-4xl mx-auto px-6 py-4">
           <Link to="/home">
-            <Button variant="ghost" size="sm" className="mr-4">
+            <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Button>
           </Link>
         </div>
+      </div>
 
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Choose Your Plan</h1>
-          <p className="text-xl text-muted-foreground">
+      <div className="max-w-4xl mx-auto px-6 py-16">
+        <div className="text-center mb-16">
+          <h1 className="text-4xl font-bold mb-4 text-gray-900">Choose Your Plan</h1>
+          <p className="text-lg text-gray-600">
             Get unlimited access to all UniApp Space features
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
           {/* Free Demo Card */}
-          <Card className="relative">
+          <Card className="border-gray-200 bg-white">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-yellow-500" />
-                Free Demo
-              </CardTitle>
-              <CardDescription>
+              <CardTitle className="text-xl text-gray-900">Free Demo</CardTitle>
+              <CardDescription className="text-gray-600">
                 Try our CV editing feature
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold mb-4">
+              <div className="text-3xl font-bold mb-6 text-gray-900">
                 $0
-                <span className="text-lg font-normal text-muted-foreground">/forever</span>
+                <span className="text-base font-normal text-gray-600">/forever</span>
               </div>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>1 CV document edit</span>
+              <ul className="space-y-3">
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-gray-900" />
+                  <span className="text-gray-700">1 CV document edit</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>Basic AI feedback</span>
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-gray-900" />
+                  <span className="text-gray-700">Basic AI feedback</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>No account required</span>
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-gray-900" />
+                  <span className="text-gray-700">No account required</span>
                 </li>
               </ul>
             </CardContent>
@@ -159,29 +155,26 @@ const Pricing = () => {
           </Card>
 
           {/* Premium Card */}
-          <Card className="relative border-primary">
-            <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-primary">
+          <Card className="border-gray-900 bg-white relative">
+            <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white">
               Most Popular
             </Badge>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-primary" />
-                Premium
-              </CardTitle>
-              <CardDescription>
+              <CardTitle className="text-xl text-gray-900">Premium</CardTitle>
+              <CardDescription className="text-gray-600">
                 Full access to all features
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold mb-4">
+              <div className="text-3xl font-bold mb-6 text-gray-900">
                 $9.99
-                <span className="text-lg font-normal text-muted-foreground">/month</span>
+                <span className="text-base font-normal text-gray-600">/month</span>
               </div>
-              <ul className="space-y-2">
+              <ul className="space-y-3">
                 {features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-500" />
-                    <span>{feature}</span>
+                  <li key={index} className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-gray-900" />
+                    <span className="text-gray-700">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -189,7 +182,7 @@ const Pricing = () => {
             <CardFooter>
               {subscription?.subscribed ? (
                 <Button 
-                  className="w-full" 
+                  className="w-full bg-gray-900 hover:bg-gray-800" 
                   onClick={handleManageSubscription}
                   disabled={loading}
                 >
@@ -197,7 +190,7 @@ const Pricing = () => {
                 </Button>
               ) : (
                 <Button 
-                  className="w-full" 
+                  className="w-full bg-gray-900 hover:bg-gray-800" 
                   onClick={handleSubscribe}
                   disabled={loading}
                 >
@@ -210,23 +203,23 @@ const Pricing = () => {
 
         {/* Subscription Status */}
         {user && subscription && (
-          <div className="mt-8 text-center">
-            <Card className="max-w-md mx-auto">
+          <div className="mt-12 text-center">
+            <Card className="max-w-md mx-auto border-gray-200">
               <CardHeader>
-                <CardTitle>Subscription Status</CardTitle>
+                <CardTitle className="text-gray-900">Subscription Status</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <p>
-                    Status: <Badge variant={subscription.subscribed ? "default" : "secondary"}>
+                <div className="space-y-3">
+                  <p className="text-gray-700">
+                    Status: <Badge variant={subscription.subscribed ? "default" : "secondary"} className="ml-2">
                       {subscription.subscribed ? "Active" : "Inactive"}
                     </Badge>
                   </p>
                   {subscription.subscription_tier && (
-                    <p>Plan: {subscription.subscription_tier}</p>
+                    <p className="text-gray-700">Plan: {subscription.subscription_tier}</p>
                   )}
                   {subscription.subscription_end && (
-                    <p>
+                    <p className="text-gray-700">
                       Next billing: {new Date(subscription.subscription_end).toLocaleDateString()}
                     </p>
                   )}
