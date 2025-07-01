@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCheckoutService } from "./CheckoutService";
 import { LoginFormValues } from "./LoginForm";
 import { SignupFormValues } from "./SignupForm";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthHandlersProps {
   setActiveTab: (tab: "login" | "signup") => void;
@@ -14,6 +15,27 @@ export const useAuthHandlers = ({ setActiveTab, setLoginFormEmail }: AuthHandler
   const { signIn, signUp, session } = useAuth();
   const { toast } = useToast();
   const { createCheckoutSession } = useCheckoutService();
+
+  const checkIfUserExists = async (email: string): Promise<boolean> => {
+    try {
+      // Try to trigger a password reset to see if user exists
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      
+      // If no error, user exists (Supabase sent reset email)
+      // If error contains "User not found", user doesn't exist
+      if (error && error.message.toLowerCase().includes('user not found')) {
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error checking if user exists:', error);
+      // If we can't check, assume user doesn't exist to allow signup attempt
+      return false;
+    }
+  };
 
   const handleLogin = async (values: LoginFormValues) => {
     try {
@@ -43,16 +65,37 @@ export const useAuthHandlers = ({ setActiveTab, setLoginFormEmail }: AuthHandler
     try {
       console.log('Starting signup process for:', values.email);
       
+      // First check if user already exists
+      const userExists = await checkIfUserExists(values.email);
+      if (userExists) {
+        console.log('User already exists, redirecting to login');
+        toast({
+          title: "Account already exists",
+          description: "An account with this email already exists. Please sign in instead.",
+          variant: "destructive",
+        });
+        setActiveTab("login");
+        setLoginFormEmail(values.email);
+        return;
+      }
+      
       const { error, data } = await signUp(values.email, values.password);
       
       if (error) {
         console.error('Signup error:', error);
         
-        // Handle specific error cases
-        if (error.message.includes('User already registered') || 
-            error.message.includes('already registered') ||
-            error.message.includes('duplicate') ||
-            error.message.includes('already exists')) {
+        // Handle all possible duplicate user error messages
+        const errorMessage = error.message.toLowerCase();
+        const isDuplicateError = 
+          errorMessage.includes('user already registered') || 
+          errorMessage.includes('already registered') ||
+          errorMessage.includes('duplicate') ||
+          errorMessage.includes('already exists') ||
+          errorMessage.includes('email already in use') ||
+          errorMessage.includes('user already exists') ||
+          errorMessage.includes('email address already in use');
+        
+        if (isDuplicateError) {
           toast({
             title: "Account already exists",
             description: "An account with this email already exists. Please sign in instead.",
@@ -71,7 +114,7 @@ export const useAuthHandlers = ({ setActiveTab, setLoginFormEmail }: AuthHandler
         return;
       }
 
-      // Additional check: If we get a response but no user was created (duplicate case)
+      // Check if signup was successful but user already existed
       if (!error && data && !data.user) {
         console.log('Signup response indicates existing user, data:', data);
         toast({
@@ -84,7 +127,7 @@ export const useAuthHandlers = ({ setActiveTab, setLoginFormEmail }: AuthHandler
         return;
       }
 
-      // Another check: If user exists but session is null (email confirmation pending for existing user)
+      // Check if user exists but email confirmation is pending for existing user
       if (data.user && !data.session && data.user.email_confirmed_at) {
         console.log('User exists with confirmed email but no session, likely duplicate signup');
         toast({
