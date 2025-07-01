@@ -33,10 +33,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
+      <div className="flex h-screen w-full items-center justify-center bg-white">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -84,7 +84,7 @@ const AppRoutes = () => {
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" storageKey="uniapp-ui-theme">
+      <ThemeProvider defaultTheme="light" storageKey="uniapp-ui-theme">
         <TooltipProvider>
           <AuthProvider>
             <ProgramProvider>
@@ -92,7 +92,7 @@ const App = () => {
                 <AINotesProvider>
                   <PerplexityProvider>
                     <BrowserRouter>
-                      <div className="min-h-screen bg-background text-foreground">
+                      <div className="min-h-screen bg-white text-gray-900">
                         <Toaster />
                         <Sonner />
                         <AppRoutes />

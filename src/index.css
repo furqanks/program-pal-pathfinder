@@ -12,7 +12,7 @@
     --card-foreground: 0 0% 15%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 15%;
-    --primary: 0 0% 25%;
+    --primary: 0 0% 10%;
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96%;
     --secondary-foreground: 0 0% 15%;
@@ -22,9 +22,9 @@
     --accent-foreground: 0 0% 15%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 91%;
-    --input: 0 0% 91%;
-    --ring: 0 0% 25%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 0 0% 10%;
     --radius: 0.5rem;
     --chart-1: 0 0% 45%;
     --chart-2: 0 0% 35%;
@@ -37,43 +37,44 @@
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 0 0% 95%;
     --sidebar-accent-foreground: 0 0% 10%;
-    --sidebar-border: 0 0% 91%;
-    --sidebar-ring: 0 0% 25%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 0 0% 10%;
   }
 
+  /* Force light theme - remove dark theme variables */
   .dark {
-    --background: 0 0% 18%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 16%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 16%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 85%;
-    --primary-foreground: 0 0% 10%;
-    --secondary: 0 0% 14%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 65%;
-    --accent: 0 0% 14%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
+    --primary: 0 0% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 15%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 15%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 24%;
-    --input: 0 0% 24%;
-    --ring: 0 0% 85%;
-    --chart-1: 0 0% 70%;
-    --chart-2: 0 0% 60%;
-    --chart-3: 0 0% 50%;
-    --chart-4: 0 0% 80%;
-    --chart-5: 0 0% 40%;
-    --sidebar-background: 0 0% 16%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 0 0% 4%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 0 0% 10%;
+    --chart-1: 0 0% 45%;
+    --chart-2: 0 0% 35%;
+    --chart-3: 0 0% 25%;
+    --chart-4: 0 0% 55%;
+    --chart-5: 0 0% 65%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 26%;
+    --sidebar-primary: 0 0% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 14%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 24%;
-    --sidebar-ring: 0 0% 85%;
+    --sidebar-accent: 0 0% 95%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 0 0% 10%;
   }
 }
 
@@ -82,7 +83,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-white text-gray-900;
     font-family: 'Inter', sans-serif;
   }
 }
@@ -93,22 +94,22 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
+  background: #cbd5e1;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: #94a3b8;
 }
 
 /* Firefox scrollbar */
 html {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--muted-foreground) / 0.3) hsl(var(--muted));
+  scrollbar-color: #cbd5e1 #f1f5f9;
 }
 
 /* Animation improvements */
@@ -145,17 +146,17 @@ html {
 
 .gradient-border::before {
   content: '';
-  @apply absolute inset-0 rounded-lg p-[1px] bg-gradient-to-r from-primary/50 via-primary to-primary/50;
+  @apply absolute inset-0 rounded-lg p-[1px] bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: subtract;
 }
 
 /* Glass morphism effect */
 .glass {
-  @apply bg-card/80 backdrop-blur-xl border border-border/50;
+  @apply bg-white/90 backdrop-blur-xl border border-gray-200;
 }
 
 /* Smooth focus states */
 .focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
+  @apply focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 focus:ring-offset-white;
 }
