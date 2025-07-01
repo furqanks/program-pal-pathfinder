@@ -13,7 +13,7 @@ interface AuthHandlersProps {
 export const useAuthHandlers = ({ setActiveTab, setLoginFormEmail }: AuthHandlersProps) => {
   const { signIn, signUp, session } = useAuth();
   const { toast } = useToast();
-  const { createCheckoutService } = useCheckoutService();
+  const { createCheckoutSession } = useCheckoutService();
 
   const handleLogin = async (values: LoginFormValues) => {
     try {
