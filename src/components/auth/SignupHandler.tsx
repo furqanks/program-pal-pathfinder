@@ -19,13 +19,11 @@ export const useSignupHandler = ({ setActiveTab, setLoginFormEmail }: SignupHand
       console.log('=== SIGNUP ATTEMPT START ===');
       console.log('Email:', values.email);
       
-      // Direct signup attempt - let Supabase handle all validation
       const { error, data } = await signUp(values.email, values.password);
       
       if (error) {
         console.log('=== SIGNUP ERROR ===');
         console.log('Error message:', error.message);
-        console.log('Error details:', error);
         
         // Handle specific error cases with user-friendly messages
         if (error.message.toLowerCase().includes('already registered') || 
@@ -65,7 +63,33 @@ export const useSignupHandler = ({ setActiveTab, setLoginFormEmail }: SignupHand
       console.log('Session available:', !!data.session);
       console.log('User email confirmed:', data.user?.email_confirmed_at ? 'Yes' : 'No');
       
-      // Handle successful signup
+      // CRITICAL FIX: Check if this is actually a duplicate signup
+      // When Supabase detects a duplicate, it returns success but with a user that has no session
+      // and the user's created_at timestamp will be old (not recent)
+      if (data.user && !data.session) {
+        const userCreatedAt = new Date(data.user.created_at);
+        const now = new Date();
+        const timeDiff = now.getTime() - userCreatedAt.getTime();
+        const minutesDiff = timeDiff / (1000 * 60);
+        
+        // If user was created more than 2 minutes ago, this is likely a duplicate signup
+        if (minutesDiff > 2) {
+          console.log('=== DETECTED DUPLICATE SIGNUP ===');
+          console.log('User created at:', userCreatedAt);
+          console.log('Time difference (minutes):', minutesDiff);
+          
+          toast({
+            title: "Account already exists",
+            description: "An account with this email already exists. Please sign in instead.",
+            variant: "destructive",
+          });
+          setActiveTab("login");
+          setLoginFormEmail(values.email);
+          return;
+        }
+      }
+      
+      // Handle legitimate successful signup
       if (data.session) {
         console.log('Session available immediately - user confirmed');
         toast({
