@@ -1,76 +1,35 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  FileText, 
-  Search, 
-  Brain, 
-  Target, 
-  ArrowRight, 
-  Check,
-  Star,
-  Users,
-  BookOpen,
-  Award,
-  ChevronRight
-} from "lucide-react";
-
+import { FileText, Search, Brain, Target, ArrowRight, Check, Star, Users, BookOpen, Award, ChevronRight } from "lucide-react";
 const Home = () => {
-  const features = [
-    {
-      icon: <FileText className="h-8 w-8" />,
-      title: "AI Document Review",
-      description: "Upload your essays, personal statements, and CVs to get intelligent feedback and suggestions for improvement.",
-      details: [
-        "Advanced grammar and style analysis",
-        "Content structure optimization",
-        "Tone and clarity improvements",
-        "Personalized enhancement suggestions"
-      ],
-      screenshot: "photo-1461749280684-dccba630e2f6"
-    },
-    {
-      icon: <Search className="h-8 w-8" />,
-      title: "University Search",  
-      description: "Discover and compare programs from universities worldwide with detailed information and requirements.",
-      details: [
-        "Comprehensive university database",
-        "Program requirement matching",
-        "Deadline tracking and reminders",
-        "Custom filtering and comparison tools"
-      ],
-      screenshot: "photo-1488590528505-98d2b5aba04b"
-    },
-    {
-      icon: <Brain className="h-8 w-8" />,
-      title: "Smart Notes & Organization",
-      description: "Organize your research and application materials with AI-enhanced note-taking and intelligent categorization.",
-      details: [
-        "AI-powered content organization",
-        "Automatic tagging and categorization",
-        "Smart search across all notes",
-        "Progress tracking and insights"
-      ],
-      screenshot: "photo-1486312338219-ce68d2c6f44d"
-    },
-    {
-      icon: <Target className="h-8 w-8" />,
-      title: "Application Management",
-      description: "Never miss a deadline with comprehensive application tracking and automated reminder systems.",
-      details: [
-        "Deadline calendar and notifications",
-        "Application status tracking",
-        "Document version control",
-        "Progress monitoring dashboard"
-      ],
-      screenshot: "photo-1531297484001-80022131f5a1"
-    }
-  ];
-
-  return (
-    <div className="min-h-screen bg-white">
+  const features = [{
+    icon: <FileText className="h-8 w-8" />,
+    title: "AI Document Review",
+    description: "Upload your essays, personal statements, and CVs to get intelligent feedback and suggestions for improvement.",
+    details: ["Advanced grammar and style analysis", "Content structure optimization", "Tone and clarity improvements", "Personalized enhancement suggestions"],
+    screenshot: "photo-1461749280684-dccba630e2f6"
+  }, {
+    icon: <Search className="h-8 w-8" />,
+    title: "University Search",
+    description: "Discover and compare programs from universities worldwide with detailed information and requirements.",
+    details: ["Comprehensive university database", "Program requirement matching", "Deadline tracking and reminders", "Custom filtering and comparison tools"],
+    screenshot: "photo-1488590528505-98d2b5aba04b"
+  }, {
+    icon: <Brain className="h-8 w-8" />,
+    title: "Smart Notes & Organization",
+    description: "Organize your research and application materials with AI-enhanced note-taking and intelligent categorization.",
+    details: ["AI-powered content organization", "Automatic tagging and categorization", "Smart search across all notes", "Progress tracking and insights"],
+    screenshot: "photo-1486312338219-ce68d2c6f44d"
+  }, {
+    icon: <Target className="h-8 w-8" />,
+    title: "Application Management",
+    description: "Never miss a deadline with comprehensive application tracking and automated reminder systems.",
+    details: ["Deadline calendar and notifications", "Application status tracking", "Document version control", "Progress monitoring dashboard"],
+    screenshot: "photo-1531297484001-80022131f5a1"
+  }];
+  return <div className="min-h-screen bg-white">
       {/* Navigation Bar */}
       <nav className="border-b border-gray-100 bg-white sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4">
@@ -143,8 +102,7 @@ const Home = () => {
           </div>
           
           <div className="space-y-20">
-            {features.map((feature, index) => (
-              <div key={index} className={`grid md:grid-cols-2 gap-12 items-center ${index % 2 === 1 ? 'md:grid-flow-col-dense' : ''}`}>
+            {features.map((feature, index) => <div key={index} className={`grid md:grid-cols-2 gap-12 items-center ${index % 2 === 1 ? 'md:grid-flow-col-dense' : ''}`}>
                 {/* Feature Content */}
                 <div className={index % 2 === 1 ? 'md:col-start-2' : ''}>
                   <div className="flex items-center mb-4">
@@ -157,12 +115,10 @@ const Home = () => {
                   <p className="text-lg text-gray-600 mb-6">{feature.description}</p>
                   
                   <ul className="space-y-3 mb-6">
-                    {feature.details.map((detail, idx) => (
-                      <li key={idx} className="flex items-start">
+                    {feature.details.map((detail, idx) => <li key={idx} className="flex items-start">
                         <Check className="h-5 w-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
                         <span className="text-gray-700">{detail}</span>
-                      </li>
-                    ))}
+                      </li>)}
                   </ul>
                   
                   <Link to="/auth?redirect=pricing">
@@ -177,19 +133,14 @@ const Home = () => {
                 <div className={index % 2 === 1 ? 'md:col-start-1' : ''}>
                   <div className="relative">
                     <div className="bg-gray-200 rounded-lg overflow-hidden shadow-lg">
-                      <img 
-                        src={`https://images.unsplash.com/${feature.screenshot}?auto=format&fit=crop&w=600&h=400`}
-                        alt={`${feature.title} interface preview`}
-                        className="w-full h-64 object-cover"
-                      />
+                      <img src={`https://images.unsplash.com/${feature.screenshot}?auto=format&fit=crop&w=600&h=400`} alt={`${feature.title} interface preview`} className="w-full h-64 object-cover" />
                     </div>
                     <div className="absolute -bottom-4 -right-4 bg-white p-3 rounded-lg shadow-lg border">
                       {feature.icon}
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </section>
@@ -241,9 +192,7 @@ const Home = () => {
           <div className="grid md:grid-cols-2 gap-8">
             <Card className="border-gray-200 p-6">
               <div className="flex mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                ))}
+                {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />)}
               </div>
               <p className="text-gray-700 mb-4 italic">
                 "The AI feedback on my personal statement was incredibly detailed. It helped me identify areas I never would have thought to improve."
@@ -261,9 +210,7 @@ const Home = () => {
             
             <Card className="border-gray-200 p-6">
               <div className="flex mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                ))}
+                {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />)}
               </div>
               <p className="text-gray-700 mb-4 italic">
                 "The deadline tracking feature was a lifesaver. I was able to stay on top of all my applications without the stress."
@@ -298,7 +245,7 @@ const Home = () => {
             </Link>
             
             <Link to="/documents">
-              <Button size="lg" variant="outline" className="border-gray-400 text-white hover:bg-white hover:text-gray-900 px-8">
+              <Button size="lg" variant="outline" className="border-gray-400 hover:bg-white px-8 text-slate-950">
                 Try Demo First
               </Button>
             </Link>
@@ -346,8 +293,6 @@ const Home = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Home;
