@@ -154,7 +154,9 @@ export default function Auth() {
         
         // Handle specific error cases
         if (error.message.includes('User already registered') || 
-            error.message.includes('already registered')) {
+            error.message.includes('already registered') ||
+            error.message.includes('duplicate') ||
+            error.message.includes('already exists')) {
           toast({
             title: "Account already exists",
             description: "An account with this email already exists. Please sign in instead.",
@@ -170,6 +172,32 @@ export default function Auth() {
           description: error.message,
           variant: "destructive",
         });
+        return;
+      }
+
+      // Additional check: If we get a response but no user was created (duplicate case)
+      if (!error && data && !data.user) {
+        console.log('Signup response indicates existing user, data:', data);
+        toast({
+          title: "Account already exists",
+          description: "An account with this email already exists. Please sign in instead.",
+          variant: "destructive",
+        });
+        setActiveTab("login");
+        loginForm.setValue("email", values.email);
+        return;
+      }
+
+      // Another check: If user exists but session is null (email confirmation pending for existing user)
+      if (data.user && !data.session && data.user.email_confirmed_at) {
+        console.log('User exists with confirmed email but no session, likely duplicate signup');
+        toast({
+          title: "Account already exists",
+          description: "An account with this email already exists. Please sign in instead.",
+          variant: "destructive",
+        });
+        setActiveTab("login");
+        loginForm.setValue("email", values.email);
         return;
       }
 
