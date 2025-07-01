@@ -92,7 +92,7 @@ const Pricing = () => {
     {
       icon: <Star className="h-5 w-5" />,
       title: "Advanced Program Search",
-      description: "Access our comprehensive database of 1,200+ universities worldwide"
+      description: "Access our comprehensive database of universities worldwide"
     },
     {
       icon: <Shield className="h-5 w-5" />,
@@ -114,10 +114,10 @@ const Pricing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="border-b border-gray-100 bg-white/95 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-6 py-4">
+      <div className="border-b border-gray-100">
+        <div className="max-w-4xl mx-auto px-6 py-4">
           <Link to="/home">
             <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -127,38 +127,37 @@ const Pricing = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-20">
+      <div className="max-w-4xl mx-auto px-6 py-16">
         {/* Header Section */}
-        <div className="text-center mb-20">
-          <Badge className="mb-6 bg-gray-900 text-white px-4 py-2">Choose Your Plan</Badge>
-          <h1 className="text-5xl font-bold mb-6 text-gray-900">
+        <div className="text-center mb-16">
+          <Badge className="mb-4 bg-gray-900 text-white">Choose Your Plan</Badge>
+          <h1 className="text-4xl font-bold mb-4 text-gray-900">
             Unlock Your University Dreams
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Choose the plan that fits your needs and start your journey to top universities. 
-            Join thousands of successful students who achieved their goals with UniApp Space.
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Choose the plan that fits your needs and start your journey to top universities.
           </p>
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid lg:grid-cols-2 gap-12 max-w-5xl mx-auto mb-20">
+        <div className="grid lg:grid-cols-2 gap-8 mb-16">
           {/* Free Demo Card */}
-          <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-shadow relative">
-            <CardHeader className="text-center pb-8">
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="text-center pb-6">
               <CardTitle className="text-2xl text-gray-900 mb-2">Free Demo</CardTitle>
-              <CardDescription className="text-gray-600 text-lg">
+              <CardDescription className="text-gray-600">
                 Experience our AI-powered document review
               </CardDescription>
-              <div className="mt-6">
-                <div className="text-4xl font-bold text-gray-900 mb-2">
+              <div className="mt-4">
+                <div className="text-3xl font-bold text-gray-900 mb-2">
                   $0
-                  <span className="text-lg font-normal text-gray-600">/forever</span>
+                  <span className="text-base font-normal text-gray-600">/forever</span>
                 </div>
                 <p className="text-gray-600">Perfect for trying out our platform</p>
               </div>
             </CardHeader>
-            <CardContent className="pb-8">
-              <ul className="space-y-4">
+            <CardContent className="pb-6">
+              <ul className="space-y-3">
                 {freeFeatures.map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
@@ -169,7 +168,7 @@ const Pricing = () => {
             </CardContent>
             <CardFooter>
               <Button 
-                className="w-full py-6 text-lg" 
+                className="w-full" 
                 variant="outline"
                 onClick={() => window.location.href = '/documents'}
               >
@@ -179,27 +178,27 @@ const Pricing = () => {
           </Card>
 
           {/* Premium Card */}
-          <Card className="border-gray-900 bg-white shadow-xl hover:shadow-2xl transition-shadow relative overflow-hidden">
-            <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-gray-900 to-gray-700 text-white px-6 py-2 text-sm font-medium">
-              🚀 Most Popular
+          <Card className="border-gray-900 shadow-lg relative">
+            <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white">
+              Most Popular
             </Badge>
-            <CardHeader className="text-center pb-8 pt-8">
+            <CardHeader className="text-center pb-6 pt-8">
               <CardTitle className="text-2xl text-gray-900 mb-2">Premium Plan</CardTitle>
-              <CardDescription className="text-gray-600 text-lg">
+              <CardDescription className="text-gray-600">
                 Complete university application solution
               </CardDescription>
-              <div className="mt-6">
-                <div className="text-4xl font-bold text-gray-900 mb-2">
+              <div className="mt-4">
+                <div className="text-3xl font-bold text-gray-900 mb-2">
                   $9.99
-                  <span className="text-lg font-normal text-gray-600">/month</span>
+                  <span className="text-base font-normal text-gray-600">/month</span>
                 </div>
                 <p className="text-gray-600">Everything you need to succeed</p>
               </div>
             </CardHeader>
-            <CardContent className="pb-8">
-              <div className="space-y-6">
+            <CardContent className="pb-6">
+              <div className="space-y-4 mb-6">
                 {premiumFeatures.map((feature, index) => (
-                  <div key={index} className="flex items-start gap-4">
+                  <div key={index} className="flex items-start gap-3">
                     <div className="p-2 bg-gray-100 rounded-lg">
                       {feature.icon}
                     </div>
@@ -211,7 +210,7 @@ const Pricing = () => {
                 ))}
               </div>
               
-              <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-gray-50 rounded-lg">
                 <h4 className="font-semibold text-gray-900 mb-2">Plus everything in Free:</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
@@ -228,7 +227,7 @@ const Pricing = () => {
             <CardFooter>
               {subscription?.subscribed ? (
                 <Button 
-                  className="w-full py-6 text-lg bg-gray-900 hover:bg-gray-800" 
+                  className="w-full bg-gray-900 hover:bg-gray-800" 
                   onClick={handleManageSubscription}
                   disabled={loading}
                 >
@@ -236,7 +235,7 @@ const Pricing = () => {
                 </Button>
               ) : (
                 <Button 
-                  className="w-full py-6 text-lg bg-gray-900 hover:bg-gray-800" 
+                  className="w-full bg-gray-900 hover:bg-gray-800" 
                   onClick={handleSubscribe}
                   disabled={loading}
                 >
@@ -247,28 +246,10 @@ const Pricing = () => {
           </Card>
         </div>
 
-        {/* Value Proposition */}
-        <div className="text-center mb-16">
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="p-6">
-              <div className="text-3xl font-bold text-green-600 mb-2">40%</div>
-              <div className="text-gray-600">Higher acceptance rates</div>
-            </div>
-            <div className="p-6">
-              <div className="text-3xl font-bold text-blue-600 mb-2">20hrs</div>
-              <div className="text-gray-600">Saved per application</div>
-            </div>
-            <div className="p-6">
-              <div className="text-3xl font-bold text-purple-600 mb-2">$1000s</div>
-              <div className="text-gray-600">Saved on consultancy fees</div>
-            </div>
-          </div>
-        </div>
-
         {/* FAQ Section */}
-        <div className="max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">Frequently Asked Questions</h2>
-          <div className="space-y-6">
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-center mb-8 text-gray-900">Frequently Asked Questions</h2>
+          <div className="space-y-4">
             <Card className="border-gray-200">
               <CardContent className="p-6">
                 <h3 className="font-semibold text-gray-900 mb-2">Can I cancel anytime?</h3>
@@ -293,14 +274,14 @@ const Pricing = () => {
         {/* Subscription Status */}
         {user && subscription && (
           <div className="text-center">
-            <Card className="max-w-md mx-auto border-gray-200 shadow-lg">
+            <Card className="max-w-md mx-auto border-gray-200">
               <CardHeader className="text-center">
                 <CardTitle className="text-gray-900">Your Subscription</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-center">
-                    <Badge variant={subscription.subscribed ? "default" : "secondary"} className="text-sm px-4 py-2">
+                    <Badge variant={subscription.subscribed ? "default" : "secondary"}>
                       {subscription.subscribed ? "✅ Active Premium" : "❌ No Active Plan"}
                     </Badge>
                   </div>
@@ -315,7 +296,7 @@ const Pricing = () => {
                 </div>
                 <Button 
                   variant="outline" 
-                  className="mt-6 w-full"
+                  className="mt-4 w-full"
                   onClick={checkSubscription}
                 >
                   Refresh Status
@@ -327,21 +308,21 @@ const Pricing = () => {
 
         {/* CTA for non-logged in users */}
         {!user && (
-          <div className="text-center mt-16">
-            <Card className="max-w-2xl mx-auto border-gray-900 bg-gradient-to-r from-gray-900 to-gray-800 text-white">
-              <CardContent className="p-12">
-                <h3 className="text-2xl font-bold mb-4">Ready to Get Started?</h3>
-                <p className="text-gray-300 mb-8 text-lg">
-                  Join thousands of successful students and transform your university applications today.
+          <div className="text-center mt-12">
+            <Card className="border-gray-900 bg-gray-900 text-white">
+              <CardContent className="p-8">
+                <h3 className="text-xl font-bold mb-3">Ready to Get Started?</h3>
+                <p className="text-gray-300 mb-6">
+                  Join students worldwide and transform your university applications today.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Link to="/auth?redirect=pricing">
-                    <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100 px-8">
+                    <Button className="bg-white text-gray-900 hover:bg-gray-100">
                       Start Your Journey
                     </Button>
                   </Link>
                   <Link to="/documents">
-                    <Button size="lg" variant="outline" className="border-gray-400 text-white hover:bg-white hover:text-gray-900 px-8">
+                    <Button variant="outline" className="border-gray-400 text-white hover:bg-white hover:text-gray-900">
                       Try Demo First
                     </Button>
                   </Link>

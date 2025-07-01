@@ -13,65 +13,85 @@ import {
   Star,
   Users,
   BookOpen,
-  Award
+  Award,
+  ChevronRight
 } from "lucide-react";
 
 const Home = () => {
   const features = [
     {
-      icon: <FileText className="h-6 w-6" />,
+      icon: <FileText className="h-8 w-8" />,
       title: "AI Document Review",
-      description: "Get intelligent feedback on essays, personal statements, and application documents with AI-powered suggestions for improvement."
+      description: "Upload your essays, personal statements, and CVs to get intelligent feedback and suggestions for improvement.",
+      details: [
+        "Advanced grammar and style analysis",
+        "Content structure optimization",
+        "Tone and clarity improvements",
+        "Personalized enhancement suggestions"
+      ],
+      screenshot: "photo-1461749280684-dccba630e2f6"
     },
     {
-      icon: <Search className="h-6 w-6" />,
+      icon: <Search className="h-8 w-8" />,
       title: "University Search",  
-      description: "Discover and compare programs from over 1,200 universities worldwide with detailed information and requirements."
+      description: "Discover and compare programs from universities worldwide with detailed information and requirements.",
+      details: [
+        "Comprehensive university database",
+        "Program requirement matching",
+        "Deadline tracking and reminders",
+        "Custom filtering and comparison tools"
+      ],
+      screenshot: "photo-1488590528505-98d2b5aba04b"
     },
     {
-      icon: <Brain className="h-6 w-6" />,
-      title: "Smart Notes",
-      description: "Organize your research and application materials with AI-enhanced note-taking and intelligent categorization."
+      icon: <Brain className="h-8 w-8" />,
+      title: "Smart Notes & Organization",
+      description: "Organize your research and application materials with AI-enhanced note-taking and intelligent categorization.",
+      details: [
+        "AI-powered content organization",
+        "Automatic tagging and categorization",
+        "Smart search across all notes",
+        "Progress tracking and insights"
+      ],
+      screenshot: "photo-1486312338219-ce68d2c6f44d"
     },
     {
-      icon: <Target className="h-6 w-6" />,
-      title: "Application Tracking",
-      description: "Never miss a deadline with comprehensive application management and automated reminder systems."
+      icon: <Target className="h-8 w-8" />,
+      title: "Application Management",
+      description: "Never miss a deadline with comprehensive application tracking and automated reminder systems.",
+      details: [
+        "Deadline calendar and notifications",
+        "Application status tracking",
+        "Document version control",
+        "Progress monitoring dashboard"
+      ],
+      screenshot: "photo-1531297484001-80022131f5a1"
     }
-  ];
-
-  const benefits = [
-    "Save 20+ hours per application",
-    "Increase acceptance rates by 40%",
-    "Get expert-level feedback instantly",
-    "Track all deadlines in one place",
-    "Access global university database",
-    "Improve writing with AI assistance"
   ];
 
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation Bar */}
-      <nav className="border-b border-gray-100 bg-white/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+      <nav className="border-b border-gray-100 bg-white sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 bg-gradient-to-br from-gray-900 to-gray-700 rounded-lg"></div>
-              <span className="text-xl font-bold text-gray-900">UniApp Space</span>
+              <div className="h-8 w-8 bg-gray-900 rounded-lg"></div>
+              <span className="text-xl font-semibold text-gray-900">UniApp Space</span>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <Link to="/pricing">
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900 font-medium">
+                <Button variant="ghost" className="text-gray-600 hover:text-gray-900">
                   Pricing
                 </Button>
               </Link>
               <Link to="/auth">
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900 font-medium">
+                <Button variant="ghost" className="text-gray-600 hover:text-gray-900">
                   Sign In
                 </Button>
               </Link>
               <Link to="/auth?redirect=pricing">
-                <Button size="sm" className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-6">
+                <Button className="bg-gray-900 hover:bg-gray-800 text-white">
                   Get Started
                 </Button>
               </Link>
@@ -81,269 +101,228 @@ const Home = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="py-24 px-6 bg-gradient-to-br from-gray-50 via-white to-gray-50">
-        <div className="max-w-6xl mx-auto text-center">
-          <Badge variant="secondary" className="mb-8 bg-gray-100 text-gray-800 hover:bg-gray-200 px-4 py-2 text-sm font-medium">
-            🎓 AI-Powered University Application Assistant
+      <section className="py-20 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <Badge variant="secondary" className="mb-6 bg-gray-100 text-gray-700">
+            AI-Powered University Applications
           </Badge>
           
-          <h1 className="text-6xl font-bold mb-8 text-gray-900 leading-tight">
-            Your Path to 
-            <span className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent"> Dream Universities</span>
+          <h1 className="text-5xl font-bold mb-6 text-gray-900">
+            Your Path to Dream Universities
           </h1>
           
-          <p className="text-xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed">
-            Transform your university application process with AI-powered document editing, 
-            intelligent program search, and comprehensive application management. 
-            <span className="font-semibold text-gray-800">Join thousands of successful applicants.</span>
+          <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+            Streamline your university application process with AI-powered document editing, 
+            intelligent program search, and comprehensive application management.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Link to="/auth?redirect=pricing">
-              <Button size="lg" className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-4 text-lg font-medium">
-                Start Your Journey <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="lg" className="bg-gray-900 hover:bg-gray-800 text-white px-8">
+                Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
             
             <Link to="/documents">
-              <Button size="lg" variant="outline" className="px-8 py-4 text-lg border-gray-300 text-gray-700 hover:bg-gray-50 font-medium">
-                Try Free Demo
+              <Button size="lg" variant="outline" className="px-8 border-gray-300 text-gray-700 hover:bg-gray-50">
+                Try Demo
               </Button>
             </Link>
-          </div>
-
-          {/* Enhanced Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-            <div className="text-center p-6 rounded-lg bg-white shadow-sm border border-gray-100">
-              <div className="text-3xl font-bold text-gray-900 mb-2">8,000+</div>
-              <div className="text-gray-600">Students Helped</div>
-            </div>
-            <div className="text-center p-6 rounded-lg bg-white shadow-sm border border-gray-100">
-              <div className="text-3xl font-bold text-gray-900 mb-2">95%</div>
-              <div className="text-gray-600">Success Rate</div>
-            </div>
-            <div className="text-center p-6 rounded-lg bg-white shadow-sm border border-gray-100">
-              <div className="text-3xl font-bold text-gray-900 mb-2">1,200+</div>
-              <div className="text-gray-600">Universities</div>
-            </div>
-            <div className="text-center p-6 rounded-lg bg-white shadow-sm border border-gray-100">
-              <div className="text-3xl font-bold text-gray-900 mb-2">20hrs</div>
-              <div className="text-gray-600">Saved Per App</div>
-            </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-24 px-6 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <Badge className="mb-4 bg-gray-900 text-white">Powerful Features</Badge>
-            <h2 className="text-4xl font-bold mb-6 text-gray-900">Everything You Need to Succeed</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Comprehensive tools designed to make your university application process seamless, 
-              efficient, and successful from start to finish.
+      <section className="py-16 px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4 text-gray-900">Powerful Features</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Everything you need to create winning university applications
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="space-y-20">
             {features.map((feature, index) => (
-              <Card key={index} className="border-gray-200 bg-white hover:shadow-lg transition-all duration-300 group">
-                <CardHeader className="pb-4">
-                  <div className="mb-4 p-3 bg-gray-100 rounded-xl w-fit group-hover:bg-gray-900 group-hover:text-white transition-colors">
-                    {feature.icon}
+              <div key={index} className={`grid md:grid-cols-2 gap-12 items-center ${index % 2 === 1 ? 'md:grid-flow-col-dense' : ''}`}>
+                {/* Feature Content */}
+                <div className={index % 2 === 1 ? 'md:col-start-2' : ''}>
+                  <div className="flex items-center mb-4">
+                    <div className="p-3 bg-gray-900 text-white rounded-lg mr-4">
+                      {feature.icon}
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900">{feature.title}</h3>
                   </div>
-                  <CardTitle className="text-xl text-gray-900 mb-2">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-gray-600 leading-relaxed text-base">
-                    {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
+                  
+                  <p className="text-lg text-gray-600 mb-6">{feature.description}</p>
+                  
+                  <ul className="space-y-3 mb-6">
+                    {feature.details.map((detail, idx) => (
+                      <li key={idx} className="flex items-start">
+                        <Check className="h-5 w-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-700">{detail}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  
+                  <Link to="/auth?redirect=pricing">
+                    <Button variant="outline" className="group">
+                      Try This Feature
+                      <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                </div>
+                
+                {/* Feature Screenshot */}
+                <div className={index % 2 === 1 ? 'md:col-start-1' : ''}>
+                  <div className="relative">
+                    <div className="bg-gray-200 rounded-lg overflow-hidden shadow-lg">
+                      <img 
+                        src={`https://images.unsplash.com/${feature.screenshot}?auto=format&fit=crop&w=600&h=400`}
+                        alt={`${feature.title} interface preview`}
+                        className="w-full h-64 object-cover"
+                      />
+                    </div>
+                    <div className="absolute -bottom-4 -right-4 bg-white p-3 rounded-lg shadow-lg border">
+                      {feature.icon}
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Benefits Section */}
-      <section className="py-24 px-6 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <Badge className="mb-4 bg-gray-100 text-gray-800">Why Choose UniApp Space</Badge>
-              <h2 className="text-4xl font-bold mb-6 text-gray-900">
-                Streamline Your Applications Like Never Before
-              </h2>
-              <p className="text-lg text-gray-600 mb-8">
-                Our AI-powered platform combines cutting-edge technology with proven application strategies 
-                to give you the competitive edge you need.
-              </p>
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {benefits.map((benefit, index) => (
-                  <li key={index} className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
-                    <span className="text-gray-700 font-medium">{benefit}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="grid grid-cols-2 gap-6">
-              <Card className="p-6 border-gray-200 bg-gradient-to-br from-blue-50 to-blue-100">
-                <BookOpen className="h-8 w-8 text-blue-600 mb-4" />
-                <h3 className="font-semibold text-gray-900 mb-2">Smart Writing</h3>
-                <p className="text-sm text-gray-600">AI analyzes your essays and provides targeted feedback</p>
-              </Card>
-              <Card className="p-6 border-gray-200 bg-gradient-to-br from-purple-50 to-purple-100 mt-8">
-                <Award className="h-8 w-8 text-purple-600 mb-4" />
-                <h3 className="font-semibold text-gray-900 mb-2">Proven Results</h3>
-                <p className="text-sm text-gray-600">Higher acceptance rates with our methodology</p>
-              </Card>
-              <Card className="p-6 border-gray-200 bg-gradient-to-br from-green-50 to-green-100 -mt-4">
-                <Users className="h-8 w-8 text-green-600 mb-4" />
-                <h3 className="font-semibold text-gray-900 mb-2">Expert Support</h3>
-                <p className="text-sm text-gray-600">Get help from our experienced team</p>
-              </Card>
-              <Card className="p-6 border-gray-200 bg-gradient-to-br from-orange-50 to-orange-100 mt-4">
-                <Target className="h-8 w-8 text-orange-600 mb-4" />
-                <h3 className="font-semibold text-gray-900 mb-2">Stay Organized</h3>
-                <p className="text-sm text-gray-600">Never miss important deadlines again</p>
-              </Card>
-            </div>
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-6 text-gray-900">Why Students Choose UniApp Space</h2>
+          <p className="text-lg text-gray-600 mb-12">
+            Join students worldwide who have streamlined their application process
+          </p>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="border-gray-200 p-6">
+              <div className="text-blue-600 mb-4">
+                <BookOpen className="h-12 w-12 mx-auto" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">Expert-Level Feedback</h3>
+              <p className="text-gray-600">Get professional-quality document reviews and improvement suggestions powered by advanced AI</p>
+            </Card>
+            
+            <Card className="border-gray-200 p-6">
+              <div className="text-green-600 mb-4">
+                <Target className="h-12 w-12 mx-auto" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">Never Miss Deadlines</h3>
+              <p className="text-gray-600">Stay organized with intelligent tracking and automated reminders for all your applications</p>
+            </Card>
+            
+            <Card className="border-gray-200 p-6">
+              <div className="text-purple-600 mb-4">
+                <Award className="h-12 w-12 mx-auto" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">Proven Results</h3>
+              <p className="text-gray-600">Students using our platform report improved application quality and better organization</p>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section className="py-24 px-6 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-gray-900 text-white">Student Success Stories</Badge>
-            <h2 className="text-4xl font-bold mb-4 text-gray-900">Trusted by Students Worldwide</h2>
-            <p className="text-xl text-gray-600">See how UniApp Space helped students achieve their dreams</p>
+      <section className="py-16 px-6 bg-gray-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4 text-gray-900">Student Success Stories</h2>
+            <p className="text-lg text-gray-600">See how UniApp Space helped students achieve their goals</p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="border-gray-200 bg-white shadow-sm">
-              <CardContent className="p-8">
-                <div className="flex mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                  ))}
+          <div className="grid md:grid-cols-2 gap-8">
+            <Card className="border-gray-200 p-6">
+              <div className="flex mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                ))}
+              </div>
+              <p className="text-gray-700 mb-4 italic">
+                "The AI feedback on my personal statement was incredibly detailed. It helped me identify areas I never would have thought to improve."
+              </p>
+              <div className="flex items-center">
+                <div className="h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                  S
                 </div>
-                <p className="text-gray-700 mb-6 text-lg italic">
-                  "UniApp Space's AI feedback transformed my personal statement. I got into Harvard!"
-                </p>
-                <div className="flex items-center">
-                  <div className="h-12 w-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold mr-4">
-                    S
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">Sarah Chen</div>
-                    <div className="text-gray-600 text-sm">Harvard University, Class of 2028</div>
-                  </div>
+                <div>
+                  <div className="font-semibold text-gray-900">Sarah M.</div>
+                  <div className="text-gray-600 text-sm">Computer Science Student</div>
                 </div>
-              </CardContent>
+              </div>
             </Card>
             
-            <Card className="border-gray-200 bg-white shadow-sm">
-              <CardContent className="p-8">
-                <div className="flex mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                  ))}
+            <Card className="border-gray-200 p-6">
+              <div className="flex mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                ))}
+              </div>
+              <p className="text-gray-700 mb-4 italic">
+                "The deadline tracking feature was a lifesaver. I was able to stay on top of all my applications without the stress."
+              </p>
+              <div className="flex items-center">
+                <div className="h-10 w-10 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                  M
                 </div>
-                <p className="text-gray-700 mb-6 text-lg italic">
-                  "The deadline tracking saved my life. I never missed a single application!"
-                </p>
-                <div className="flex items-center">
-                  <div className="h-12 w-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold mr-4">
-                    M
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">Marcus Johnson</div>
-                    <div className="text-gray-600 text-sm">MIT, Computer Science</div>
-                  </div>
+                <div>
+                  <div className="font-semibold text-gray-900">Marcus J.</div>
+                  <div className="text-gray-600 text-sm">Engineering Student</div>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-gray-200 bg-white shadow-sm">
-              <CardContent className="p-8">
-                <div className="flex mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-                <p className="text-gray-700 mb-6 text-lg italic">
-                  "Found my perfect match university through their search feature. Amazing!"
-                </p>
-                <div className="flex items-center">
-                  <div className="h-12 w-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold mr-4">
-                    A
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">Aisha Patel</div>
-                    <div className="text-gray-600 text-sm">Stanford University, Medicine</div>
-                  </div>
-                </div>
-              </CardContent>
+              </div>
             </Card>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 px-6 bg-gradient-to-r from-gray-900 to-gray-800 text-white">
+      <section className="py-16 px-6 bg-gray-900 text-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6">Ready to Transform Your Applications?</h2>
-          <p className="text-xl mb-12 text-gray-300 max-w-3xl mx-auto">
-            Join thousands of successful students who streamlined their university applications 
-            and achieved their academic dreams with UniApp Space.
+          <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Applications?</h2>
+          <p className="text-xl mb-8 text-gray-300">
+            Start your journey to your dream university today
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/auth?redirect=pricing">
-              <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-4 text-lg font-medium">
-                Start Your Free Trial
+              <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100 px-8">
+                Get Started Free
               </Button>
             </Link>
             
-            <Link to="/pricing">
-              <Button size="lg" variant="outline" className="border-gray-400 text-white hover:bg-white hover:text-gray-900 px-8 py-4 text-lg font-medium">
-                View Pricing
+            <Link to="/documents">
+              <Button size="lg" variant="outline" className="border-gray-400 text-white hover:bg-white hover:text-gray-900 px-8">
+                Try Demo First
               </Button>
             </Link>
           </div>
-
-          <p className="text-gray-400 text-sm">
-            💳 No credit card required for free trial • 🚀 Get started in under 2 minutes
-          </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-16 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
-            <div className="md:col-span-2">
+      <footer className="bg-white border-t border-gray-200 py-12 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
+            <div>
               <div className="flex items-center space-x-3 mb-4">
-                <div className="h-8 w-8 bg-gradient-to-br from-gray-900 to-gray-700 rounded-lg"></div>
-                <span className="text-xl font-bold text-gray-900">UniApp Space</span>
+                <div className="h-8 w-8 bg-gray-900 rounded-lg"></div>
+                <span className="text-xl font-semibold text-gray-900">UniApp Space</span>
               </div>
-              <p className="text-gray-600 mb-6 max-w-md">
-                Empowering students worldwide to achieve their academic dreams through 
-                AI-powered application assistance and comprehensive university guidance.
+              <p className="text-gray-600">
+                AI-powered university application assistance for students worldwide.
               </p>
-              <div className="flex space-x-4">
-                <Badge variant="secondary" className="bg-gray-100 text-gray-700">8,000+ Students</Badge>
-                <Badge variant="secondary" className="bg-gray-100 text-gray-700">95% Success Rate</Badge>
-              </div>
             </div>
             
             <div>
               <h3 className="font-semibold text-gray-900 mb-4">Product</h3>
-              <ul className="space-y-3 text-gray-600">
+              <ul className="space-y-2 text-gray-600">
                 <li><Link to="/pricing" className="hover:text-gray-900">Pricing</Link></li>
                 <li><Link to="/documents" className="hover:text-gray-900">Try Demo</Link></li>
                 <li><Link to="/auth" className="hover:text-gray-900">Sign Up</Link></li>
@@ -351,23 +330,19 @@ const Home = () => {
             </div>
             
             <div>
-              <h3 className="font-semibold text-gray-900 mb-4">Company</h3>
-              <ul className="space-y-3 text-gray-600">
-                <li><a href="#" className="hover:text-gray-900">About Us</a></li>
-                <li><a href="#" className="hover:text-gray-900">Contact</a></li>
-                <li><a href="#" className="hover:text-gray-900">Support</a></li>
+              <h3 className="font-semibold text-gray-900 mb-4">Support</h3>
+              <ul className="space-y-2 text-gray-600">
+                <li><a href="#" className="hover:text-gray-900">Help Center</a></li>
+                <li><a href="#" className="hover:text-gray-900">Contact Us</a></li>
+                <li><a href="#" className="hover:text-gray-900">Privacy Policy</a></li>
               </ul>
             </div>
           </div>
           
-          <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-600 text-sm">
+          <div className="border-t border-gray-200 pt-6 text-center">
+            <p className="text-gray-600">
               © 2024 UniApp Space. All rights reserved.
             </p>
-            <div className="flex space-x-6 text-sm text-gray-600 mt-4 md:mt-0">
-              <a href="#" className="hover:text-gray-900">Privacy Policy</a>
-              <a href="#" className="hover:text-gray-900">Terms of Service</a>
-            </div>
           </div>
         </div>
       </footer>
