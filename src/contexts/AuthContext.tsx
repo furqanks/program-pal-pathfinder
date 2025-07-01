@@ -59,6 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
         // Only synchronous state updates here
         setSession(session);
         setUser(session?.user ?? null);
@@ -76,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -94,18 +97,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    console.log('Attempting sign in for:', email);
     return await supabase.auth.signInWithPassword({ email, password });
   };
 
   const signUp = async (email: string, password: string) => {
+    console.log('Attempting sign up for:', email);
     const redirectUrl = `${window.location.origin}/`;
-    return await supabase.auth.signUp({ 
+    
+    // Use a more restrictive signup approach
+    const result = await supabase.auth.signUp({ 
       email, 
       password,
       options: {
-        emailRedirectTo: redirectUrl
+        emailRedirectTo: redirectUrl,
+        // Add data to help identify unique signups
+        data: {
+          signup_timestamp: new Date().toISOString()
+        }
       }
     });
+    
+    console.log('Signup result:', result);
+    return result;
   };
 
   const signOut = async () => {
