@@ -141,53 +141,11 @@ export default function Auth() {
     }
   };
 
-  const checkIfUserExists = async (email: string) => {
-    try {
-      // Check if user already has an account by trying to sign in with a dummy password
-      // This is a workaround since Supabase doesn't provide a direct way to check if email exists
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: 'dummy_password_to_check_if_user_exists'
-      });
-      
-      // If we get an "Invalid login credentials" error, the user exists but password is wrong
-      // If we get an "Email not confirmed" error, the user exists but hasn't confirmed email
-      if (error && (
-        error.message.includes('Invalid login credentials') || 
-        error.message.includes('Email not confirmed') ||
-        error.message.includes('Invalid credentials')
-      )) {
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('Error checking if user exists:', error);
-      return false;
-    }
-  };
-
   const handleSignup = async (values: SignupFormValues) => {
     setIsLoading(true);
     
     try {
       console.log('Starting signup process for:', values.email);
-      
-      // First check if user already exists
-      const userExists = await checkIfUserExists(values.email);
-      
-      if (userExists) {
-        toast({
-          title: "Account already exists",
-          description: "An account with this email already exists. Please sign in instead or use a different email address.",
-          variant: "destructive",
-        });
-        // Switch to login tab to help user
-        setActiveTab("login");
-        // Pre-fill the login form with the email
-        loginForm.setValue("email", values.email);
-        return;
-      }
       
       const { error, data } = await signUp(values.email, values.password);
       
@@ -195,7 +153,8 @@ export default function Auth() {
         console.error('Signup error:', error);
         
         // Handle specific error cases
-        if (error.message.includes('User already registered')) {
+        if (error.message.includes('User already registered') || 
+            error.message.includes('already registered')) {
           toast({
             title: "Account already exists",
             description: "An account with this email already exists. Please sign in instead.",
