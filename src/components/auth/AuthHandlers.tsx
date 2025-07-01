@@ -2,8 +2,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { LoginFormValues } from "./LoginForm";
-import { SignupFormValues } from "./SignupForm";
-import { useSignupHandler } from "./SignupHandler";
 
 interface AuthHandlersProps {
   setActiveTab: (tab: "login" | "signup") => void;
@@ -13,7 +11,6 @@ interface AuthHandlersProps {
 export const useAuthHandlers = ({ setActiveTab, setLoginFormEmail }: AuthHandlersProps) => {
   const { signIn } = useAuth();
   const { toast } = useToast();
-  const { handleSignup } = useSignupHandler({ setActiveTab, setLoginFormEmail });
 
   const handleLogin = async (values: LoginFormValues) => {
     try {
@@ -66,5 +63,5 @@ export const useAuthHandlers = ({ setActiveTab, setLoginFormEmail }: AuthHandler
     }
   };
 
-  return { handleLogin, handleSignup };
+  return { handleLogin };
 };

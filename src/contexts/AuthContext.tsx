@@ -17,10 +17,6 @@ type AuthContextType = {
     error: Error | null;
     data: { user: User | null; session: Session | null };
   }>;
-  signUp: (email: string, password: string) => Promise<{
-    error: Error | null;
-    data: { user: User | null; session: Session | null };
-  }>;
   signOut: () => Promise<{ error: Error | null }>;
   checkSubscription: () => Promise<void>;
   loading: boolean;
@@ -108,41 +104,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string) => {
-    console.log('Starting signup process for:', email);
-    
-    try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const result = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            signup_timestamp: new Date().toISOString()
-          }
-        }
-      });
-      
-      console.log('Signup API response:', {
-        hasUser: !!result.data?.user,
-        hasSession: !!result.data?.session,
-        userEmail: result.data?.user?.email,
-        userConfirmed: result.data?.user?.email_confirmed_at ? 'Yes' : 'No',
-        error: result.error?.message || 'None'
-      });
-      
-      return result;
-    } catch (error) {
-      console.error('Signup unexpected error:', error);
-      return { 
-        error: error as Error, 
-        data: { user: null, session: null } 
-      };
-    }
-  };
-
   const signOut = async () => {
     setSubscription(null);
     return await supabase.auth.signOut();
@@ -155,7 +116,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session, 
         subscription, 
         signIn, 
-        signUp, 
         signOut, 
         checkSubscription, 
         loading 
