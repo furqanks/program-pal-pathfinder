@@ -1,6 +1,8 @@
 
 import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginForm, LoginFormValues } from "./LoginForm";
+import { SignupForm, SignupFormValues } from "./SignupForm";
 import { useAuthHandlers } from "./AuthHandlers";
 
 interface AuthTabsProps {
@@ -14,10 +16,11 @@ export function AuthTabs({
   setIsLoading,
   loginFormRef 
 }: AuthTabsProps) {
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [loginFormEmail, setLoginFormEmail] = useState("");
 
-  const { handleLogin } = useAuthHandlers({
-    setActiveTab: () => {}, // No longer needed since we only have login
+  const { handleLogin, handleSignup } = useAuthHandlers({
+    setActiveTab,
     setLoginFormEmail: (email: string) => {
       setLoginFormEmail(email);
       // Update the login form email field
@@ -36,9 +39,29 @@ export function AuthTabs({
     }
   };
 
+  const onSignupSubmit = async (values: SignupFormValues) => {
+    setIsLoading(true);
+    try {
+      await handleSignup(values);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      <LoginForm onSubmit={onLoginSubmit} isLoading={isLoading} />
-    </div>
+    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "login" | "signup")} className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="login">Sign In</TabsTrigger>
+        <TabsTrigger value="signup">Sign Up</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="login" className="space-y-4">
+        <LoginForm onSubmit={onLoginSubmit} isLoading={isLoading} />
+      </TabsContent>
+      
+      <TabsContent value="signup" className="space-y-4">
+        <SignupForm onSubmit={onSignupSubmit} isLoading={isLoading} />
+      </TabsContent>
+    </Tabs>
   );
 }

@@ -57,10 +57,10 @@ export default function Auth() {
         <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-2xl text-gray-900">
-              Welcome Back
+              Welcome to UniApp Space
             </CardTitle>
             <CardDescription className="text-gray-600 text-base">
-              Sign in to continue your university application journey
+              Sign in to your account or create a new one to get started
             </CardDescription>
           </CardHeader>
           <CardContent>
