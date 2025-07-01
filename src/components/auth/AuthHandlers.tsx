@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { LoginFormValues } from "./LoginForm";
@@ -101,16 +100,37 @@ export const useAuthHandlers = ({ setActiveTab, setLoginFormEmail }: AuthHandler
           });
         }
       } else {
-        console.log('=== SIGNUP SUCCESS ===');
-        toast({
-          title: "Account created successfully!",
-          description: "Welcome to UniApp Space! Redirecting to pricing...",
-        });
-        
-        // Redirect to pricing page after successful signup
-        setTimeout(() => {
-          navigate("/pricing");
-        }, 1000);
+        // Check if user was actually created
+        if (data?.user && !data.user.email_confirmed_at) {
+          // New user created, needs email confirmation
+          console.log('=== SIGNUP SUCCESS - EMAIL CONFIRMATION NEEDED ===');
+          toast({
+            title: "Account created successfully!",
+            description: "Please check your email and click the confirmation link to complete your registration.",
+          });
+        } else if (data?.user && data.user.email_confirmed_at) {
+          // User was created and confirmed (shouldn't happen in normal flow)
+          console.log('=== SIGNUP SUCCESS - USER CONFIRMED ===');
+          toast({
+            title: "Account created successfully!",
+            description: "Welcome to UniApp Space! Redirecting to pricing...",
+          });
+          
+          setTimeout(() => {
+            navigate("/pricing");
+          }, 1000);
+        } else {
+          // No user returned - likely existing user
+          console.log('=== SIGNUP - USER ALREADY EXISTS ===');
+          toast({
+            title: "Account already exists",
+            description: "An account with this email already exists. Please try logging in instead.",
+            variant: "destructive",
+          });
+          // Switch to login tab and pre-fill email
+          setLoginFormEmail(values.email);
+          setActiveTab("login");
+        }
       }
     } catch (error) {
       console.log('=== SIGNUP UNEXPECTED ERROR ===');
