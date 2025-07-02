@@ -19,6 +19,7 @@ import { PerplexityProvider } from "./contexts/PerplexityContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { AINotesProvider } from "./contexts/AINotesContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { StripeProvider } from "./components/stripe/StripeProvider";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import Pricing from "./pages/Pricing";
@@ -86,23 +87,25 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="uniapp-ui-theme">
         <TooltipProvider>
-          <AuthProvider>
-            <ProgramProvider>
-              <TagProvider>
-                <AINotesProvider>
-                  <PerplexityProvider>
-                    <BrowserRouter>
+            <AuthProvider>
+              <StripeProvider>
+                <ProgramProvider>
+                  <TagProvider>
+                    <AINotesProvider>
+                      <PerplexityProvider>
+                        <BrowserRouter>
                       <div className="min-h-screen bg-white text-gray-900">
                         <Toaster />
                         <Sonner />
                         <AppRoutes />
                       </div>
-                    </BrowserRouter>
-                  </PerplexityProvider>
-                </AINotesProvider>
-              </TagProvider>
-            </ProgramProvider>
-          </AuthProvider>
+                        </BrowserRouter>
+                      </PerplexityProvider>
+                    </AINotesProvider>
+                  </TagProvider>
+                </ProgramProvider>
+              </StripeProvider>
+            </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>

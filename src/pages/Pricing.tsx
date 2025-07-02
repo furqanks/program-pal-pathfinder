@@ -9,46 +9,27 @@ import { Badge } from "@/components/ui/badge";
 import { Check, ArrowLeft, Star, Zap, Shield, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+import { CheckoutModal } from "@/components/stripe/CheckoutModal";
 
 const Pricing = () => {
   const navigate = useNavigate();
   const { user, session, subscription, checkSubscription } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
 
-  const handleSubscribe = async () => {
-    if (!user || !session) {
+  const handleSubscribe = () => {
+    if (!user) {
       navigate("/auth?redirect=pricing");
       return;
     }
+    setCheckoutModalOpen(true);
+  };
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to create checkout session. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      window.open(data.url, '_blank');
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleCheckoutSuccess = () => {
+    // Refresh subscription status and show success message
+    checkSubscription();
+    navigate("/"); // Redirect to dashboard
   };
 
   const handleManageSubscription = async () => {
@@ -239,7 +220,7 @@ const Pricing = () => {
                   onClick={handleSubscribe}
                   disabled={loading}
                 >
-                  {loading ? "Processing..." : user ? "Subscribe Now" : "Sign Up to Subscribe"}
+                  {user ? "Subscribe Now" : "Sign Up to Subscribe"}
                 </Button>
               )}
             </CardFooter>
@@ -331,6 +312,13 @@ const Pricing = () => {
             </Card>
           </div>
         )}
+
+        {/* Checkout Modal */}
+        <CheckoutModal
+          isOpen={checkoutModalOpen}
+          onClose={() => setCheckoutModalOpen(false)}
+          onSuccess={handleCheckoutSuccess}
+        />
       </div>
     </div>
   );
