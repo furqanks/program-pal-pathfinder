@@ -95,12 +95,12 @@ export function StripeTestPanel() {
         .from('subscribers')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code === 'PGRST116') {
-        updateTestResult('Database Schema', 'warning', 'No subscriber record found (normal for new users)');
-      } else if (error) {
+      if (error) {
         updateTestResult('Database Schema', 'error', `Database error: ${error.message}`);
+      } else if (!data) {
+        updateTestResult('Database Schema', 'warning', 'No subscriber record found (normal for new users)');
       } else {
         updateTestResult('Database Schema', 'success', 
           `Subscriber record exists. Status: ${data.subscription_status || 'inactive'}`);

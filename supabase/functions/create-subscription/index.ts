@@ -86,9 +86,52 @@ serve(async (req) => {
 
     logStep("Creating subscription for recurring payment");
     
-    // Create the subscription with a predefined price ID
-    // You should create this price in your Stripe dashboard first
-    const priceId = 'price_1QYMiCRuLzJnfzJBGBg2JNqQDYHobIcCo0hWrFwzfSRN2sUKgfZsEDEKGbJZeZnBfZKaZIlbV5VzZiGbEJVBHyWQ00ZYgZqZYZ'; // Replace with your actual price ID
+    // Create or get the price for $9.99/month
+    let priceId;
+    
+    // First check if our product and price already exist
+    const products = await stripe.products.list({ limit: 100 });
+    let product = products.data.find(p => p.metadata?.app === 'uniapp-space' && p.metadata?.tier === 'premium');
+    
+    if (!product) {
+      // Create the product
+      product = await stripe.products.create({
+        name: 'UniApp Space Premium',
+        description: 'Premium subscription for UniApp Space with unlimited AI document reviews, advanced program search, and priority support',
+        metadata: {
+          app: 'uniapp-space',
+          tier: 'premium'
+        }
+      });
+      logStep("Created new product", { productId: product.id });
+    }
+    
+    // Check if price exists for this product
+    const prices = await stripe.prices.list({ 
+      product: product.id,
+      limit: 10 
+    });
+    
+    let price = prices.data.find(p => p.unit_amount === 999 && p.recurring?.interval === 'month');
+    
+    if (!price) {
+      // Create the price
+      price = await stripe.prices.create({
+        product: product.id,
+        unit_amount: 999, // $9.99 in cents
+        currency: 'usd',
+        recurring: {
+          interval: 'month',
+        },
+        metadata: {
+          app: 'uniapp-space',
+          tier: 'premium'
+        }
+      });
+      logStep("Created new price", { priceId: price.id });
+    }
+    
+    priceId = price.id;
 
     const subscription = await stripe.subscriptions.create({
       customer: customerId,

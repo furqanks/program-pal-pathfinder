@@ -10,7 +10,7 @@ import { Check, ArrowLeft, Star, Zap, Shield, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { CheckoutModal } from "@/components/stripe/CheckoutModal";
-import { StripeTestPanel } from "@/components/stripe/StripeTestPanel";
+import { EnhancedStripeAudit } from "@/components/stripe/EnhancedStripeAudit";
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -228,10 +228,10 @@ const Pricing = () => {
           </Card>
         </div>
 
-        {/* Debug Panel - Remove in production */}
+        {/* Enhanced Stripe Audit Panel - Remove in production */}
         {user && (
           <div className="mb-16">
-            <StripeTestPanel />
+            <EnhancedStripeAudit />
           </div>
         )}
 
