@@ -2,7 +2,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
 // Initialize Stripe with your publishable key
-const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51QYMiCRuLzJnfzJBGBg2JNqQDYHobIcCo0hWrFwzfSRN2sUKgfZsEDEKGbJZeZnBfZKaZIlbV5VzZiGbEJVBHyWQ00ZYgZqZYZ';
+const STRIPE_PUBLISHABLE_KEY = 'pk_live_51OeZZJICp0rgVBLwFZiODSU908fAdNFf4zQj19u2ERW58Ik0SZrnC2MpK7FjqR0eQhFpXh1OK6bccxCXz677UuL100GtcHh1bP';
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
