@@ -30,17 +30,23 @@ export function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutModalProps
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+      const { data, error } = await supabase.functions.invoke('create-subscription', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
-        },
-        body: {
-          amount: 999, // $9.99 in cents
-          currency: 'usd',
         },
       });
 
       if (error) {
+        // Handle specific error cases
+        if (error.message?.includes('already have an active subscription')) {
+          toast({
+            title: "Subscription Already Active",
+            description: "You already have an active subscription. Please check your account.",
+            variant: "destructive",
+          });
+          onClose();
+          return;
+        }
         throw new Error(error.message);
       }
 

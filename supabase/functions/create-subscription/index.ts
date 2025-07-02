@@ -10,7 +10,7 @@ const corsHeaders = {
 // Helper logging function for enhanced debugging
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[CREATE-PAYMENT-INTENT] ${step}${detailsStr}`);
+  console.log(`[CREATE-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
 serve(async (req) => {
@@ -45,11 +45,6 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Parse request body
-    const body = await req.json();
-    const { amount = 999, currency = 'usd' } = body; // Default to $9.99
-    logStep("Request body parsed", { amount, currency });
-
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
     // Check if customer exists, create if not
@@ -71,40 +66,30 @@ serve(async (req) => {
       logStep("Found existing customer", { customerId });
     }
 
-    // Create subscription instead of one-time payment
-    logStep("Creating subscription for recurring payment");
-    
-    // First, create or retrieve the price for the subscription
-    const prices = await stripe.prices.list({
-      product: 'prod_test_premium', // You'll need to create this product in Stripe
+    // Check if user already has an active subscription
+    const existingSubscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      status: 'active',
       limit: 1,
     });
 
-    let priceId;
-    if (prices.data.length === 0) {
-      // Create the product and price if they don't exist
-      const product = await stripe.products.create({
-        id: 'prod_test_premium',
-        name: 'UniApp Space Premium',
-        description: 'Unlimited AI document reviews, advanced program search, and priority support',
+    if (existingSubscriptions.data.length > 0) {
+      logStep("User already has active subscription");
+      return new Response(JSON.stringify({
+        error: "You already have an active subscription",
+        subscription_id: existingSubscriptions.data[0].id,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
       });
-
-      const price = await stripe.prices.create({
-        product: product.id,
-        unit_amount: amount,
-        currency: currency,
-        recurring: {
-          interval: 'month',
-        },
-      });
-      priceId = price.id;
-      logStep("Created new product and price", { productId: product.id, priceId });
-    } else {
-      priceId = prices.data[0].id;
-      logStep("Using existing price", { priceId });
     }
 
-    // Create the subscription
+    logStep("Creating subscription for recurring payment");
+    
+    // Create the subscription with a predefined price ID
+    // You should create this price in your Stripe dashboard first
+    const priceId = 'price_1QYMiCRuLzJnfzJBGBg2JNqQDYHobIcCo0hWrFwzfSRN2sUKgfZsEDEKGbJZeZnBfZKaZIlbV5VzZiGbEJVBHyWQ00ZYgZqZYZ'; // Replace with your actual price ID
+
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{
@@ -113,6 +98,9 @@ serve(async (req) => {
       payment_behavior: 'default_incomplete',
       payment_settings: { save_default_payment_method: 'on_subscription' },
       expand: ['latest_invoice.payment_intent'],
+      metadata: {
+        user_id: user.id,
+      },
     });
 
     logStep("Subscription created", { 
@@ -157,7 +145,7 @@ serve(async (req) => {
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in create-payment-intent", { message: errorMessage });
+    logStep("ERROR in create-subscription", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

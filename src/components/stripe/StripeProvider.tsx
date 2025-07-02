@@ -1,11 +1,9 @@
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
-// Initialize Stripe with your publishable key from environment
-const stripePromise = loadStripe(process.env.NODE_ENV === 'production' 
-  ? 'pk_live_YOUR_LIVE_KEY' 
-  : 'pk_test_51QYMiCRuLzJnfzJBGBg2JNqQDYHobIcCo0hWrFwzfSRN2sUKgfZsEDEKGbJZeZnBfZKaZIlbV5VzZiGbEJVBHyWQ00ZYgZqZYZ'
-);
+// Initialize Stripe with your publishable key
+// Note: In production, you should use environment variables for this
+const stripePromise = loadStripe('pk_test_51QYMiCRuLzJnfzJBGBg2JNqQDYHobIcCo0hWrFwzfSRN2sUKgfZsEDEKGbJZeZnBfZKaZIlbV5VzZiGbEJVBHyWQ00ZYgZqZYZ');
 
 interface StripeProviderProps {
   children: React.ReactNode;
