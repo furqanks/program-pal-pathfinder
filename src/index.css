@@ -51,27 +51,27 @@
     --sidebar-transition: all 250ms ease-in-out;
   }
 
-  /* Proper dark theme */
+  /* Proper dark grey theme */
   .dark {
-    --background: 222 84% 5%;
-    --foreground: 210 40% 95%;
-    --card: 222 84% 5%;
-    --card-foreground: 210 40% 95%;
-    --popover: 222 84% 5%;
-    --popover-foreground: 210 40% 95%;
-    --primary: 210 40% 95%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 95%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 95%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 95%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 210 40% 95%;
+    --background: 220 13% 9%;        /* Dark grey background */
+    --foreground: 220 9% 95%;        /* Light grey text */
+    --card: 220 13% 11%;             /* Slightly lighter card background */
+    --card-foreground: 220 9% 95%;   /* Light grey card text */
+    --popover: 220 13% 11%;          /* Popover background */
+    --popover-foreground: 220 9% 95%; /* Popover text */
+    --primary: 220 9% 95%;           /* Light primary for dark mode */
+    --primary-foreground: 220 13% 9%; /* Dark primary text */
+    --secondary: 220 13% 15%;        /* Secondary grey */
+    --secondary-foreground: 220 9% 95%; /* Secondary text */
+    --muted: 220 13% 15%;            /* Muted background */
+    --muted-foreground: 220 9% 65%;  /* Muted text */
+    --accent: 220 13% 15%;           /* Accent background */
+    --accent-foreground: 220 9% 95%; /* Accent text */
+    --destructive: 0 84% 60%;        /* Red for destructive actions */
+    --destructive-foreground: 220 9% 95%; /* Light text on red */
+    --border: 220 13% 20%;           /* Border color */
+    --input: 220 13% 15%;            /* Input background */
+    --ring: 220 9% 95%;              /* Focus ring */
   }
 }
 
@@ -85,28 +85,28 @@
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar for light mode */
 ::-webkit-scrollbar {
   width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: hsl(var(--muted));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: hsl(var(--border));
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: hsl(var(--muted-foreground));
 }
 
 /* Firefox scrollbar */
 html {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f1f5f9;
+  scrollbar-color: hsl(var(--border)) hsl(var(--muted));
 }
 
 /* Animation improvements */
