@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
 
-// Set up PDF.js worker - using stable version
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+// Set up PDF.js worker - matching library version
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.31/pdf.worker.min.js`;
 
 interface FileUploadButtonProps {
   onFileContent: (content: string, fileName: string) => void;
