@@ -76,7 +76,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
   return (
     <aside className={cn(
       "fixed inset-y-0 left-0 z-50 flex flex-col",
-      "glass border-r border-border/50 sidebar-transition",
+      "bg-card border-r border-border sidebar-transition",
       // Responsive width with smooth transitions
       open 
         ? "w-64 translate-x-0" 

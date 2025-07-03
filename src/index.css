@@ -51,37 +51,49 @@
     --sidebar-transition: all 250ms ease-in-out;
   }
 
-  /* Proper dark grey theme */
+  /* Professional dark theme matching Claude's interface */
   .dark {
-    --background: 220 13% 9%;        /* Dark grey background */
-    --foreground: 220 9% 95%;        /* Light grey text */
-    --card: 220 13% 11%;             /* Slightly lighter card background */
-    --card-foreground: 220 9% 95%;   /* Light grey card text */
-    --popover: 220 13% 11%;          /* Popover background */
-    --popover-foreground: 220 9% 95%; /* Popover text */
-    --primary: 220 9% 95%;           /* Light primary for dark mode */
-    --primary-foreground: 220 13% 9%; /* Dark primary text */
-    --secondary: 220 13% 15%;        /* Secondary grey */
-    --secondary-foreground: 220 9% 95%; /* Secondary text */
-    --muted: 220 13% 15%;            /* Muted background */
-    --muted-foreground: 220 9% 65%;  /* Muted text */
-    --accent: 220 13% 15%;           /* Accent background */
-    --accent-foreground: 220 9% 95%; /* Accent text */
-    --destructive: 0 84% 60%;        /* Red for destructive actions */
-    --destructive-foreground: 220 9% 95%; /* Light text on red */
-    --border: 220 13% 20%;           /* Border color */
-    --input: 220 13% 15%;            /* Input background */
-    --ring: 220 9% 95%;              /* Focus ring */
+    --background: 0 0% 18%;           /* #2F2F2F - Primary dark grey background */
+    --foreground: 0 0% 100%;          /* #FFFFFF - White primary text */
+    --card: 0 0% 25%;                 /* #3F3F3F - Lighter grey for cards */
+    --card-foreground: 0 0% 100%;     /* #FFFFFF - White card text */
+    --popover: 0 0% 25%;              /* #3F3F3F - Popover background */
+    --popover-foreground: 0 0% 100%;  /* #FFFFFF - Popover text */
+    --primary: 0 0% 100%;             /* White primary in dark mode */
+    --primary-foreground: 0 0% 18%;   /* Dark text on white primary */
+    --secondary: 0 0% 25%;            /* #404040 - Secondary background */
+    --secondary-foreground: 0 0% 100%; /* White secondary text */
+    --muted: 0 0% 25%;                /* #404040 - Muted background */
+    --muted-foreground: 0 0% 69%;     /* #B0B0B0 - Light grey muted text */
+    --accent: 0 0% 25%;               /* #404040 - Accent background */
+    --accent-foreground: 0 0% 100%;   /* White accent text */
+    --destructive: 0 84% 60%;         /* Keep red for destructive */
+    --destructive-foreground: 0 0% 100%; /* White on red */
+    --border: 0 0% 25%;               /* #404040 - Subtle grey borders */
+    --input: 0 0% 25%;                /* Input background */
+    --ring: 0 0% 100%;                /* White focus ring */
+    
+    /* Sidebar specific colors */
+    --sidebar-background: 0 0% 16%;   /* #2A2A2A - Darker sidebar */
+    --sidebar-foreground: 0 0% 100%;  /* White sidebar text */
+    --sidebar-primary: 0 0% 100%;     /* White sidebar primary */
+    --sidebar-primary-foreground: 0 0% 16%; /* Dark on white */
+    --sidebar-accent: 0 0% 20%;       /* Slightly lighter for sidebar accent */
+    --sidebar-accent-foreground: 0 0% 100%; /* White sidebar accent text */
+    --sidebar-border: 0 0% 25%;       /* Sidebar borders */
+    --sidebar-ring: 0 0% 100%;        /* White sidebar focus ring */
   }
 }
 
 @layer base {
   * {
     @apply border-border;
+    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
   }
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
+    transition: background-color 200ms ease, color 200ms ease;
   }
 }
 
@@ -148,9 +160,9 @@ html {
   mask-composite: subtract;
 }
 
-/* Glass morphism effect */
+/* Glass morphism effect that works in both themes */
 .glass {
-  @apply bg-white/90 backdrop-blur-xl border border-border;
+  @apply bg-background/90 backdrop-blur-xl border border-border;
 }
 
 /* Smooth focus states */

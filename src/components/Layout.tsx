@@ -37,7 +37,7 @@ const Layout = () => {
       )}>
         {/* Always visible header with toggle button */}
         <div className={cn(
-          "sticky top-0 z-30 glass border-b border-border/50",
+          "sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border",
           "flex items-center justify-between",
           isMobile ? "px-4 py-3" : "px-6 py-4"
         )}>
