@@ -22,23 +22,67 @@ function createErrorResponse(message: string, status: number) {
   );
 }
 
-// Helper function to extract text from PDF using simple text fallback
+// Helper function to extract text from PDF
 async function extractTextFromPDF(file: File): Promise<string> {
   try {
-    console.log("Attempting PDF text extraction");
+    console.log("Attempting PDF text extraction for:", file.name);
     
-    // For basic PDF text extraction, we'll return a helpful message
-    // In production, you'd use a proper PDF parsing library or service
-    return `PDF document uploaded: "${file.name}". 
+    // Read the file as ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
     
-For better PDF text extraction, please consider:
-1. Converting your PDF to a Word document first
-2. Copy-pasting the text content directly into the editor
+    // For PDF files, we'll try to extract text using a simple approach
+    // Convert to Uint8Array for text extraction attempts
+    const uint8Array = new Uint8Array(arrayBuffer);
+    const decoder = new TextDecoder('utf-8', { fatal: false });
+    let rawText = decoder.decode(uint8Array);
+    
+    // Simple PDF text extraction - look for text between common PDF markers
+    // This is a basic approach and won't work for all PDFs
+    const textPattern = /BT\s+.*?ET/g;
+    const matches = rawText.match(textPattern);
+    
+    if (matches && matches.length > 0) {
+      // Extract text from PDF stream objects
+      let extractedText = matches.join(' ')
+        .replace(/BT\s+/g, '')
+        .replace(/ET/g, '')
+        .replace(/Tj/g, ' ')
+        .replace(/TJ/g, ' ')
+        .replace(/Td/g, ' ')
+        .replace(/TD/g, ' ')
+        .replace(/Tm/g, ' ')
+        .replace(/T\*/g, '\n')
+        .replace(/\([^)]*\)/g, (match) => match.slice(1, -1))
+        .replace(/[<>]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      if (extractedText.length > 50) {
+        console.log(`Extracted ${extractedText.length} characters from PDF`);
+        return extractedText;
+      }
+    }
+    
+    // If PDF extraction fails, return a helpful message
+    return `PDF document "${file.name}" was uploaded, but text extraction failed. 
 
-This will ensure accurate text processing for feedback generation.`;
+This often happens with:
+• Image-based PDFs (scanned documents)
+• Password-protected PDFs
+• Complex formatting or encrypted PDFs
+
+Please try:
+1. Copy-pasting the text content directly into the editor
+2. Converting the PDF to a Word document first
+3. Using a plain text version of your document
+
+This will ensure our AI can properly analyze your content.`;
+    
   } catch (error) {
     console.error("PDF extraction error:", error);
-    throw new Error("Failed to extract text from PDF");
+    return `PDF document "${file.name}" was uploaded, but encountered an extraction error.
+
+Please copy and paste the text content directly into the editor for the best AI analysis experience.`;
   }
 }
 
@@ -47,23 +91,108 @@ async function extractTextFromWord(file: File): Promise<string> {
   try {
     console.log("Processing Word document:", file.name);
     
-    // Since proper DOCX extraction requires complex libraries that aren't available,
-    // we'll provide helpful guidance to users
-    return `Word document "${file.name}" uploaded successfully.
+    // Read the file as ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // For DOCX files (which are ZIP archives), we need to extract the document.xml
+    const uint8Array = new Uint8Array(arrayBuffer);
+    
+    // Check if it's a DOCX file (ZIP signature)
+    const isDocx = uint8Array[0] === 0x50 && uint8Array[1] === 0x4B;
+    
+    if (isDocx) {
+      // Try to extract text from DOCX
+      const text = await extractDocxText(uint8Array);
+      if (text && text.length > 20) {
+        console.log(`Extracted ${text.length} characters from DOCX`);
+        return text;
+      }
+    }
+    
+    // For older DOC files or if DOCX extraction fails, try simple text extraction
+    const decoder = new TextDecoder('utf-8', { fatal: false });
+    let rawText = decoder.decode(uint8Array);
+    
+    // Clean up the raw text
+    let cleanText = rawText
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\xFF]/g, ' ') // Remove control characters
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim();
+    
+    // Look for readable text patterns
+    const words = cleanText.split(' ').filter(word => 
+      word.length > 2 && /^[a-zA-Z]/.test(word)
+    );
+    
+    if (words.length > 10) {
+      cleanText = words.join(' ');
+      console.log(`Extracted ${cleanText.length} characters from Word document`);
+      return cleanText;
+    }
+    
+    // If extraction fails, return helpful message
+    return `Word document "${file.name}" was uploaded, but text extraction had limited success.
 
-Since this is a Word document (.docx), for the best text analysis experience, please:
+For the best results, please:
+1. **Copy and paste** the text content directly into the editor
+2. **Save as plain text** (.txt) and upload that instead
+3. **Export as PDF** and try uploading that
 
-1. **Copy and paste the text content** directly into the editor below
-2. **Or convert to plain text** and upload as a .txt file
-3. **Or save as PDF** and try uploading that instead
-
-This will ensure our AI can properly analyze your document content and provide accurate feedback.
-
-The document has been received, but automatic text extraction from .docx files requires additional setup. Manual content input will give you the best results for AI feedback and analysis.`;
+This will ensure our AI can properly analyze your document content and provide accurate feedback.`;
     
   } catch (error) {
     console.error("Word processing error:", error);
-    throw new Error(`Failed to process Word document: ${error.message}`);
+    return `Word document "${file.name}" was uploaded, but encountered an extraction error.
+
+Please copy and paste the text content directly into the editor for the best AI analysis experience.`;
+  }
+}
+
+// Helper function to extract text from DOCX files
+async function extractDocxText(uint8Array: Uint8Array): Promise<string> {
+  try {
+    // This is a simplified DOCX text extraction
+    // DOCX files are ZIP archives containing XML files
+    const decoder = new TextDecoder('utf-8', { fatal: false });
+    const content = decoder.decode(uint8Array);
+    
+    // Look for document.xml content patterns
+    const xmlPattern = /<w:t[^>]*>([^<]*)<\/w:t>/g;
+    const matches = [];
+    let match;
+    
+    while ((match = xmlPattern.exec(content)) !== null) {
+      if (match[1] && match[1].trim()) {
+        matches.push(match[1]);
+      }
+    }
+    
+    if (matches.length > 0) {
+      return matches.join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    
+    // Alternative pattern for text content
+    const textPattern = />\s*([A-Za-z][A-Za-z0-9\s,.'";:!?-]{10,})\s*</g;
+    const textMatches = [];
+    
+    while ((match = textPattern.exec(content)) !== null) {
+      if (match[1] && match[1].trim().length > 10) {
+        textMatches.push(match[1].trim());
+      }
+    }
+    
+    if (textMatches.length > 0) {
+      return textMatches.join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    
+    return '';
+  } catch (error) {
+    console.error("DOCX extraction error:", error);
+    return '';
   }
 }
 
