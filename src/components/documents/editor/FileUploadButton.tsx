@@ -6,9 +6,14 @@ import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
 
-// Setup PDF.js worker with CDN fallbacks
+// Setup PDF.js worker with version-matched CDN fallbacks
 const setupPDFWorker = async () => {
   const workerUrls = [
+    // Try matching version 5.3.31 first
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.31/pdf.worker.min.js',
+    'https://unpkg.com/pdfjs-dist@5.3.31/build/pdf.worker.min.js',
+    'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.3.31/build/pdf.worker.min.js',
+    // Fallback to known working version 3.11.174 if 5.3.31 doesn't exist
     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
     'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js',
     'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'
