@@ -48,23 +48,25 @@ const Documents = () => {
   // Find selected document
   const selectedDocument = documents.find(doc => doc.id === selectedDocumentId);
 
-  // When changing tabs, reset selection but keep content if creating new
+  // When changing tabs, reset selection but only if not creating new
   useEffect(() => {
-    if (documentVersions.length > 0) {
-      setSelectedDocumentId(documentVersions[0].id);
-    } else {
-      setSelectedDocumentId(null);
+    if (!creatingNew) {
+      if (documentVersions.length > 0) {
+        setSelectedDocumentId(documentVersions[0].id);
+      } else {
+        setSelectedDocumentId(null);
+      }
     }
-  }, [activeTab, selectedProgramId, documentVersions]);
+  }, [activeTab, selectedProgramId, documentVersions, creatingNew]);
 
-  // Update content when selection changes
+  // Update content when selection changes (but not when creating new)
   useEffect(() => {
-    if (selectedDocument) {
+    if (selectedDocument && !creatingNew) {
       setDocumentContent(selectedDocument.contentRaw);
-    } else {
+    } else if (creatingNew) {
       setDocumentContent("");
     }
-  }, [selectedDocument]);
+  }, [selectedDocument, creatingNew]);
   const handleCreateNewVersion = () => {
     if (selectedDocument) {
       setSelectedDocumentId(null);
@@ -73,11 +75,21 @@ const Documents = () => {
   };
 
   const handleCreateNew = () => {
+    console.log("Creating new document - before:", { selectedDocumentId, creatingNew });
     setSelectedDocumentId(null);
     setCreatingNew(true);
+    setDocumentContent(""); // Clear content immediately
+    console.log("Creating new document - after:", { selectedDocumentId: null, creatingNew: true });
   };
 
   const handleDocumentSelect = (docId: string | null) => {
+    console.log("Selecting document:", docId);
+    setSelectedDocumentId(docId);
+    setCreatingNew(false);
+  };
+
+  const handleSaveSuccess = (docId: string) => {
+    console.log("Document saved successfully:", docId);
     setSelectedDocumentId(docId);
     setCreatingNew(false);
   };
@@ -111,15 +123,28 @@ const Documents = () => {
             <CardHeader className={cn("pb-3", isMobile ? "px-4" : "")}>
               <div className={cn("flex justify-between items-center gap-2", isMobile ? "flex-col items-start space-y-2" : "flex-wrap")}>
                 <CardTitle className={cn(isMobile ? "text-base" : "text-lg")}>
-                  {selectedDocument ? `${documentTypeLabels[selectedDocument.documentType]} - Version ${selectedDocument.versionNumber}` : `New ${documentTypeLabels[activeDocumentType]}`}
+                  {selectedDocument && !creatingNew ? `${documentTypeLabels[selectedDocument.documentType]} - Version ${selectedDocument.versionNumber}` : `New ${documentTypeLabels[activeDocumentType]}`}
                 </CardTitle>
                 
-                {!selectedDocument && <DocumentsProgramSelector selectedProgramId={selectedProgramId} setSelectedProgramId={setSelectedProgramId} isMobile={isMobile} />}
+                {(!selectedDocument || creatingNew) && <DocumentsProgramSelector selectedProgramId={selectedProgramId} setSelectedProgramId={setSelectedProgramId} isMobile={isMobile} />}
               </div>
             </CardHeader>
             
             <CardContent className={cn("pb-2 overflow-auto", isMobile ? "px-4 h-[calc(70vh-8rem)]" : "h-[calc(100vh-7rem)]")}>
-              {selectedDocument ? <DocumentViewer selectedDocument={selectedDocument} onCreateNewVersion={handleCreateNewVersion} documentTypeLabels={documentTypeLabels} /> : <DocumentEditor activeDocumentType={activeDocumentType} documentTypeLabels={documentTypeLabels} selectedDocument={selectedDocument} onSaveSuccess={setSelectedDocumentId} />}
+              {selectedDocument && !creatingNew ? (
+                <DocumentViewer 
+                  selectedDocument={selectedDocument} 
+                  onCreateNewVersion={handleCreateNewVersion} 
+                  documentTypeLabels={documentTypeLabels} 
+                />
+              ) : (
+                <DocumentEditor 
+                  activeDocumentType={activeDocumentType} 
+                  documentTypeLabels={documentTypeLabels} 
+                  selectedDocument={creatingNew ? null : selectedDocument} 
+                  onSaveSuccess={handleSaveSuccess}
+                />
+              )}
             </CardContent>
           </Card>
         </div>
