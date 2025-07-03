@@ -66,18 +66,26 @@ const DocumentsList = ({
   };
 
   const handleRename = async (docId: string) => {
+    console.log("handleRename called with:", { docId, editName });
     if (editName.trim()) {
       try {
+        console.log("Updating document with new name:", editName.trim());
         await updateDocument(docId, { fileName: editName.trim() });
         setEditingDocument(null);
         setEditName("");
+        console.log("Document renamed successfully");
       } catch (error) {
         console.error("Error renaming document:", error);
       }
+    } else {
+      console.log("editName is empty, canceling rename");
+      setEditingDocument(null);
+      setEditName("");
     }
   };
 
   const startEdit = (doc: Document) => {
+    console.log("Starting edit for document:", doc.id, doc.fileName);
     setEditingDocument(doc.id);
     setEditName(doc.fileName || `Version ${doc.versionNumber}`);
   };
@@ -158,18 +166,30 @@ const DocumentsList = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="absolute right-1 top-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute right-1 top-1 h-8 w-8 p-0 opacity-70 group-hover:opacity-100 transition-opacity z-10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log("Dropdown button clicked for document:", doc.id);
+                      }}
                     >
-                      <MoreHorizontal className="h-3 w-3" />
+                      <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => startEdit(doc)}>
+                  <DropdownMenuContent align="end" className="z-50 bg-background border shadow-md">
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log("Rename clicked for document:", doc.id);
+                        startEdit(doc);
+                      }}
+                    >
                       <Edit className="h-3 w-3 mr-2" />
                       Rename
                     </DropdownMenuItem>
                     <DropdownMenuItem 
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log("Delete clicked for document:", doc.id);
                         setDocumentToDelete(doc.id);
                         setDeleteDialogOpen(true);
                       }}
