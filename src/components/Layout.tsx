@@ -35,28 +35,26 @@ const Layout = () => {
             : "ml-64" 
           : "ml-0 md:ml-16"
       )}>
-        {/* Mobile header with menu button */}
-        {(isMobile || !sidebarOpen) && (
-          <div className={cn(
-            "sticky top-0 z-30 glass border-b border-border/50",
-            "flex items-center justify-between",
-            isMobile ? "px-4 py-3" : "px-6 py-4"
-          )}>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="nav-item h-9 w-9"
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
-            
-            {/* Optional: Add breadcrumbs or page title here */}
-            <div className="flex items-center gap-2">
-              {/* Placeholder for future header actions */}
-            </div>
+        {/* Always visible header with toggle button */}
+        <div className={cn(
+          "sticky top-0 z-30 glass border-b border-border/50",
+          "flex items-center justify-between",
+          isMobile ? "px-4 py-3" : "px-6 py-4"
+        )}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="nav-item h-9 w-9 flex-shrink-0"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+          
+          {/* Optional: Add breadcrumbs or page title here */}
+          <div className="flex items-center gap-2">
+            {/* Placeholder for future header actions */}
           </div>
-        )}
+        </div>
         
         {/* Page content with proper padding and responsive design */}
         <div className={cn(
