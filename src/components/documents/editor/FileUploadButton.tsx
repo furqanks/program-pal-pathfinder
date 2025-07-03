@@ -6,29 +6,31 @@ import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
 
-// Setup PDF.js worker with local worker and fallbacks
-const setupPDFWorker = () => {
-  try {
-    // Try to use local worker first
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      'pdfjs-dist/build/pdf.worker.js',
-      import.meta.url
-    ).toString();
-  } catch (error) {
-    console.warn("Local worker setup failed, trying CDN fallbacks:", error);
-    // Fallback to CDN options
+// Setup PDF.js worker with CDN fallbacks
+const setupPDFWorker = async () => {
+  const workerUrls = [
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+    'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js',
+    'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'
+  ];
+
+  for (const workerUrl of workerUrls) {
     try {
-      // Try unpkg CDN
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.3.31/build/pdf.worker.min.js`;
-    } catch (fallbackError) {
-      // Final fallback to jsDelivr CDN
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@5.3.31/build/pdf.worker.min.js`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+      console.log(`PDF.js worker set to: ${workerUrl}`);
+      return true;
+    } catch (error) {
+      console.warn(`Failed to set worker from ${workerUrl}:`, error);
     }
   }
+  
+  throw new Error('All PDF.js worker CDN sources failed');
 };
 
 // Initialize worker setup
-setupPDFWorker();
+setupPDFWorker().catch(error => {
+  console.error('PDF.js worker setup failed:', error);
+});
 
 interface FileUploadButtonProps {
   onFileContent: (content: string, fileName: string) => void;
