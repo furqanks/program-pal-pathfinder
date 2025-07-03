@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { extract } from "https://deno.land/x/office_text_extractor@v0.2.0/mod.ts";
 
 // CORS headers for the function
 const corsHeaders = {
@@ -22,54 +23,56 @@ function createErrorResponse(message: string, status: number) {
   );
 }
 
-// Helper function to generate a random storage key
-function generateStorageKey(fileExtension: string): string {
-  const randomString = Math.random().toString(36).substring(2, 15);
-  const timestamp = new Date().getTime();
-  return `temp/${randomString}_${timestamp}.${fileExtension}`;
-}
-
-// Helper function to extract the text from a PDF file
-async function extractTextFromPDF(pdfUrl: string): Promise<string> {
+// Helper function to extract text from PDF using simple text fallback
+async function extractTextFromPDF(file: File): Promise<string> {
   try {
-    // Using PDF.co Web API for extraction (you could replace this with any PDF extraction service)
-    const apiKey = Deno.env.get('PDF_EXTRACTION_API_KEY');
+    console.log("Attempting PDF text extraction");
     
-    if (!apiKey) {
-      // For demo purposes, return a placeholder text that indicates it's from a PDF
-      console.log("PDF extraction API key not found, using mock extraction");
-      return `This is a PDF document. Unfortunately, the API key for PDF extraction is missing. 
-      In production, you would need to set up a PDF extraction API key.
-      For now, please try uploading a Word document instead as those can be processed directly.`;
-    }
+    // For basic PDF text extraction, we'll return a helpful message
+    // In production, you'd use a proper PDF parsing library or service
+    return `PDF document uploaded: "${file.name}". 
+    
+For better PDF text extraction, please consider:
+1. Converting your PDF to a Word document first
+2. Copy-pasting the text content directly into the editor
 
-    // In a real implementation, you would call a PDF extraction API here
-    // For this implementation, we'll return a message explaining the situation
-    return "PDF extraction requires a third-party service API key. Please configure it in the environment variables.";
+This will ensure accurate text processing for feedback generation.`;
   } catch (error) {
     console.error("PDF extraction error:", error);
     throw new Error("Failed to extract text from PDF");
   }
 }
 
-// Helper function to extract the text from a Word document
-// For .docx files, we're using the raw text content
+// Helper function to extract text from Word documents
 async function extractTextFromWord(file: File): Promise<string> {
   try {
-    // For Word documents, we'll extract text from the file directly
-    console.log("Extracting text from Word document");
+    console.log("Extracting text from Word document:", file.name);
     
-    // Read the file as text
-    const textContent = await file.text();
+    // Convert File to Uint8Array
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
     
-    console.log(`Extracted ${textContent.length} characters from document`);
-    console.log("First 100 chars:", textContent.substring(0, 100) + "...");
+    // Use the office text extractor
+    const extractedText = await extract(uint8Array);
     
-    // Return the text content
-    return textContent;
+    console.log(`Successfully extracted ${extractedText.length} characters from Word document`);
+    console.log("First 200 chars:", extractedText.substring(0, 200) + "...");
+    
+    // Clean up the extracted text
+    const cleanText = extractedText
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .replace(/\n\s*\n/g, '\n\n')
+      .trim();
+    
+    if (!cleanText || cleanText.length < 10) {
+      throw new Error("No meaningful content could be extracted from the document");
+    }
+    
+    return cleanText;
   } catch (error) {
     console.error("Word extraction error:", error);
-    throw new Error("Failed to extract text from Word document");
+    throw new Error(`Failed to extract text from Word document: ${error.message}`);
   }
 }
 
@@ -113,7 +116,7 @@ serve(async (req) => {
       if (fileType === "application/pdf") {
         // For PDFs, we'd use a service API (requires setup)
         console.log("Detected PDF file, using PDF extraction");
-        extractedText = await extractTextFromPDF("");
+        extractedText = await extractTextFromPDF(file);
       } else if (
         fileType === "application/msword" || 
         fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
