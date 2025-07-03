@@ -51,35 +51,37 @@ const FileUploadButton = ({
       
       setUploadProgress(30);
       
-      // Use direct fetch instead of supabase.functions.invoke for proper FormData handling
-      const response = await fetch(`https://ljoxowcnyiqsbmzkkudn.supabase.co/functions/v1/extract-document-text`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxqb3hvd2NueWlxc2JtemtrdWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0ODIwMzEsImV4cCI6MjA2MzA1ODAzMX0.Ogn9ZXzTrEwKns_EQXrH1g04GXbnSPAUDN4-0hEHcHw'
-        },
+      // Get current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error("Authentication required. Please log in and try again.");
+      }
+
+      // Use supabase.functions.invoke for proper integration
+      const { data: extractedData, error } = await supabase.functions.invoke('extract-document-text', {
         body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
       
       setUploadProgress(90);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Failed to extract text from document");
+      if (error) {
+        throw new Error(error.message || "Failed to extract text from document");
       }
       
-      const data = await response.json();
-      
-      if (!data || !data.text) {
+      if (!extractedData || !extractedData.text) {
         throw new Error("No content extracted from document");
       }
       
       // Log the extracted content for debugging
-      console.log("Extracted document content length:", data.text.length);
-      console.log("Extracted content sample:", data.text.substring(0, 100) + "...");
+      console.log("Extracted document content length:", extractedData.text.length);
+      console.log("Extracted content sample:", extractedData.text.substring(0, 100) + "...");
       
       // Pass extracted text back to parent component WITHOUT MODIFICATION
-      onFileContent(data.text, file.name);
+      onFileContent(extractedData.text, file.name);
       setUploadProgress(100);
       toast.success(`File "${file.name}" processed successfully`);
       

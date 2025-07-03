@@ -3,6 +3,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import FileUploadButton from "./FileUploadButton";
 
 interface DocumentContentEditorProps {
   documentContent: string;
@@ -32,7 +33,11 @@ const DocumentContentEditor = ({
             {documentTypeLabel}
           </Badge>
         </div>
-        {/* File upload button removed temporarily */}
+        <FileUploadButton 
+          onFileContent={onFileContent}
+          isUploading={isUploading}
+          setIsUploading={setIsUploading}
+        />
       </div>
       <Textarea
         value={documentContent}
