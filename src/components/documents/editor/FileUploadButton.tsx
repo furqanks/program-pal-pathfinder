@@ -61,9 +61,6 @@ const FileUploadButton = ({
       // Use supabase.functions.invoke for proper integration
       const { data: extractedData, error } = await supabase.functions.invoke('extract-document-text', {
         body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
       });
       
       setUploadProgress(90);
