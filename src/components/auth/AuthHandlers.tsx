@@ -106,8 +106,13 @@ export const useAuthHandlers = ({ setActiveTab, setLoginFormEmail }: AuthHandler
           console.log('=== SIGNUP SUCCESS - EMAIL CONFIRMATION NEEDED ===');
           toast({
             title: "Account created successfully!",
-            description: "Please check your email and click the confirmation link to complete your registration.",
+            description: "Please check your email and click the confirmation link. Redirecting to pricing...",
           });
+          
+          // Redirect to pricing even for email confirmation
+          setTimeout(() => {
+            navigate("/pricing");
+          }, 2000);
         } else if (data?.user && data.user.email_confirmed_at) {
           // User was created and confirmed (shouldn't happen in normal flow)
           console.log('=== SIGNUP SUCCESS - USER CONFIRMED ===');
