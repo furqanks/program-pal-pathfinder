@@ -13,28 +13,56 @@ const Layout = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
+      {/* Sidebar with improved responsive behavior */}
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       
+      {/* Overlay for mobile when sidebar is open */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm md:hidden" 
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
+      {/* Main content area with proper responsive spacing */}
       <main className={cn(
-        "flex-1 overflow-auto transition-all duration-300 ease-in-out bg-background", 
-        sidebarOpen ? (isMobile ? "ml-0" : "ml-56") : "ml-0 md:ml-14"
+        "flex-1 overflow-auto sidebar-transition bg-background",
+        "relative flex flex-col",
+        // Responsive sidebar spacing
+        sidebarOpen 
+          ? isMobile 
+            ? "ml-0" 
+            : "ml-64" 
+          : "ml-0 md:ml-16"
       )}>
+        {/* Mobile header with menu button */}
         {(isMobile || !sidebarOpen) && (
           <div className={cn(
-            "sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border",
-            isMobile ? "p-4" : "p-6"
+            "sticky top-0 z-30 glass border-b border-border/50",
+            "flex items-center justify-between",
+            isMobile ? "px-4 py-3" : "px-6 py-4"
           )}>
             <Button 
-              variant="outline" 
+              variant="ghost" 
               size="icon" 
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="h-10 w-10 bg-card/80 backdrop-blur-sm border-border/50 hover:bg-accent"
+              className="nav-item h-9 w-9"
             >
               <Menu className="h-4 w-4" />
             </Button>
+            
+            {/* Optional: Add breadcrumbs or page title here */}
+            <div className="flex items-center gap-2">
+              {/* Placeholder for future header actions */}
+            </div>
           </div>
         )}
-        <div className="w-full">
+        
+        {/* Page content with proper padding and responsive design */}
+        <div className={cn(
+          "flex-1 p-6 md:p-8 container-responsive",
+          "min-h-0" // Allows proper flex shrinking
+        )}>
           <Outlet />
         </div>
       </main>
