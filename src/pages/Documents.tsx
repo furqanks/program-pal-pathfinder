@@ -104,7 +104,7 @@ const Documents = () => {
       <div className="text-center space-y-4 pb-2">
         <div className="space-y-2">
           <h1 className="text-display">Document Assistant</h1>
-          <p className="text-body max-w-2xl mx-auto">
+          <p className="text-body-secondary max-w-2xl mx-auto">
             Get AI-powered feedback on your applications, essays, and uploaded documents. 
             Create, edit, and perfect your application materials with intelligent suggestions.
           </p>
@@ -164,7 +164,7 @@ const Documents = () => {
                     : `New ${documentTypeLabels[activeDocumentType]}`
                   }
                 </CardTitle>
-                <p className="text-body">
+                <p className="text-body-secondary">
                   {selectedDocument && !creatingNew
                     ? `Created ${new Date(selectedDocument.createdAt).toLocaleDateString()}`
                     : "Create a new document from scratch or upload an existing file"

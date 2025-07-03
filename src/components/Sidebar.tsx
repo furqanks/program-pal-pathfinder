@@ -129,17 +129,19 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                   "group flex items-center gap-3 rounded-xl px-3 py-3",
                   "text-sm font-medium transition-all duration-200",
                   "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-ring",
-                  // Active state styling
+                  // Active state styling with better visibility
                   isActive 
                     ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border shadow-sm" 
-                    : "text-sidebar-foreground/70 hover:text-sidebar-foreground",
+                    : "text-sidebar-foreground hover:text-sidebar-accent-foreground",
                   // Responsive behavior
                   !open && "md:justify-center md:px-2"
                 )}
               >
                 <item.icon className={cn(
-                  "h-5 w-5 transition-colors duration-200",
-                  isActive ? "text-sidebar-primary" : "text-current"
+                  "h-5 w-5 transition-colors duration-200 flex-shrink-0",
+                  isActive 
+                    ? "text-sidebar-accent-foreground" 
+                    : "text-sidebar-foreground group-hover:text-sidebar-accent-foreground"
                 )} />
                 
                 {/* Label with fade animation */}
@@ -193,7 +195,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             
             <DropdownMenuContent 
               align="end" 
-              className="w-56 glass border border-border/50 shadow-lg"
+              className="w-56 bg-popover border border-border shadow-lg"
             >
               <DropdownMenuItem className="flex items-center gap-3 py-3 focus:bg-accent">
                 <User className="h-4 w-4" />

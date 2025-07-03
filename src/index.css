@@ -178,7 +178,7 @@ html {
   @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background;
 }
 
-/* Modern button styles */
+/* Modern button styles that work in both themes */
 .btn-primary {
   @apply bg-primary text-primary-foreground hover:bg-primary/90 
          border border-primary focus-ring shadow-sm
@@ -197,7 +197,7 @@ html {
          transition-all duration-200;
 }
 
-/* Typography hierarchy */
+/* Typography hierarchy with improved contrast */
 .text-display {
   @apply text-3xl font-bold tracking-tight text-foreground;
 }
@@ -211,6 +211,10 @@ html {
 }
 
 .text-body {
+  @apply text-sm text-foreground leading-relaxed;
+}
+
+.text-body-secondary {
   @apply text-sm text-muted-foreground leading-relaxed;
 }
 
@@ -218,9 +222,9 @@ html {
   @apply text-xs font-medium text-muted-foreground uppercase tracking-wider;
 }
 
-/* Card improvements */
+/* Card improvements with enhanced dark mode support */
 .card-modern {
-  @apply bg-card border border-border rounded-xl shadow-sm
+  @apply bg-card text-card-foreground border border-border rounded-xl shadow-sm
          hover:shadow-md transition-all duration-200;
 }
 
@@ -230,7 +234,7 @@ html {
          transition-all duration-200;
 }
 
-/* Navigation styles */
+/* Enhanced navigation styles for better visibility */
 .nav-item {
   @apply flex items-center gap-3 px-3 py-2 rounded-lg
          text-sm font-medium transition-all duration-200
