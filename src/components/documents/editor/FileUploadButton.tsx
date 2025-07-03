@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
 
-// Set up PDF.js worker from CDN
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Set up PDF.js worker - using stable version
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
 interface FileUploadButtonProps {
   onFileContent: (content: string, fileName: string) => void;
@@ -24,25 +24,34 @@ const FileUploadButton = ({
 
   // Process PDF files
   const processPDF = async (file: File): Promise<string> => {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const numPages = pdf.numPages;
-    let fullText = "";
+    try {
+      toast.info("Setting up PDF processor...");
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const numPages = pdf.numPages;
+      let fullText = "";
 
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      setUploadProgress(20 + (pageNum / numPages) * 60); // 20-80% for PDF processing
-      toast.info(`Processing page ${pageNum} of ${numPages}...`);
-      
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(" ");
-      
-      fullText += pageText + "\n\n";
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        setUploadProgress(20 + (pageNum / numPages) * 60); // 20-80% for PDF processing
+        toast.info(`Processing page ${pageNum} of ${numPages}...`);
+        
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(" ");
+        
+        fullText += pageText + "\n\n";
+      }
+
+      return fullText.trim();
+    } catch (error: any) {
+      console.error("PDF processing error:", error);
+      if (error.message && error.message.includes('worker')) {
+        throw new Error('PDF processor setup failed. Please try again.');
+      }
+      throw new Error(`Failed to process PDF: ${error.message || 'Unknown error'}`);
     }
-
-    return fullText.trim();
   };
 
   // Process DOCX files
