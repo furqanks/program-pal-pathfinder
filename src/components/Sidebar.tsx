@@ -76,7 +76,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
   return (
     <aside className={cn(
       "fixed inset-y-0 left-0 z-50 flex flex-col",
-      "bg-card border-r border-border sidebar-transition",
+      "bg-sidebar text-sidebar-foreground border-r border-sidebar-border sidebar-transition",
       // Responsive width with smooth transitions
       open 
         ? "w-64 translate-x-0" 
@@ -128,18 +128,18 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
                 className={cn(
                   "group flex items-center gap-3 rounded-xl px-3 py-3",
                   "text-sm font-medium transition-all duration-200",
-                  "hover:bg-accent hover:text-accent-foreground focus-ring",
+                  "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-ring",
                   // Active state styling
                   isActive 
-                    ? "bg-accent text-accent-foreground border border-border shadow-sm" 
-                    : "text-muted-foreground hover:text-foreground",
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border shadow-sm" 
+                    : "text-sidebar-foreground/70 hover:text-sidebar-foreground",
                   // Responsive behavior
                   !open && "md:justify-center md:px-2"
                 )}
               >
                 <item.icon className={cn(
                   "h-5 w-5 transition-colors duration-200",
-                  isActive ? "text-primary" : "text-current"
+                  isActive ? "text-sidebar-primary" : "text-current"
                 )} />
                 
                 {/* Label with fade animation */}

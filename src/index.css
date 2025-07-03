@@ -46,8 +46,16 @@
     --spacing-9: 3rem;       /* 48px */
     
     /* Sidebar specific tokens */
-    --sidebar-width: 16rem;      /* 256px */
-    --sidebar-width-collapsed: 4rem; /* 64px */
+    --sidebar-background: 0 0% 100%;      /* White sidebar in light mode */
+    --sidebar-foreground: 222 15% 15%;    /* Dark text in light mode */
+    --sidebar-primary: 222 47% 11%;       /* Dark primary */
+    --sidebar-primary-foreground: 210 40% 98%; /* Light text on dark primary */
+    --sidebar-accent: 210 40% 94%;        /* Light accent background */
+    --sidebar-accent-foreground: 222 15% 15%; /* Dark text on light accent */
+    --sidebar-border: 214 32% 91%;        /* Light border */
+    --sidebar-ring: 222 47% 11%;          /* Dark focus ring */
+    --sidebar-width: 16rem;               /* 256px */
+    --sidebar-width-collapsed: 4rem;      /* 64px */
     --sidebar-transition: all 250ms ease-in-out;
   }
 
