@@ -51,27 +51,27 @@
     --sidebar-transition: all 250ms ease-in-out;
   }
 
-  /* Enhanced dark theme to match light theme consistency */
+  /* Proper dark theme */
   .dark {
-    --background: 250 100% 99%;
-    --foreground: 222 15% 15%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 15% 15%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 15% 15%;
-    --primary: 222 47% 11%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 15% 15%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 14% 45%;
-    --accent: 210 40% 94%;
-    --accent-foreground: 222 15% 15%;
+    --background: 222 84% 5%;
+    --foreground: 210 40% 95%;
+    --card: 222 84% 5%;
+    --card-foreground: 210 40% 95%;
+    --popover: 222 84% 5%;
+    --popover-foreground: 210 40% 95%;
+    --primary: 210 40% 95%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 95%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 95%;
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 222 47% 11%;
+    --destructive-foreground: 210 40% 95%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 210 40% 95%;
   }
 }
 
@@ -80,7 +80,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-white text-gray-900;
+    @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
   }
 }

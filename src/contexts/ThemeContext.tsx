@@ -27,22 +27,26 @@ export function ThemeProvider({
   storageKey = 'uniapp-ui-theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+    }
+    return defaultTheme;
+  });
 
   useEffect(() => {
     const root = window.document.documentElement;
-
-    // Always force light theme
+    
+    // Remove both classes and add the current theme
     root.classList.remove('light', 'dark');
-    root.classList.add('light');
+    root.classList.add(theme);
   }, [theme]);
 
   const value = {
-    theme: 'light' as Theme,
-    setTheme: (theme: Theme) => {
-      // Always stay in light theme
-      localStorage.setItem(storageKey, 'light');
-      setTheme('light');
+    theme,
+    setTheme: (newTheme: Theme) => {
+      localStorage.setItem(storageKey, newTheme);
+      setTheme(newTheme);
     },
   };
 
