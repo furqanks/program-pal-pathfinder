@@ -106,7 +106,7 @@ const DocumentsList = ({
                     setEditName("");
                   }
                 }} className="h-4 text-xs p-0 border-none bg-transparent" autoFocus /> : <span>{doc.fileName || `v${doc.versionNumber}`}</span>}
-                      {doc.score && <Badge variant="outline" className="ml-1 text-xs bg-slate-50">
+                      {doc.score && <Badge variant="outline" className="ml-1 text-xs bg-gray-500">
                           {doc.score}/10
                         </Badge>}
                     </div>
