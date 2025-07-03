@@ -6,8 +6,29 @@ import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
 
-// Set up PDF.js worker - matching library version
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.31/pdf.worker.min.js`;
+// Setup PDF.js worker with local worker and fallbacks
+const setupPDFWorker = () => {
+  try {
+    // Try to use local worker first
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.js',
+      import.meta.url
+    ).toString();
+  } catch (error) {
+    console.warn("Local worker setup failed, trying CDN fallbacks:", error);
+    // Fallback to CDN options
+    try {
+      // Try unpkg CDN
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.3.31/build/pdf.worker.min.js`;
+    } catch (fallbackError) {
+      // Final fallback to jsDelivr CDN
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@5.3.31/build/pdf.worker.min.js`;
+    }
+  }
+};
+
+// Initialize worker setup
+setupPDFWorker();
 
 interface FileUploadButtonProps {
   onFileContent: (content: string, fileName: string) => void;
