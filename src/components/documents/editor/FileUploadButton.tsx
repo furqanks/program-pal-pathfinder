@@ -45,12 +45,6 @@ const FileUploadButton = ({
     setUploadProgress(10);
     
     try {
-      // Create form data for the file upload
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      setUploadProgress(30);
-      
       // Get current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
@@ -58,27 +52,59 @@ const FileUploadButton = ({
         throw new Error("Authentication required. Please log in and try again.");
       }
 
-      // Use supabase.functions.invoke for proper integration
-      const { data: extractedData, error } = await supabase.functions.invoke('extract-document-text', {
-        body: formData,
+      // Upload file to Supabase storage first
+      const userId = session.user.id;
+      const timestamp = Date.now();
+      const fileName = `${userId}/${timestamp}_${file.name}`;
+      
+      setUploadProgress(30);
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      setUploadProgress(50);
+
+      // Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(fileName);
+
+      // Process the document using the new Edge function
+      const { data: processedData, error: processError } = await supabase.functions.invoke('process-document', {
+        body: JSON.stringify({
+          fileUrl: publicUrl,
+          fileName: file.name,
+          fileType: fileType
+        }),
       });
       
       setUploadProgress(90);
       
-      if (error) {
-        throw new Error(error.message || "Failed to extract text from document");
+      if (processError) {
+        throw new Error(processError.message || "Failed to process document");
       }
       
-      if (!extractedData || !extractedData.text) {
+      if (!processedData || !processedData.text) {
         throw new Error("No content extracted from document");
       }
       
-      // Log the extracted content for debugging
-      console.log("Extracted document content length:", extractedData.text.length);
-      console.log("Extracted content sample:", extractedData.text.substring(0, 100) + "...");
+      // Clean up the uploaded file from storage
+      await supabase.storage.from('documents').remove([fileName]);
       
-      // Pass extracted text back to parent component WITHOUT MODIFICATION
-      onFileContent(extractedData.text, file.name);
+      // Log the extracted content for debugging
+      console.log("Extracted document content length:", processedData.text.length);
+      console.log("Extracted content sample:", processedData.text.substring(0, 100) + "...");
+      
+      // Pass extracted text back to parent component
+      onFileContent(processedData.text, file.name);
       setUploadProgress(100);
       toast.success(`File "${file.name}" processed successfully`);
       
