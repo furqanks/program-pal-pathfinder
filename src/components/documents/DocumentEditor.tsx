@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useDocumentContext } from "@/contexts/DocumentContext";
 import { useProgramContext } from "@/contexts/ProgramContext";
@@ -14,6 +14,7 @@ interface DocumentEditorProps {
   documentTypeLabels: Record<string, string>;
   selectedDocument: any;
   onSaveSuccess: (docId: string) => void;
+  onReset?: () => void;
 }
 
 const DocumentEditor = ({
@@ -23,7 +24,7 @@ const DocumentEditor = ({
   onSaveSuccess
 }: DocumentEditorProps) => {
   const isMobile = useIsMobile();
-  const { addDocument, generateFeedback } = useDocumentContext();
+  const { addDocument, updateDocument, generateFeedback } = useDocumentContext();
   
   const [documentContent, setDocumentContent] = useState("");
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
@@ -43,6 +44,32 @@ const DocumentEditor = ({
   // State to control visibility of feedback
   const [showFeedback, setShowFeedback] = useState(false);
 
+  // State for edit mode
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingDocumentId, setEditingDocumentId] = useState<string | null>(null);
+
+  // Effect to handle document selection
+  useEffect(() => {
+    if (selectedDocument) {
+      setDocumentContent(selectedDocument.contentRaw);
+      setSelectedProgramId(selectedDocument.linkedProgramId);
+      setIsEditMode(true);
+      setEditingDocumentId(selectedDocument.id);
+    } else {
+      resetEditor();
+    }
+  }, [selectedDocument]);
+
+  // Method to reset editor
+  const resetEditor = () => {
+    setDocumentContent("");
+    setSelectedProgramId(null);
+    setIsEditMode(false);
+    setEditingDocumentId(null);
+    setTempFeedback(null);
+    setShowFeedback(false);
+  };
+
   const handleFileContent = (content: string, uploadedFileName: string) => {
     setDocumentContent(content);
     toast.success(`Content loaded from ${uploadedFileName}`);
@@ -58,31 +85,41 @@ const DocumentEditor = ({
     setIsSaving(true);
     
     try {
-      console.log("Attempting to save document:", {
-        documentType: activeDocumentType,
-        contentLength: documentContent.length,
-        programId: selectedProgramId
-      });
-
-      const savedDoc = await addDocument({
-        documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
-        linkedProgramId: selectedProgramId,
-        contentRaw: documentContent,
-        fileName: null
-      });
-      
-      if (savedDoc) {
-        console.log("Document saved successfully:", savedDoc.id);
-        onSaveSuccess(savedDoc.id);
-        // Clear the content after successful save
-        setDocumentContent("");
-        toast.success("Document saved successfully");
+      if (isEditMode && editingDocumentId) {
+        // Update existing document
+        await updateDocument(editingDocumentId, {
+          contentRaw: documentContent,
+          linkedProgramId: selectedProgramId
+        });
+        onSaveSuccess(editingDocumentId);
+        toast.success("Document updated successfully");
       } else {
-        throw new Error("No document returned from save operation");
+        // Create new document
+        console.log("Attempting to save document:", {
+          documentType: activeDocumentType,
+          contentLength: documentContent.length,
+          programId: selectedProgramId
+        });
+
+        const savedDoc = await addDocument({
+          documentType: activeDocumentType as "SOP" | "CV" | "Essay" | "LOR" | "PersonalEssay" | "ScholarshipEssay",
+          linkedProgramId: selectedProgramId,
+          contentRaw: documentContent,
+          fileName: null
+        });
+        
+        if (savedDoc) {
+          console.log("Document saved successfully:", savedDoc.id);
+          onSaveSuccess(savedDoc.id);
+          resetEditor();
+          toast.success("Document saved successfully");
+        } else {
+          throw new Error("No document returned from save operation");
+        }
       }
       
     } catch (error) {
-      console.error("Error creating document:", error);
+      console.error("Error saving document:", error);
       
       // Provide more specific error messages based on error type
       if (error && typeof error === 'object' && 'code' in error) {
@@ -218,6 +255,8 @@ const DocumentEditor = ({
         onSave={handleCreateDocument}
         onSaveAndGenerateFeedback={saveAndGenerateFeedback}
         onGenerateTempFeedback={handleGenerateTempFeedback}
+        isEditMode={isEditMode}
+        onReset={resetEditor}
       />
     </div>
   );

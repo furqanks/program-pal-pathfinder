@@ -1,30 +1,86 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, PlusCircle } from "lucide-react";
+import { FileText, PlusCircle, Edit, Trash2, MoreHorizontal } from "lucide-react";
 import { Document } from "@/types/document.types";
 import { format } from "date-fns";
 import { useDocumentContext } from "@/contexts/DocumentContext";
+import { useProgramContext } from "@/contexts/ProgramContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 
 interface DocumentsListProps {
   activeDocumentType: string;
   selectedProgramId: string | null;
   selectedDocumentId: string | null;
   onSelectDocument: (docId: string | null) => void;
+  onCreateNew?: () => void;
 }
 
 const DocumentsList = ({
   activeDocumentType,
   selectedProgramId,
   selectedDocumentId,
-  onSelectDocument
+  onSelectDocument,
+  onCreateNew
 }: DocumentsListProps) => {
-  const { getVersions } = useDocumentContext();
+  const { getVersions, deleteDocument, updateDocument } = useDocumentContext();
   const { programs } = useProgramContext();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
+  const [editingDocument, setEditingDocument] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
   
   // Get versions for the current document type
   const documentVersions = getVersions(activeDocumentType, selectedProgramId);
+  
+  const handleDelete = async () => {
+    if (documentToDelete) {
+      try {
+        await deleteDocument(documentToDelete);
+        if (selectedDocumentId === documentToDelete) {
+          onSelectDocument(null);
+        }
+      } catch (error) {
+        console.error("Error deleting document:", error);
+      }
+    }
+    setDeleteDialogOpen(false);
+    setDocumentToDelete(null);
+  };
+
+  const handleRename = async (docId: string) => {
+    if (editName.trim()) {
+      try {
+        await updateDocument(docId, { fileName: editName.trim() });
+        setEditingDocument(null);
+        setEditName("");
+      } catch (error) {
+        console.error("Error renaming document:", error);
+      }
+    }
+  };
+
+  const startEdit = (doc: Document) => {
+    setEditingDocument(doc.id);
+    setEditName(doc.fileName || `Version ${doc.versionNumber}`);
+  };
   
   return (
     <div className="space-y-2">
@@ -33,7 +89,7 @@ const DocumentsList = ({
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={() => onSelectDocument(null)}
+          onClick={onCreateNew || (() => onSelectDocument(null))}
           className="h-8 px-2"
         >
           <PlusCircle className="h-4 w-4 mr-1" />
@@ -53,41 +109,101 @@ const DocumentsList = ({
               : null;
             
             return (
-              <Button
-                key={doc.id}
-                variant={selectedDocumentId === doc.id ? "default" : "outline"}
-                className="w-full justify-start h-auto py-2 px-3"
-                onClick={() => onSelectDocument(doc.id)}
-              >
-                <div className="flex flex-col items-start text-left">
-                  <div className="flex items-center gap-1">
-                    <FileText className="h-3 w-3" />
-                    <span>v{doc.versionNumber}</span>
-                    {doc.score && (
-                      <Badge variant="outline" className="ml-1 text-xs">
-                        {doc.score}/10
-                      </Badge>
+              <div key={doc.id} className="relative group">
+                <Button
+                  variant={selectedDocumentId === doc.id ? "default" : "outline"}
+                  className="w-full justify-start h-auto py-2 px-3 pr-10"
+                  onClick={() => onSelectDocument(doc.id)}
+                >
+                  <div className="flex flex-col items-start text-left">
+                    <div className="flex items-center gap-1">
+                      <FileText className="h-3 w-3" />
+                      {editingDocument === doc.id ? (
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onBlur={() => handleRename(doc.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleRename(doc.id);
+                            if (e.key === 'Escape') {
+                              setEditingDocument(null);
+                              setEditName("");
+                            }
+                          }}
+                          className="h-4 text-xs p-0 border-none bg-transparent"
+                          autoFocus
+                        />
+                      ) : (
+                        <span>{doc.fileName || `v${doc.versionNumber}`}</span>
+                      )}
+                      {doc.score && (
+                        <Badge variant="outline" className="ml-1 text-xs">
+                          {doc.score}/10
+                        </Badge>
+                      )}
+                    </div>
+                    {program && (
+                      <span className="text-xs text-muted-foreground mt-1 truncate w-full">
+                        {program.programName}
+                      </span>
                     )}
-                  </div>
-                  {program && (
-                    <span className="text-xs text-muted-foreground mt-1 truncate w-full">
-                      {program.programName}
+                    <span className="text-xs text-muted-foreground mt-1">
+                      {format(new Date(doc.createdAt), "MMM d, yyyy")}
                     </span>
-                  )}
-                  <span className="text-xs text-muted-foreground mt-1">
-                    {format(new Date(doc.createdAt), "MMM d, yyyy")}
-                  </span>
-                </div>
-              </Button>
+                  </div>
+                </Button>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <MoreHorizontal className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => startEdit(doc)}>
+                      <Edit className="h-3 w-3 mr-2" />
+                      Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        setDocumentToDelete(doc.id);
+                        setDeleteDialogOpen(true);
+                      }}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="h-3 w-3 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             );
           })}
         </div>
       )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Document</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this document? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
-
-// Import at the top
-import { useProgramContext } from "@/contexts/ProgramContext";
 
 export default DocumentsList;

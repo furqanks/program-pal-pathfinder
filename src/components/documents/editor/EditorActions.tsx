@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Save, Sparkles } from "lucide-react";
+import { Save, Sparkles, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EditorActionsProps {
@@ -10,6 +10,8 @@ interface EditorActionsProps {
   onSave: () => void;
   onSaveAndGenerateFeedback: () => void;
   onGenerateTempFeedback: () => void;
+  isEditMode?: boolean;
+  onReset?: () => void;
 }
 
 const EditorActions = ({
@@ -18,7 +20,9 @@ const EditorActions = ({
   isGeneratingFeedback,
   onSave,
   onSaveAndGenerateFeedback,
-  onGenerateTempFeedback
+  onGenerateTempFeedback,
+  isEditMode = false,
+  onReset
 }: EditorActionsProps) => {
   return (
     <div className={cn(
@@ -34,8 +38,23 @@ const EditorActions = ({
         disabled={isSaving}
       >
         <Save className="mr-2 h-4 w-4" />
-        {isSaving ? "Saving..." : "Save Document"}
+        {isSaving ? (isEditMode ? "Updating..." : "Saving...") : (isEditMode ? "Update Document" : "Save Document")}
       </Button>
+      
+      {onReset && (
+        <Button 
+          onClick={onReset}
+          variant="outline"
+          className={cn(
+            isMobile ? "w-full h-12" : "",
+            "min-h-[44px]"
+          )}
+          disabled={isSaving}
+        >
+          <RotateCcw className="mr-2 h-4 w-4" />
+          Reset
+        </Button>
+      )}
       <Button 
         onClick={onSaveAndGenerateFeedback}
         variant="secondary"

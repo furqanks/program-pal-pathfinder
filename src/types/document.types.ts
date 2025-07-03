@@ -22,6 +22,8 @@ export interface Document {
 export type DocumentContextType = {
   documents: Document[];
   addDocument: (doc: Omit<Document, "id" | "versionNumber" | "createdAt">) => Promise<Document | undefined>;
+  updateDocument: (id: string, updates: Partial<Document>) => Promise<void>;
+  deleteDocument: (id: string) => Promise<void>;
   getVersions: (documentType: string, programId: string | null) => Document[];
   generateFeedback: (documentId: string) => Promise<void>;
 };

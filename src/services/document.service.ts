@@ -228,6 +228,54 @@ export const generateImprovedDraft = async (
   }
 };
 
+// Update an existing document
+export const updateDocumentService = async (
+  id: string,
+  updates: Partial<Document>
+): Promise<Document> => {
+  try {
+    const updateData: any = {};
+    
+    // Map Document fields to database columns
+    if (updates.contentRaw !== undefined) updateData.original_text = updates.contentRaw;
+    if (updates.linkedProgramId !== undefined) updateData.program_id = updates.linkedProgramId;
+    if (updates.fileName !== undefined) updateData.file_name = updates.fileName;
+    if (updates.contentFeedback !== undefined) updateData.feedback_summary = updates.contentFeedback;
+    if (updates.improvementPoints !== undefined) updateData.improvement_points = updates.improvementPoints;
+    if (updates.quotedImprovements !== undefined) updateData.quoted_improvements = updates.quotedImprovements;
+    if (updates.score !== undefined) updateData.score = updates.score;
+
+    const { data, error } = await supabase
+      .from('user_documents')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    return formatDocumentFromDb(data);
+  } catch (error) {
+    console.error('Error updating document:', error);
+    throw error;
+  }
+};
+
+// Delete a document
+export const deleteDocumentService = async (id: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('user_documents')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting document:', error);
+    throw error;
+  }
+};
+
 // Generate real test feedback without saving to database
 export const generateTestFeedback = async (
   content: string, 

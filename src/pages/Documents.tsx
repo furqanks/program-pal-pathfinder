@@ -23,6 +23,7 @@ const Documents = () => {
   const [documentContent, setDocumentContent] = useState("");
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
+  const [creatingNew, setCreatingNew] = useState(false);
   const documentTypes = {
     sop: "SOP",
     cv: "CV",
@@ -70,6 +71,16 @@ const Documents = () => {
       setDocumentContent(selectedDocument.contentRaw);
     }
   };
+
+  const handleCreateNew = () => {
+    setSelectedDocumentId(null);
+    setCreatingNew(true);
+  };
+
+  const handleDocumentSelect = (docId: string | null) => {
+    setSelectedDocumentId(docId);
+    setCreatingNew(false);
+  };
   return <div className={cn("space-y-4", isMobile ? "space-y-3" : "space-y-6")}>
       <div className={isMobile ? "px-2" : ""}>
         <h1 className="font-semibold text-center text-3xl">Document Assistant</h1>
@@ -84,7 +95,13 @@ const Documents = () => {
           <div className={cn("space-y-4", isMobile ? "space-y-3" : "")}>
             <DocumentTypeSelector activeTab={activeTab} setActiveTab={setActiveTab} selectedProgramId={selectedProgramId} setSelectedProgramId={setSelectedProgramId} isMobile={isMobile} />
             
-            <DocumentsList activeDocumentType={activeDocumentType} selectedProgramId={selectedProgramId} selectedDocumentId={selectedDocumentId} onSelectDocument={setSelectedDocumentId} />
+            <DocumentsList 
+              activeDocumentType={activeDocumentType} 
+              selectedProgramId={selectedProgramId} 
+              selectedDocumentId={selectedDocumentId} 
+              onSelectDocument={handleDocumentSelect}
+              onCreateNew={handleCreateNew}
+            />
           </div>
         </div>
         

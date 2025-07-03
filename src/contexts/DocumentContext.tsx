@@ -5,6 +5,8 @@ import { Document, DocumentContextType } from "@/types/document.types";
 import { 
   fetchUserDocuments, 
   addDocument as addDocumentService, 
+  updateDocumentService,
+  deleteDocumentService,
   generateDocumentFeedback
 } from "@/services/document.service";
 
@@ -102,11 +104,41 @@ export const DocumentProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Update an existing document
+  const updateDocument = async (id: string, updates: Partial<Document>) => {
+    try {
+      const updatedDoc = await updateDocumentService(id, updates);
+      setDocuments(documents.map(doc => 
+        doc.id === id ? { ...doc, ...updatedDoc } : doc
+      ));
+      toast.success("Document updated successfully");
+    } catch (error) {
+      console.error("Error updating document:", error);
+      toast.error("Failed to update document");
+      throw error;
+    }
+  };
+
+  // Delete a document
+  const deleteDocument = async (id: string) => {
+    try {
+      await deleteDocumentService(id);
+      setDocuments(documents.filter(doc => doc.id !== id));
+      toast.success("Document deleted successfully");
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      toast.error("Failed to delete document");
+      throw error;
+    }
+  };
+
   return (
     <DocumentContext.Provider
       value={{
         documents,
         addDocument,
+        updateDocument,
+        deleteDocument,
         getVersions,
         generateFeedback
       }}
