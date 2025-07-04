@@ -147,7 +147,7 @@ const MainEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: MainEditorPr
   return (
     <div className="h-full flex flex-col">
       {/* Editor Toolbar */}
-      <div className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-10 px-6 py-3">
+      <div className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-10 px-6 py-3">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4" />
@@ -234,7 +234,7 @@ const MainEditor = ({ selectedNote, onNoteCreated, onNoteUpdated }: MainEditorPr
       </div>
 
       {/* Main Editor */}
-      <div className="flex-1 overflow-auto bg-white">
+      <div className="flex-1 overflow-auto bg-background">
         <div className="max-w-4xl mx-auto p-8">
           <Input
             ref={titleRef}

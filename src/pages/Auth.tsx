@@ -54,7 +54,7 @@ export default function Auth() {
           <p className="text-gray-600 text-lg">Your AI-powered university application assistant</p>
         </div>
 
-        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+        <Card className="shadow-lg border-0 bg-card/80 backdrop-blur-sm">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-2xl text-gray-900">
               Welcome to UniApp Space

@@ -83,7 +83,7 @@ const EnhancedInsights = () => {
   };
 
   return (
-    <Card className="bg-white/70 backdrop-blur-sm">
+    <Card className="bg-card/70 backdrop-blur-sm border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">

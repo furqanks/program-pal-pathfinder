@@ -75,7 +75,7 @@ const ApplicationStatusCard = ({ program, onViewDetails }: ApplicationStatusCard
               <Badge 
                 style={{
                   backgroundColor: statusTag.color,
-                  color: '#fff'
+                  color: 'white'
                 }}
                 className={isMobile ? "text-xs px-2 py-1" : "text-xs"}
               >

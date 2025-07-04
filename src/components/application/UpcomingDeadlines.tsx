@@ -139,7 +139,7 @@ const UpcomingDeadlines = () => {
                   <Badge 
                     style={{
                       backgroundColor: statusTag.color,
-                      color: '#fff'
+                      color: 'white'
                     }}
                     className="text-xs ml-2"
                   >
