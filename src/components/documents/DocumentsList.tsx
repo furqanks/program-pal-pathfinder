@@ -95,7 +95,7 @@ const DocumentsList = ({
           {documentVersions.map(doc => {
         const program = doc.linkedProgramId ? programs.find(p => p.id === doc.linkedProgramId) : null;
         return <div key={doc.id} className="relative group">
-                <Button variant={selectedDocumentId === doc.id ? "default" : "outline"} onClick={() => onSelectDocument(doc.id)} className="w-full justify-start h-auto py-2 px-3 pr-10 bg-stone-200 hover:bg-stone-100 text-slate-950">
+                <Button variant={selectedDocumentId === doc.id ? "default" : "outline"} onClick={() => onSelectDocument(doc.id)} className="w-full justify-start h-auto py-2 px-3 pr-10 bg-muted hover:bg-muted/80 text-foreground border-border">
                   <div className="flex flex-col items-start text-left">
                     <div className="flex items-center gap-1">
                       <FileText className="h-3 w-3" />

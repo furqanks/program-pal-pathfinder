@@ -68,59 +68,69 @@ const UpdatedSearch = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Updated Search</h1>
-        <p className="text-muted-foreground">
-          Find university programs with official information from verified sources
-        </p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight mb-2 text-foreground">Updated Search</h1>
+          <p className="text-muted-foreground">
+            Find university programs with official information from verified sources
+          </p>
+        </div>
 
-      {/* Search Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <SearchIcon className="h-5 w-5" />
-            Search University Programs
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSearch} className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="e.g., Computer Science Masters in UK, Psychology PhD programs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
-              />
-              <Button type="submit" disabled={isLoading || !searchQuery.trim()}>
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <SearchIcon className="h-4 w-4" />
-                )}
-              </Button>
-              {searchResults && (
-                <Button type="button" variant="outline" onClick={handleClear}>
-                  Clear
+        {/* Search Form */}
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-card-foreground">
+              <SearchIcon className="h-5 w-5 text-primary" />
+              Search University Programs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSearch} className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g., Computer Science Masters in UK, Psychology PhD programs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-background border-border text-foreground placeholder:text-muted-foreground"
+                />
+                <Button 
+                  type="submit" 
+                  disabled={isLoading || !searchQuery.trim()}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <SearchIcon className="h-4 w-4" />
+                  )}
                 </Button>
-              )}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Loading State */}
-      {isLoading && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              Searching official university sources...
-            </p>
+                {searchResults && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleClear}
+                    className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </form>
           </CardContent>
         </Card>
-      )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <Card className="bg-card border-border">
+            <CardContent className="py-12 text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-muted-foreground">
+                Searching official university sources...
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
       {/* Search Results */}
       {searchResults && !isLoading && (
@@ -131,7 +141,7 @@ const UpdatedSearch = () => {
             onSearchGoogle={handleSearchGoogle}
           />
           
-          <Card>
+          <Card className="bg-card border-border">
             <CardContent className="p-6">
               <SearchReportContent rawContent={searchResults} query={searchQuery} />
             </CardContent>
@@ -143,23 +153,24 @@ const UpdatedSearch = () => {
         </div>
       )}
 
-      {/* Empty State */}
-      {!isLoading && !searchResults && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <SearchIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-medium mb-2">Search University Programs</h3>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Enter your search criteria above to find university programs from official sources.
-            </p>
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p>• Information from official university websites only</p>
-              <p>• At least 10 program options per search</p>
-              <p>• Verified and up-to-date information</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {/* Empty State */}
+        {!isLoading && !searchResults && (
+          <Card className="bg-card border-border">
+            <CardContent className="py-12 text-center">
+              <SearchIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-medium mb-2 text-card-foreground">Search University Programs</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Enter your search criteria above to find university programs from official sources.
+              </p>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>• Information from official university websites only</p>
+                <p>• At least 10 program options per search</p>
+                <p>• Verified and up-to-date information</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };

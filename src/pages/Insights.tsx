@@ -45,19 +45,19 @@ const Insights = () => {
   // Show sign in prompt if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className={cn("container mx-auto", isMobile ? "p-2" : "p-4")}>
+      <div className={cn("min-h-screen bg-background", "container mx-auto", isMobile ? "p-2" : "p-4")}>
         <div className={cn(
           "flex justify-between items-center mb-6",
           isMobile ? "flex-col gap-4 items-start" : ""
         )}>
           <h1 className={cn(
-            "font-semibold",
+            "font-semibold text-foreground",
             isMobile ? "text-xl" : "text-2xl"
           )}>Application Insights</h1>
         </div>
 
         <div className={cn(
-          "flex flex-col items-center justify-center text-center",
+          "flex flex-col items-center justify-center text-center bg-card rounded-lg border border-border",
           isMobile ? "p-8" : "p-12"
         )}>
           <LogIn className={cn(
@@ -65,7 +65,7 @@ const Insights = () => {
             isMobile ? "h-10 w-10" : "h-12 w-12"
           )} />
           <h2 className={cn(
-            "font-medium mb-2",
+            "font-medium mb-2 text-card-foreground",
             isMobile ? "text-lg" : "text-xl"
           )}>Sign In Required</h2>
           <p className={cn(
@@ -74,7 +74,10 @@ const Insights = () => {
           )}>
             Please sign in to access AI-powered insights about your program selections.
           </p>
-          <Button onClick={() => navigate('/auth')}>
+          <Button 
+            onClick={() => navigate('/auth')}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
             Sign In
           </Button>
         </div>
@@ -83,19 +86,22 @@ const Insights = () => {
   }
 
   return (
-    <div className={cn("container mx-auto", isMobile ? "p-2" : "p-4")}>
+    <div className={cn("min-h-screen bg-background", "container mx-auto", isMobile ? "p-2" : "p-4")}>
       <div className={cn(
         "flex justify-between items-center mb-6",
         isMobile ? "flex-col gap-4 items-start" : ""
       )}>
         <h1 className={cn(
-          "font-semibold",
+          "font-semibold text-foreground",
           isMobile ? "text-xl" : "text-2xl"
         )}>Application Insights</h1>
         <Button 
           onClick={handleAnalyzeShortlist} 
           disabled={loading || programs.length < 3}
-          className={isMobile ? "w-full" : ""}
+          className={cn(
+            "bg-primary text-primary-foreground hover:bg-primary/90",
+            isMobile ? "w-full" : ""
+          )}
         >
           {loading ? "Analyzing..." : "Analyze My Shortlist"}
         </Button>
@@ -107,55 +113,55 @@ const Insights = () => {
           isMobile ? "grid-cols-1" : "md:grid-cols-2"
         )}>
           {/* Summary Card */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader className={isMobile ? "pb-3" : ""}>
               <CardTitle className={cn(
-                "flex items-center gap-2",
+                "flex items-center gap-2 text-card-foreground",
                 isMobile ? "text-lg" : ""
               )}>
-                <TrendingUp className="h-5 w-5" />
+                <TrendingUp className="h-5 w-5 text-primary" />
                 Shortlist Analysis
               </CardTitle>
-              <CardDescription>AI-powered analysis of your program selections</CardDescription>
+              <CardDescription className="text-muted-foreground">AI-powered analysis of your program selections</CardDescription>
             </CardHeader>
             <CardContent className={isMobile ? "space-y-3" : ""}>
-              <p className="mb-4">{analysisData.summary}</p>
-              <h3 className="font-medium mb-2">Suggestions:</h3>
+              <p className="mb-4 text-card-foreground">{analysisData.summary}</p>
+              <h3 className="font-medium mb-2 text-card-foreground">Suggestions:</h3>
               <ul className="list-disc list-inside space-y-1">
                 {analysisData.suggestions.map((suggestion: string, index: number) => (
-                  <li key={index} className="text-sm">{suggestion}</li>
+                  <li key={index} className="text-sm text-muted-foreground">{suggestion}</li>
                 ))}
               </ul>
             </CardContent>
           </Card>
 
           {/* Statistics Card */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader className={isMobile ? "pb-3" : ""}>
               <CardTitle className={cn(
-                "flex items-center gap-2",
+                "flex items-center gap-2 text-card-foreground",
                 isMobile ? "text-lg" : ""
               )}>
-                <BarChart3 className="h-5 w-5" />
+                <BarChart3 className="h-5 w-5 text-primary" />
                 Program Statistics
               </CardTitle>
-              <CardDescription>Breakdown of your program selections</CardDescription>
+              <CardDescription className="text-muted-foreground">Breakdown of your program selections</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h3 className="font-medium">Geographic Analysis</h3>
+                <h3 className="font-medium text-card-foreground">Geographic Analysis</h3>
                 <p className="text-sm text-muted-foreground">{analysisData.countryAnalysis}</p>
               </div>
               <div>
-                <h3 className="font-medium">Degree Type Balance</h3>
+                <h3 className="font-medium text-card-foreground">Degree Type Balance</h3>
                 <p className="text-sm text-muted-foreground">{analysisData.degreeTypeAnalysis}</p>
               </div>
               <div>
-                <h3 className="font-medium">Timeline Insights</h3>
+                <h3 className="font-medium text-card-foreground">Timeline Insights</h3>
                 <p className="text-sm text-muted-foreground">{analysisData.timelineInsight}</p>
               </div>
               <div>
-                <h3 className="font-medium">Financial Considerations</h3>
+                <h3 className="font-medium text-card-foreground">Financial Considerations</h3>
                 <p className="text-sm text-muted-foreground">{analysisData.financialInsight}</p>
               </div>
             </CardContent>
@@ -163,7 +169,7 @@ const Insights = () => {
         </div>
       ) : (
         <div className={cn(
-          "flex flex-col items-center justify-center text-center",
+          "flex flex-col items-center justify-center text-center bg-card rounded-lg border border-border",
           isMobile ? "p-8" : "p-12"
         )}>
           <AlertCircle className={cn(
@@ -171,7 +177,7 @@ const Insights = () => {
             isMobile ? "h-10 w-10" : "h-12 w-12"
           )} />
           <h2 className={cn(
-            "font-medium mb-2",
+            "font-medium mb-2 text-card-foreground",
             isMobile ? "text-lg" : "text-xl"
           )}>No Analysis Available</h2>
           <p className={cn(
@@ -183,7 +189,7 @@ const Insights = () => {
           </p>
           {programs.length < 3 && (
             <p className={cn(
-              "text-sm text-orange-600 mt-2",
+              "text-sm text-destructive mt-2",
               isMobile ? "text-xs" : ""
             )}>
               Currently {programs.length} programs in your shortlist. Add {3 - programs.length} more to enable analysis.
