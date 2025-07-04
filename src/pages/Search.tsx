@@ -177,18 +177,18 @@ const Search = () => {
   const generatedQuery = buildQueryFromAnswers();
 
   return (
-    <div className="w-full max-w-none px-4 py-8">
+    <div className="w-full max-w-none px-4 py-8 bg-background">
       <div className="max-w-8xl mx-auto space-y-8">
         {/* Header Section with improved spacing */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight">University Program Search</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-foreground">University Program Search</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Find university programs worldwide with accurate information from official sources
           </p>
         </div>
 
         {/* Guided Search Card with improved spacing */}
-        <Card className="shadow-lg">
+        <Card className="shadow-lg bg-card border-border">
           <CardHeader className="pb-6">
             <CardTitle className="flex items-center gap-3 text-xl">
               <GraduationCap className="h-6 w-6" />

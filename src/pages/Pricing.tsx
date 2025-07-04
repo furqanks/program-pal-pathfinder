@@ -96,12 +96,12 @@ const Pricing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b border-gray-100">
+      <div className="border-b border-border">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <Link to="/home">
-            <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Button>
@@ -112,11 +112,11 @@ const Pricing = () => {
       <div className="max-w-4xl mx-auto px-6 py-16">
         {/* Header Section */}
         <div className="text-center mb-16">
-          <Badge className="mb-4 bg-gray-900 text-white">Choose Your Plan</Badge>
-          <h1 className="text-4xl font-bold mb-4 text-gray-900">
+          <Badge className="mb-4 bg-primary text-primary-foreground">Choose Your Plan</Badge>
+          <h1 className="text-4xl font-bold mb-4 text-foreground">
             Unlock Your University Dreams
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Choose the plan that fits your needs and start your journey to top universities.
           </p>
         </div>
