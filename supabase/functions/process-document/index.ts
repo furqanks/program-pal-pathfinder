@@ -27,13 +27,15 @@ async function extractTextFromPDF(arrayBuffer: ArrayBuffer, fileName: string): P
     console.log(`Processing PDF: ${fileName}, size: ${arrayBuffer.byteLength} bytes`);
     
     const uint8Array = new Uint8Array(arrayBuffer);
+    
+    // Strategy 1: Try to find PDF stream objects and text content
     const decoder = new TextDecoder('utf-8', { fatal: false });
     let content = decoder.decode(uint8Array);
     
     // Multiple extraction strategies for better PDF support
     const extractedTexts: string[] = [];
     
-    // Strategy 1: Look for text streams between stream/endstream
+    // Enhanced strategy: Look for text streams with better filtering
     const streamPattern = /stream[\r\n]+(.*?)[\r\n]+endstream/gs;
     let match;
     while ((match = streamPattern.exec(content)) !== null) {
@@ -51,12 +53,20 @@ async function extractTextFromPDF(arrayBuffer: ArrayBuffer, fileName: string): P
       }
     }
     
-    // Strategy 2: Extract text objects (Tj commands)
+    // Strategy 2: Extract text objects (Tj commands) - more precise
     const textObjectPattern = /\(([^)]*)\)\s*Tj/g;
     const textMatches: string[] = [];
     while ((match = textObjectPattern.exec(content)) !== null) {
       if (match[1] && match[1].trim().length > 2) {
-        textMatches.push(match[1].trim());
+        // Decode PDF string escapes
+        const decodedText = match[1]
+          .replace(/\\n/g, '\n')
+          .replace(/\\r/g, '\r')
+          .replace(/\\t/g, '\t')
+          .replace(/\\\\/g, '\\')
+          .replace(/\\'/g, "'")
+          .replace(/\\"/g, '"');
+        textMatches.push(decodedText.trim());
       }
     }
     
@@ -64,11 +74,11 @@ async function extractTextFromPDF(arrayBuffer: ArrayBuffer, fileName: string): P
       extractedTexts.push(textMatches.join(' '));
     }
     
-    // Strategy 3: Extract text arrays (TJ commands)
+    // Strategy 3: Extract text arrays (TJ commands) with better parsing
     const textArrayPattern = /\[([^\]]*)\]\s*TJ/g;
     while ((match = textArrayPattern.exec(content)) !== null) {
       const arrayContent = match[1];
-      // Extract strings from the array
+      // Extract strings from the array with better parsing
       const stringPattern = /\(([^)]*)\)/g;
       const strings: string[] = [];
       let stringMatch;
@@ -82,12 +92,18 @@ async function extractTextFromPDF(arrayBuffer: ArrayBuffer, fileName: string): P
       }
     }
     
-    // Strategy 4: Look for any readable text patterns
+    // Strategy 4: Look for readable text patterns with better filtering
     const readableTextPattern = /[A-Za-z]{3,}[\w\s.,;:!?'"()-]{10,}/g;
     const readableMatches = content.match(readableTextPattern);
     if (readableMatches && readableMatches.length > 5) {
       const combinedText = readableMatches
-        .filter(text => text.length > 10 && !text.includes('obj') && !text.includes('endobj'))
+        .filter(text => 
+          text.length > 10 && 
+          !text.includes('obj') && 
+          !text.includes('endobj') &&
+          !text.includes('stream') &&
+          !text.includes('xref')
+        )
         .join(' ')
         .replace(/\s+/g, ' ')
         .trim();
@@ -97,34 +113,55 @@ async function extractTextFromPDF(arrayBuffer: ArrayBuffer, fileName: string): P
       }
     }
     
-    // Combine and clean all extracted text
-    const combinedText = extractedTexts.join('\n\n').replace(/\s+/g, ' ').trim();
+    // Strategy 5: Look for embedded fonts and text content
+    const fontTextPattern = /\/F\d+\s+\d+\s+Tf[^(]*\(([^)]+)\)/g;
+    while ((match = fontTextPattern.exec(content)) !== null) {
+      if (match[1] && match[1].length > 3) {
+        extractedTexts.push(match[1]);
+      }
+    }
+    
+    // Combine and clean all extracted text with deduplication
+    const allText = extractedTexts.join('\n\n');
+    const combinedText = allText
+      .replace(/\s+/g, ' ')
+      .replace(/(.{50,}?)\1+/g, '$1') // Remove repeated chunks
+      .trim();
     
     if (combinedText.length > 100) {
       console.log(`Successfully extracted ${combinedText.length} characters from PDF`);
       return combinedText;
     }
     
-    // Fallback: Return helpful message for complex PDFs
+    // Enhanced fallback message with more helpful instructions
     return `PDF document "${fileName}" was processed, but automatic text extraction had limited success.
 
 This can happen with:
-• Image-based PDFs (scanned documents)
-• Password-protected PDFs
-• Complex formatting or encrypted PDFs
+• **Image-based PDFs** (scanned documents) - these contain images of text, not actual text
+• **Password-protected PDFs** - encrypted files cannot be processed
+• **Complex formatting** - tables, forms, or unusual layouts
+• **Non-standard encoding** - some PDFs use custom fonts or encoding
 
-To get the best results:
-1. Copy and paste the text content directly into the editor
-2. Convert the PDF to a Word document first
-3. Use a plain text version of your document
+**Recommended solutions:**
+1. **Copy and paste** the text content directly into the editor below
+2. **Convert to Word document** (.docx) first and upload that instead  
+3. **Save as plain text** (.txt) and upload that
+4. **Use OCR software** if it's a scanned document
 
-This will ensure our AI can properly analyze your content.`;
+This will ensure our AI can properly analyze your content and provide accurate feedback.`;
     
   } catch (error) {
     console.error("PDF extraction error:", error);
     return `PDF document "${fileName}" was uploaded, but encountered a processing error.
 
-Please copy and paste the text content directly into the editor for the best AI analysis experience.`;
+**What happened:** ${error instanceof Error ? error.message : 'Unknown processing error'}
+
+**What to do next:**
+1. **Copy and paste** the text content directly into the editor below
+2. **Try converting** the PDF to a Word document (.docx) first
+3. **Check if the PDF** is password-protected or corrupted
+
+This will give you the best results for AI analysis.`;
   }
 }
 

@@ -3,39 +3,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileUp } from "lucide-react";
 import { toast } from "sonner";
-import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
-
-// Setup PDF.js worker with version-matched CDN fallbacks
-const setupPDFWorker = async () => {
-  const workerUrls = [
-    // Try matching version 5.3.31 first
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.31/pdf.worker.min.js',
-    'https://unpkg.com/pdfjs-dist@5.3.31/build/pdf.worker.min.js',
-    'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.3.31/build/pdf.worker.min.js',
-    // Fallback to known working version 3.11.174 if 5.3.31 doesn't exist
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
-    'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js',
-    'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'
-  ];
-
-  for (const workerUrl of workerUrls) {
-    try {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-      console.log(`PDF.js worker set to: ${workerUrl}`);
-      return true;
-    } catch (error) {
-      console.warn(`Failed to set worker from ${workerUrl}:`, error);
-    }
-  }
-  
-  throw new Error('All PDF.js worker CDN sources failed');
-};
-
-// Initialize worker setup
-setupPDFWorker().catch(error => {
-  console.error('PDF.js worker setup failed:', error);
-});
+import { processPDF, ProcessingProgress } from "@/utils/pdfProcessor";
 
 interface FileUploadButtonProps {
   onFileContent: (content: string, fileName: string) => void;
@@ -50,36 +19,10 @@ const FileUploadButton = ({
 }: FileUploadButtonProps) => {
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Process PDF files
-  const processPDF = async (file: File): Promise<string> => {
-    try {
-      toast.info("Setting up PDF processor...");
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const numPages = pdf.numPages;
-      let fullText = "";
-
-      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-        setUploadProgress(20 + (pageNum / numPages) * 60); // 20-80% for PDF processing
-        toast.info(`Processing page ${pageNum} of ${numPages}...`);
-        
-        const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(" ");
-        
-        fullText += pageText + "\n\n";
-      }
-
-      return fullText.trim();
-    } catch (error: any) {
-      console.error("PDF processing error:", error);
-      if (error.message && error.message.includes('worker')) {
-        throw new Error('PDF processor setup failed. Please try again.');
-      }
-      throw new Error(`Failed to process PDF: ${error.message || 'Unknown error'}`);
-    }
+  // Handle processing progress updates
+  const handleProgress = (progress: ProcessingProgress) => {
+    setUploadProgress(progress.progress);
+    toast.info(progress.message);
   };
 
   // Process DOCX files
@@ -149,7 +92,15 @@ const FileUploadButton = ({
 
       // Process based on file type
       if (fileType === "application/pdf" || fileName.endsWith('.pdf')) {
-        extractedText = await processPDF(file);
+        const pdfResult = await processPDF(file, handleProgress);
+        if (pdfResult.success && pdfResult.text) {
+          extractedText = pdfResult.text;
+        } else if (pdfResult.fallbackMessage) {
+          // Show fallback message and let user decide
+          extractedText = pdfResult.fallbackMessage;
+        } else {
+          throw new Error(pdfResult.error || "Failed to process PDF");
+        }
       } else if (
         fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
         fileName.endsWith('.docx')
