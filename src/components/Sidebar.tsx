@@ -94,16 +94,20 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
           "flex items-center gap-3 transition-opacity duration-200",
           !open && "md:justify-center"
         )}>
-          {/* Brand icon */}
-          <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-sm">
-            <Target className="h-4 w-4 text-primary-foreground" />
+          {/* Brand logo */}
+          <div className="w-8 h-8 flex items-center justify-center">
+            <img 
+              src="/lovable-uploads/9804e8a0-76d7-4ec7-9860-5ce7921027ff.png" 
+              alt="Hey Grad' Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
           
           {/* Brand text with smooth transition */}
           {open && (
             <div className="animate-fade-in">
               <h1 className="text-heading text-sm font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                UniApp Space
+                Hey Grad'
               </h1>
             </div>
           )}
@@ -223,7 +227,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             "text-xs text-muted-foreground space-y-2 text-center",
             !open && "md:hidden"
           )}>
-            <p className="font-medium text-foreground">UniApp Space</p>
+            <p className="font-medium text-foreground">Hey Grad'</p>
             <p className="leading-relaxed">AI-powered university applications</p>
           </div>
         )}
