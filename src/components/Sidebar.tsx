@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Search, GraduationCap, FileText, BarChart, Target, StickyNote, User, Sparkles, LogOut } from "lucide-react";
+import { Search, GraduationCap, FileText, BarChart, Target, StickyNote, User, Sparkles, LogOut, Menu } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -85,33 +85,19 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
       // Enhanced shadow for depth
       "shadow-elevated"
     )}>
-      {/* Header with brand */}
+      {/* Header with hamburger icon and theme toggle */}
       <div className={cn(
         "flex items-center justify-between border-b border-border/50",
         "h-16 px-4 py-3"
       )}>
-        <div className={cn(
-          "flex items-center gap-3 transition-opacity duration-200",
-          !open && "md:justify-center"
-        )}>
-          {/* Brand logo */}
-          <div className="w-8 h-8 flex items-center justify-center">
-            <img 
-              src="/lovable-uploads/9804e8a0-76d7-4ec7-9860-5ce7921027ff.png" 
-              alt="Hey Grad' Logo" 
-              className="w-full h-full object-contain"
-            />
-          </div>
-          
-          {/* Brand text with smooth transition */}
-          {open && (
-            <div className="animate-fade-in">
-              <h1 className="text-heading text-sm font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                Hey Grad'
-              </h1>
-            </div>
-          )}
-        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setOpen(!open)} 
+          className="nav-item h-10 w-10 flex-shrink-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
 
         {/* Theme toggle - only visible when open */}
         {open && (
