@@ -146,6 +146,36 @@ export type Database = {
           },
         ]
       }
+      data_export_requests: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          export_type: string
+          file_url: string | null
+          id: string
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          export_type: string
+          file_url?: string | null
+          id?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          export_type?: string
+          file_url?: string | null
+          id?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       note_collaborations: {
         Row: {
           accepted_at: string | null
@@ -306,6 +336,42 @@ export type Database = {
         }
         Relationships: []
       }
+      security_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          location: string | null
+          metadata: Json | null
+          success: boolean | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          location?: string | null
+          metadata?: Json | null
+          success?: boolean | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          location?: string | null
+          metadata?: Json | null
+          success?: boolean | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       smart_reminders: {
         Row: {
           ai_generated: boolean | null
@@ -398,6 +464,69 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string
+          id: string
+          priority: string | null
+          status: string | null
+          subject: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          priority?: string | null
+          status?: string | null
+          subject: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          priority?: string | null
+          status?: string | null
+          subject?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      usage_tracking: {
+        Row: {
+          action_type: string
+          created_at: string
+          feature_type: string
+          id: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          feature_type: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          feature_type?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_documents: {
         Row: {
           created_at: string
@@ -450,6 +579,102 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_profiles: {
+        Row: {
+          academic_achievements: string | null
+          country_of_origin: string | null
+          created_at: string
+          education_level: string | null
+          email_notifications: boolean | null
+          full_name: string | null
+          id: string
+          intended_major: string | null
+          language_preference: string | null
+          marketing_communications: boolean | null
+          phone_number: string | null
+          target_application_year: number | null
+          target_countries: string[] | null
+          theme_preference: string | null
+          time_zone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          academic_achievements?: string | null
+          country_of_origin?: string | null
+          created_at?: string
+          education_level?: string | null
+          email_notifications?: boolean | null
+          full_name?: string | null
+          id?: string
+          intended_major?: string | null
+          language_preference?: string | null
+          marketing_communications?: boolean | null
+          phone_number?: string | null
+          target_application_year?: number | null
+          target_countries?: string[] | null
+          theme_preference?: string | null
+          time_zone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          academic_achievements?: string | null
+          country_of_origin?: string | null
+          created_at?: string
+          education_level?: string | null
+          email_notifications?: boolean | null
+          full_name?: string | null
+          id?: string
+          intended_major?: string | null
+          language_preference?: string | null
+          marketing_communications?: boolean | null
+          phone_number?: string | null
+          target_application_year?: number | null
+          target_countries?: string[] | null
+          theme_preference?: string | null
+          time_zone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          is_active: boolean | null
+          last_activity: string | null
+          location: string | null
+          session_token: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean | null
+          last_activity?: string | null
+          location?: string | null
+          session_token: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean | null
+          last_activity?: string | null
+          location?: string | null
+          session_token?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
