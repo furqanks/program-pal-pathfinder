@@ -78,11 +78,7 @@ export const BillingCenter = () => {
 
       if (error) {
         console.error('Error loading billing history:', error);
-        toast({
-          title: "Error loading billing data",
-          description: "Unable to load billing history. Please try again later.",
-          variant: "destructive",
-        });
+        // Don't show error toast for missing customer, just log it
         return;
       }
 
