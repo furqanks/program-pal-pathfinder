@@ -34,6 +34,9 @@ interface Invoice {
   status: string;
   created: number;
   invoice_pdf?: string;
+  hosted_invoice_url?: string;
+  number?: string;
+  description?: string;
 }
 
 export const BillingCenter = () => {
@@ -63,36 +66,63 @@ export const BillingCenter = () => {
     try {
       setLoading(true);
       
-      // Load payment methods and invoices from Stripe via edge function
+      // Load billing history from Stripe via edge function
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) return;
 
-      // This would typically call a billing edge function to get Stripe data
-      // For now, we'll show placeholder data
+      const { data, error } = await supabase.functions.invoke('billing-history', {
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+      });
+
+      if (error) {
+        console.error('Error loading billing history:', error);
+        toast({
+          title: "Error loading billing data",
+          description: "Unable to load billing history. Please try again later.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Convert billing history to invoices format
+      if (data.transactions && Array.isArray(data.transactions)) {
+        const formattedInvoices = data.transactions
+          .filter((t: any) => t.type === 'invoice')
+          .map((transaction: any) => ({
+            id: transaction.id,
+            amount: transaction.amount,
+            currency: transaction.currency,
+            status: transaction.status,
+            created: transaction.date,
+            invoice_pdf: transaction.invoice_pdf,
+            hosted_invoice_url: transaction.hosted_invoice_url,
+            number: transaction.number,
+            description: transaction.description || 'Subscription payment'
+          }));
+        setInvoices(formattedInvoices);
+      }
+
+      // Set placeholder payment method data since we don't have a separate endpoint
       setPaymentMethods([
         {
-          id: 'pm_1',
+          id: 'pm_default',
           type: 'card',
-          last4: '4242',
-          brand: 'visa',
+          last4: '****',
+          brand: 'card',
           exp_month: 12,
           exp_year: 2025
         }
       ]);
 
-      setInvoices([
-        {
-          id: 'in_1',
-          amount: 799,
-          currency: 'usd',
-          status: 'paid',
-          created: Date.now() / 1000 - 86400 * 30,
-          invoice_pdf: 'https://example.com/invoice.pdf'
-        }
-      ]);
-
     } catch (error) {
       console.error('Error loading billing data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load billing information. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -361,29 +391,51 @@ export const BillingCenter = () => {
           <CardDescription>Your payment history and invoices</CardDescription>
         </CardHeader>
         <CardContent>
-          {invoices.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
+              Loading billing history...
+            </div>
+          ) : invoices.length > 0 ? (
             <div className="space-y-3">
               {invoices.map((invoice) => (
-                <div key={invoice.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                <div key={invoice.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
                       <Receipt className="h-4 w-4" />
                       <span className="font-medium">
                         {formatAmount(invoice.amount, invoice.currency)}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(invoice.created * 1000).toLocaleDateString()}
+                      {new Date(invoice.created * 1000).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                      {invoice.number && ` • Invoice ${invoice.number}`}
                     </p>
+                    {invoice.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {invoice.description}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
-                      {invoice.status}
+                      {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                     </Badge>
-                    {invoice.invoice_pdf && (
-                      <Button variant="outline" size="sm">
+                    {(invoice.invoice_pdf || invoice.hosted_invoice_url) && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          const url = invoice.hosted_invoice_url || invoice.invoice_pdf;
+                          if (url) window.open(url, '_blank');
+                        }}
+                      >
                         <Download className="h-4 w-4 mr-2" />
-                        Download
+                        Receipt
                       </Button>
                     )}
                   </div>
@@ -391,7 +443,13 @@ export const BillingCenter = () => {
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground">No billing history found.</p>
+            <div className="text-center py-8">
+              <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Billing History</h3>
+              <p className="text-muted-foreground">
+                Your billing history will appear here once you have completed payments.
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>
