@@ -25,8 +25,22 @@ const Layout = () => {
             <Menu className="h-4 w-4" />
           </Button>
           
-          {/* Optional: Add breadcrumbs or page title here */}
-          <div className="flex items-center gap-2">
+          {/* Centered logo and brand */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-3">
+            <div className="w-10 h-10 flex items-center justify-center">
+              <img 
+                src="/lovable-uploads/9804e8a0-76d7-4ec7-9860-5ce7921027ff.png" 
+                alt="Hey Grad' Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <h1 className="text-lg font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+              Hey Grad'
+            </h1>
+          </div>
+          
+          {/* Right side placeholder */}
+          <div className="flex items-center gap-2 w-9">
             {/* Placeholder for future header actions */}
           </div>
         </div>
