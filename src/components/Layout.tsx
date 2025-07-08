@@ -22,6 +22,17 @@ const Layout = () => {
         {/* Always visible header with toggle button */}
         <div className={cn("sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border", "flex items-center justify-between min-h-[80px]", isMobile ? "px-4 py-4" : "px-6 py-5")}>
           
+          {/* Left side - Hamburger menu button */}
+          <div className="flex items-center gap-2 w-9">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="h-9 w-9"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
           
           {/* Centered logo and brand */}
           <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center py-3">

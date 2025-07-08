@@ -35,8 +35,10 @@ const Home = () => {
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 bg-primary rounded-lg"></div>
-              <span className="text-xl font-semibold text-foreground">UniApp Space</span>
+              <div className="h-8 w-8 flex items-center justify-center">
+                <img src="/lovable-uploads/9804e8a0-76d7-4ec7-9860-5ce7921027ff.png" alt="Hey Grad' Logo" className="h-full w-full object-contain" />
+              </div>
+              <span className="text-xl font-semibold text-foreground">Hey Grad'</span>
             </div>
             <div className="flex items-center space-x-3">
               <Link to="/pricing">
@@ -148,7 +150,7 @@ const Home = () => {
       {/* Benefits Section */}
       <section className="py-16 px-6 bg-background">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-6 text-foreground">Why Students Choose UniApp Space</h2>
+          <h2 className="text-3xl font-bold mb-6 text-foreground">Why Students Choose Hey Grad'</h2>
           <p className="text-lg text-muted-foreground mb-12">
             Join students worldwide who have streamlined their application process
           </p>
@@ -186,7 +188,7 @@ const Home = () => {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4 text-foreground">Student Success Stories</h2>
-            <p className="text-lg text-muted-foreground">See how UniApp Space helped students achieve their goals</p>
+            <p className="text-lg text-muted-foreground">See how Hey Grad' helped students achieve their goals</p>
           </div>
           
           <div className="grid md:grid-cols-2 gap-8">
@@ -259,8 +261,10 @@ const Home = () => {
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center space-x-3 mb-4">
-                <div className="h-8 w-8 bg-primary rounded-lg"></div>
-                <span className="text-xl font-semibold text-foreground">UniApp Space</span>
+                <div className="h-8 w-8 flex items-center justify-center">
+                  <img src="/lovable-uploads/9804e8a0-76d7-4ec7-9860-5ce7921027ff.png" alt="Hey Grad' Logo" className="h-full w-full object-contain" />
+                </div>
+                <span className="text-xl font-semibold text-foreground">Hey Grad'</span>
               </div>
               <p className="text-muted-foreground">
                 AI-powered university application assistance for students worldwide.
@@ -288,7 +292,7 @@ const Home = () => {
           
           <div className="border-t border-border pt-6 text-center">
             <p className="text-muted-foreground">
-              © 2024 UniApp Space. All rights reserved.
+              © 2024 Hey Grad'. All rights reserved.
             </p>
           </div>
         </div>
