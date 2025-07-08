@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Search, GraduationCap, FileText, BarChart, Target, StickyNote, User, Sparkles, LogOut } from "lucide-react";
 import { Button } from "./ui/button";
@@ -53,6 +53,7 @@ type SidebarProps = {
 
 const Sidebar = ({ open, setOpen }: SidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -197,7 +198,10 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
               align="end" 
               className="w-56 bg-popover border border-border shadow-lg"
             >
-              <DropdownMenuItem className="flex items-center gap-3 py-3 focus:bg-accent">
+              <DropdownMenuItem 
+                onClick={() => navigate("/account")}
+                className="flex items-center gap-3 py-3 focus:bg-accent cursor-pointer"
+              >
                 <User className="h-4 w-4" />
                 <div className="flex flex-col">
                   <span className="font-medium truncate">{user.email}</span>
