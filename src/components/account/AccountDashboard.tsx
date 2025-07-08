@@ -16,7 +16,8 @@ import {
   HelpCircle,
   FileText,
   GraduationCap,
-  Zap
+  Zap,
+  ShoppingCart
 } from "lucide-react";
 
 import { ProfileSettings } from "./ProfileSettings";
@@ -26,6 +27,7 @@ import { SecuritySettings } from "./SecuritySettings";
 import { BillingCenter } from "./BillingCenter";
 import { DataPrivacy } from "./DataPrivacy";
 import { SupportCenter } from "./SupportCenter";
+import { LocalCheckout } from "../checkout/LocalCheckout";
 
 interface UserProfile {
   full_name?: string;
@@ -171,7 +173,7 @@ export const AccountDashboard = () => {
 
       {/* Main Tabs */}
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Profile
@@ -179,6 +181,10 @@ export const AccountDashboard = () => {
           <TabsTrigger value="subscription" className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" />
             Subscription
+          </TabsTrigger>
+          <TabsTrigger value="checkout" className="flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4" />
+            Services
           </TabsTrigger>
           <TabsTrigger value="usage" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -208,6 +214,10 @@ export const AccountDashboard = () => {
 
         <TabsContent value="subscription">
           <SubscriptionManager />
+        </TabsContent>
+
+        <TabsContent value="checkout">
+          <LocalCheckout />
         </TabsContent>
 
         <TabsContent value="usage">

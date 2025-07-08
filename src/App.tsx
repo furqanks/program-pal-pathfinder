@@ -24,6 +24,7 @@ import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import Pricing from "./pages/Pricing";
 import Account from "./pages/Account";
+import { PaymentSuccess } from "./pages/PaymentSuccess";
 
 // Create the query client instance
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const AppRoutes = () => {
       <Route path="/auth" element={<Auth />} />
       <Route path="/home" element={<Home />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/payment-success" element={<PaymentSuccess />} />
       <Route path="/" element={
         <ProtectedRoute>
           <Layout />
