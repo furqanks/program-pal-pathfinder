@@ -27,7 +27,7 @@ const Layout = () => {
           
           {/* Centered logo and brand */}
           <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-3">
-            <div className="w-[110px] h-[110px] flex items-center justify-center">
+            <div className="w-[130px] h-[130px] flex items-center justify-center">
               <img src="/lovable-uploads/9804e8a0-76d7-4ec7-9860-5ce7921027ff.png" alt="Hey Grad' Logo" className="w-full h-full object-contain" />
             </div>
             
