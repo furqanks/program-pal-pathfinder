@@ -21,9 +21,7 @@ const Layout = () => {
     sidebarOpen ? isMobile ? "ml-0" : "ml-64" : "ml-0 md:ml-16")}>
         {/* Always visible header with toggle button */}
         <div className={cn("sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border", "flex items-center justify-between", isMobile ? "px-4 py-3" : "px-6 py-4")}>
-          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="nav-item h-9 w-9 flex-shrink-0 text-gray-500 bg-transparent">
-            <Menu className="h-4 w-4" />
-          </Button>
+          
           
           {/* Centered logo and brand */}
           <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-3">
