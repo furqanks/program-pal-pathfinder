@@ -38,7 +38,7 @@ const Home = () => {
               <div className="h-8 w-8 flex items-center justify-center">
                 <img src="/lovable-uploads/9804e8a0-76d7-4ec7-9860-5ce7921027ff.png" alt="Hey Grad' Logo" className="h-full w-full object-contain" />
               </div>
-              <span className="text-xl font-semibold text-foreground hidden sm:block">Hey Grad'</span>
+              
             </div>
             <div className="flex items-center space-x-3">
               <Link to="/pricing">
