@@ -24,14 +24,7 @@ const Layout = () => {
           
           {/* Left side - Hamburger menu button */}
           <div className="flex items-center gap-2 w-9">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="h-9 w-9"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
+            
           </div>
           
           {/* Centered logo and brand */}
@@ -39,9 +32,7 @@ const Layout = () => {
             <div className={cn("flex items-center justify-center", isMobile ? "w-24 h-24" : "w-28 h-28")}>
               <img src="/lovable-uploads/9804e8a0-76d7-4ec7-9860-5ce7921027ff.png" alt="Hey Grad' Logo" className="w-full h-full object-contain drop-shadow-sm" />
             </div>
-            {!isMobile && (
-              <span className="text-xl font-semibold text-foreground">Hey Grad'</span>
-            )}
+            {!isMobile}
           </div>
           
           {/* Right side placeholder */}
