@@ -36,7 +36,7 @@ const Layout = () => {
           
           {/* Centered logo and brand */}
           <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center gap-3">
-            <div className={cn("flex items-center justify-center", isMobile ? "w-10 h-10" : "w-12 h-12")}>
+            <div className={cn("flex items-center justify-center", isMobile ? "w-24 h-24" : "w-28 h-28")}>
               <img src="/lovable-uploads/9804e8a0-76d7-4ec7-9860-5ce7921027ff.png" alt="Hey Grad' Logo" className="w-full h-full object-contain drop-shadow-sm" />
             </div>
             {!isMobile && (
