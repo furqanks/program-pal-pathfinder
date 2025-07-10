@@ -38,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!session) return;
     
     try {
+      console.log('🔄 Checking subscription status...');
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -45,13 +46,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       if (error) {
-        console.error('Error checking subscription:', error);
+        console.error('❌ Error checking subscription:', error);
         return;
       }
       
+      console.log('✅ Subscription status updated:', data);
       setSubscription(data);
     } catch (error) {
-      console.error('Error checking subscription:', error);
+      console.error('❌ Error checking subscription:', error);
     }
   };
 
@@ -91,10 +93,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
+    // Set up periodic subscription check for active users
+    let intervalId: NodeJS.Timeout;
+    if (user) {
+      // Check subscription status every 30 seconds for active users
+      intervalId = setInterval(() => {
+        if (session?.user) {
+          checkSubscription();
+        }
+      }, 30000);
+    }
+
     return () => {
       subscription.unsubscribe();
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
     };
-  }, []);
+  }, [user, session]);
 
   const signIn = async (email: string, password: string) => {
     console.log('Attempting sign in for:', email);

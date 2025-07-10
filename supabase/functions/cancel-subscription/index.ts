@@ -40,8 +40,8 @@ serve(async (req) => {
 
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const { cancelAtPeriodEnd = true } = await req.json();
-    logStep("Cancel subscription request", { cancelAtPeriodEnd });
+    const { cancelAtPeriodEnd = true, immediate = false } = await req.json();
+    logStep("Cancel subscription request", { cancelAtPeriodEnd, immediate });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
     
@@ -69,30 +69,39 @@ serve(async (req) => {
 
     // Cancel or schedule cancellation
     let updatedSubscription;
-    if (cancelAtPeriodEnd) {
+    if (immediate || !cancelAtPeriodEnd) {
+      // Immediate cancellation - revoke access right away
+      updatedSubscription = await stripe.subscriptions.cancel(subscription.id);
+      logStep("Cancelled subscription immediately", { subscriptionId: subscription.id });
+    } else {
+      // Grace period cancellation - access until period end
       updatedSubscription = await stripe.subscriptions.update(subscription.id, {
         cancel_at_period_end: true
       });
       logStep("Scheduled cancellation at period end", { subscriptionId: subscription.id });
-    } else {
-      updatedSubscription = await stripe.subscriptions.cancel(subscription.id);
-      logStep("Cancelled subscription immediately", { subscriptionId: subscription.id });
     }
 
     // Update subscribers table
+    const isStillActive = updatedSubscription.status === 'active' && !immediate;
     await supabaseClient.from("subscribers").upsert({
       email: user.email,
       user_id: user.id,
       stripe_customer_id: customerId,
-      stripe_subscription_id: subscription.id,
-      subscription_status: updatedSubscription.status,
-      subscribed: updatedSubscription.status === 'active',
-      subscription_tier: updatedSubscription.status === 'active' ? 'Premium' : null,
-      subscription_end: updatedSubscription.current_period_end 
+      stripe_subscription_id: immediate ? null : subscription.id,
+      subscription_status: immediate ? 'canceled' : updatedSubscription.status,
+      subscribed: isStillActive,
+      subscription_tier: isStillActive ? 'Premium' : null,
+      subscription_end: isStillActive && updatedSubscription.current_period_end 
         ? new Date(updatedSubscription.current_period_end * 1000).toISOString() 
         : null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'email' });
+
+    logStep("Updated database with cancellation info", { 
+      isStillActive, 
+      immediate, 
+      status: immediate ? 'canceled' : updatedSubscription.status 
+    });
 
     return new Response(JSON.stringify({
       success: true,

@@ -164,6 +164,50 @@ serve(async (req) => {
         break;
       }
 
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object;
+        const subscriptionId = invoice.subscription;
+        
+        logStep("Processing failed payment", { 
+          invoiceId: invoice.id, 
+          subscriptionId 
+        });
+
+        if (subscriptionId) {
+          // Get the subscription details
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          const customerId = subscription.customer as string;
+          
+          // Get customer details
+          const customer = await stripe.customers.retrieve(customerId);
+          const customerEmail = customer.email;
+
+          if (customerEmail) {
+            // If subscription is past due or unpaid, revoke access
+            if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
+              await supabaseClient.from("subscribers").upsert({
+                email: customerEmail,
+                stripe_customer_id: customerId,
+                stripe_subscription_id: subscriptionId,
+                subscription_status: subscription.status,
+                subscribed: false, // Revoke access on payment failure
+                subscription_tier: null,
+                subscription_end: subscription.current_period_end 
+                  ? new Date(subscription.current_period_end * 1000).toISOString() 
+                  : null,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'email' });
+
+              logStep("Revoked access due to payment failure", { 
+                email: customerEmail,
+                status: subscription.status 
+              });
+            }
+          }
+        }
+        break;
+      }
+
       default:
         logStep("Unhandled event type", { eventType: event.type });
     }

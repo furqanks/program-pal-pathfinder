@@ -8,12 +8,15 @@ import DocumentEditor from "@/components/documents/DocumentEditor";
 import DocumentViewer from "@/components/documents/DocumentViewer";
 import DocumentsProgramSelector from "@/components/documents/DocumentsProgramSelector";
 import { cn } from "@/lib/utils";
+import SubscriptionGuard from "@/components/auth/SubscriptionGuard";
 
 const DocumentsPage = () => {
   return (
-    <DocumentProvider>
-      <Documents />
-    </DocumentProvider>
+    <SubscriptionGuard feature="document review and feedback">
+      <DocumentProvider>
+        <Documents />
+      </DocumentProvider>
+    </SubscriptionGuard>
   );
 };
 
