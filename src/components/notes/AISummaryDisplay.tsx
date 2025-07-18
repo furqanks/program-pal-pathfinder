@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Brain, Sparkles, Target, Lightbulb } from "lucide-react";
+import { processMarkdownSecurely, createSafeHtml } from "@/utils/secureRenderer";
 
 interface AISummaryDisplayProps {
   note: any;
@@ -11,56 +12,6 @@ interface AISummaryDisplayProps {
 const AISummaryDisplay = ({ note }: AISummaryDisplayProps) => {
   if (!note?.ai_summary && !note?.ai_insights) return null;
 
-  // Process markdown text into readable format
-  const processMarkdownSummary = (text: string) => {
-    if (!text) return "";
-    
-    let processed = text.trim();
-    
-    // Handle headers (### or ## or #)
-    processed = processed.replace(/^#+\s+(.+)$/gm, (match, content) => {
-      const level = match.match(/^#+/)?.[0].length || 3;
-      const className = level === 1 ? 'text-xl font-bold mb-3 mt-4' : 
-                       level === 2 ? 'text-lg font-semibold mb-2 mt-3' : 
-                       'text-base font-medium mb-2 mt-2';
-      return `<h${Math.min(level, 6)} class="${className}">${content.trim()}</h${Math.min(level, 6)}>`;
-    });
-    
-    // Handle bold text (**text**)
-    processed = processed.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>');
-    
-    // Handle italic text (*text*)
-    processed = processed.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>');
-    
-    // Handle bullet points (- text)
-    processed = processed.replace(/^[\s]*-[\s]+(.+)$/gm, '<li class="ml-4 mb-1">$1</li>');
-    
-    // Wrap consecutive <li> elements in <ul>
-    processed = processed.replace(/(<li[^>]*>.*?<\/li>\s*)+/g, (match) => {
-      return `<ul class="list-disc mb-3 space-y-1">${match}</ul>`;
-    });
-    
-    // Handle numbered lists (1. text)
-    processed = processed.replace(/^[\s]*\d+\.[\s]+(.+)$/gm, '<li class="ml-4 mb-1">$1</li>');
-    processed = processed.replace(/(<li[^>]*>.*?<\/li>\s*)+/g, (match) => {
-      if (!match.includes('list-disc')) {
-        return `<ol class="list-decimal mb-3 space-y-1">${match}</ol>`;
-      }
-      return match;
-    });
-    
-    // Split into paragraphs and wrap them
-    const paragraphs = processed.split(/\n\s*\n/);
-    processed = paragraphs.map(para => {
-      para = para.trim();
-      if (para && !para.includes('<h') && !para.includes('<ul') && !para.includes('<ol')) {
-        return `<p class="mb-3 leading-relaxed">${para.replace(/\n/g, '<br>')}</p>`;
-      }
-      return para;
-    }).join('\n');
-    
-    return processed;
-  };
 
   const insights = note.ai_insights || {};
 
@@ -82,7 +33,7 @@ const AISummaryDisplay = ({ note }: AISummaryDisplayProps) => {
 
             <div className="prose dark:prose-invert max-w-none prose-sm sm:prose-base">
               <div className="leading-relaxed text-sm sm:text-base">
-                <div dangerouslySetInnerHTML={{ __html: processMarkdownSummary(note.ai_summary) }} />
+                <div dangerouslySetInnerHTML={createSafeHtml(processMarkdownSecurely(note.ai_summary))} />
               </div>
             </div>
           </div>
