@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -113,6 +114,7 @@ interface AINotesContextType {
   convertExistingAIContent: () => Promise<void>;
   completeReminder: (id: string) => Promise<void>;
   loading: boolean;
+  error: string | null;
 }
 
 const AINotesContext = createContext<AINotesContextType | undefined>(undefined);
@@ -133,15 +135,17 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
   const [insights, setInsights] = useState<AIInsight[]>([]);
   const [reminders, setReminders] = useState<SmartReminder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hasFetchedData, setHasFetchedData] = useState(false);
   const { user } = useAuth();
 
   // Fetch data when user changes
   useEffect(() => {
-    if (user) {
+    if (user && !hasFetchedData) {
       fetchAllData();
-      // Auto-convert existing AI content in background
-      autoConvertAIContent();
-    } else {
+      setHasFetchedData(true);
+    } else if (!user) {
+      // Clear all data when user logs out
       setNotes([]);
       setFolders([]);
       setTemplates([]);
@@ -149,75 +153,106 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       setInsights([]);
       setReminders([]);
       setLoading(false);
+      setError(null);
+      setHasFetchedData(false);
     }
-  }, [user]);
+  }, [user, hasFetchedData]);
 
   const fetchAllData = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
+      setError(null);
       
       // Fetch notes (including shared ones)
       const { data: notesData, error: notesError } = await supabase
         .from('ai_notes')
         .select('*')
+        .eq('user_id', user.id)
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
 
-      if (notesError) throw notesError;
+      if (notesError) {
+        console.error('Error fetching notes:', notesError);
+        setError('Failed to load notes');
+        return;
+      }
+      
       setNotes(notesData || []);
 
       // Fetch folders
       const { data: foldersData, error: foldersError } = await supabase
         .from('note_folders')
         .select('*')
+        .eq('user_id', user.id)
         .order('name');
 
-      if (foldersError) throw foldersError;
-      setFolders(foldersData || []);
+      if (foldersError) {
+        console.error('Error fetching folders:', foldersError);
+      } else {
+        setFolders(foldersData || []);
+      }
 
       // Fetch templates
       const { data: templatesData, error: templatesError } = await supabase
         .from('note_templates')
         .select('*')
+        .eq('user_id', user.id)
         .order('name');
 
-      if (templatesError) throw templatesError;
-      setTemplates(templatesData || []);
+      if (templatesError) {
+        console.error('Error fetching templates:', templatesError);
+      } else {
+        setTemplates(templatesData || []);
+      }
 
       // Fetch collaborations
       const { data: collaborationsData, error: collaborationsError } = await supabase
         .from('note_collaborations')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (collaborationsError) throw collaborationsError;
-      setCollaborations(collaborationsData || []);
+      if (collaborationsError) {
+        console.error('Error fetching collaborations:', collaborationsError);
+      } else {
+        setCollaborations(collaborationsData || []);
+      }
 
       // Fetch insights
       const { data: insightsData, error: insightsError } = await supabase
         .from('ai_insights')
         .select('*')
+        .eq('user_id', user.id)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (insightsError) throw insightsError;
-      setInsights(insightsData || []);
+      if (insightsError) {
+        console.error('Error fetching insights:', insightsError);
+      } else {
+        setInsights(insightsData || []);
+      }
 
       // Fetch reminders
       const { data: remindersData, error: remindersError } = await supabase
         .from('smart_reminders')
         .select('*')
+        .eq('user_id', user.id)
         .eq('is_completed', false)
         .order('due_date', { ascending: true });
 
-      if (remindersError) throw remindersError;
-      setReminders(remindersData || []);
+      if (remindersError) {
+        console.error('Error fetching reminders:', remindersError);
+      } else {
+        setReminders(remindersData || []);
+      }
+
+      console.log('Successfully loaded notes data');
 
     } catch (error) {
-      console.error('Error fetching AI notes data:', error);
-      toast.error('Failed to load notes data');
+      console.error('Error in fetchAllData:', error);
+      setError('Failed to load notes data');
     } finally {
       setLoading(false);
     }
@@ -423,7 +458,7 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No session');
 
-      toast.info('Analyzing your note... ✨ Gimme a sec!');
+      toast.info('Analyzing your note... ✨');
       
       const noteToAnalyze = notes.find(note => note.id === noteId);
       if (!noteToAnalyze) throw new Error('Note not found');
@@ -459,7 +494,7 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
     } catch (error) {
       console.error('Error analyzing note:', error);
-      toast.error('Oops! Analysis failed. Try again?');
+      toast.error('Analysis failed. Please try again.');
     }
   };
 
@@ -470,11 +505,9 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       toast.info('Creating summary of all notes... 📝');
 
-      // Don't send insightsPrompt for summarize - let edge function use its text format
       const { data, error } = await supabase.functions.invoke('analyze-notes', {
         body: { 
           action: 'summarize_all'
-          // Removed insightsPrompt - edge function has proper text format prompt
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -483,7 +516,6 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      // Create a new note with the summary content for editing
       if (data?.summary) {
         const summaryNoteData = {
           title: `All Notes Summary - ${new Date().toLocaleDateString()}`,
@@ -493,10 +525,9 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
         };
 
         await addNote(summaryNoteData);
-        toast.success('Summary created as a new note! You can now edit it in the editor. 📋✨');
+        toast.success('Summary created as a new note! 📋✨');
       } else {
-        await fetchAllData();
-        toast.success('Summary complete! Check your insights for the overview! 📋✨');
+        toast.success('Summary complete! 📋✨');
       }
 
     } catch (error) {
@@ -537,7 +568,6 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      // Create a new note with the daily summary content for editing
       if (data?.summary) {
         const dailySummaryNoteData = {
           title: `Daily Summary - ${new Date().toLocaleDateString()}`,
@@ -547,9 +577,8 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
         };
 
         await addNote(dailySummaryNoteData);
-        toast.success("Today's summary created as a new note! You can now edit it in the editor. 🎯");
+        toast.success("Today's summary created as a new note! 🎯");
       } else {
-        await fetchAllData();
         toast.success("Today's summary is ready! 🎯");
       }
 
@@ -587,7 +616,6 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      // Create a new note with the organization content for editing
       if (data?.organization) {
         const organizationNoteData = {
           title: `Notes Organization - ${new Date().toLocaleDateString()}`,
@@ -597,10 +625,9 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
         };
 
         await addNote(organizationNoteData);
-        toast.success("Notes organized! The organization summary is now available as a new note for editing. 📋✨");
+        toast.success("Notes organized! 📋✨");
       } else {
-        await fetchAllData();
-        toast.success("Notes organized successfully! 📋✨ Check your insights for the detailed organization.");
+        toast.success("Notes organized successfully! 📋✨");
       }
 
     } catch (error) {
@@ -609,38 +636,12 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const autoConvertAIContent = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data, error } = await supabase.functions.invoke('convert-ai-content', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        }
-      });
-
-      if (error) throw error;
-
-      // Only show toast and refresh if content was actually converted
-      if (data?.processedCount > 0) {
-        // Refresh notes to show updated content
-        await fetchAllData();
-        toast.success(`Automatically converted ${data.processedCount} notes to readable format! ✨`);
-      }
-
-    } catch (error) {
-      console.error('Error auto-converting AI content:', error);
-      // Silently fail for auto-conversion to avoid disrupting user experience
-    }
-  };
-
   const convertExistingAIContent = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No session');
 
-      toast.info('Converting existing AI content from JSON to readable format... 🔄');
+      toast.info('Converting existing AI content... 🔄');
 
       const { data, error } = await supabase.functions.invoke('convert-ai-content', {
         headers: {
@@ -650,11 +651,9 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      // Refresh notes to show updated content
-      await fetchAllData();
-      
       if (data?.processedCount > 0) {
-        toast.success(`Successfully converted ${data.processedCount} notes! All AI content is now in readable format. ✨`);
+        await fetchAllData();
+        toast.success(`Successfully converted ${data.processedCount} notes! ✨`);
       } else {
         toast.success('All AI content is already in readable format! 👍');
       }
@@ -707,7 +706,8 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       organizeNotes,
       convertExistingAIContent,
       completeReminder,
-      loading
+      loading,
+      error
     }}>
       {children}
     </AINotesContext.Provider>
