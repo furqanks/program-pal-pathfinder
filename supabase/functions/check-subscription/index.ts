@@ -46,6 +46,34 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // First check if we have existing subscription data in our database
+    const { data: existingSubscription } = await supabaseClient
+      .from("subscribers")
+      .select("*")
+      .eq("email", user.email)
+      .single();
+
+    // If we have recent data (less than 5 minutes old), return it to avoid rate limits
+    if (existingSubscription && existingSubscription.updated_at) {
+      const lastUpdate = new Date(existingSubscription.updated_at);
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      
+      if (lastUpdate > fiveMinutesAgo) {
+        logStep("Using cached subscription data", { 
+          subscribed: existingSubscription.subscribed,
+          lastUpdate: existingSubscription.updated_at 
+        });
+        return new Response(JSON.stringify({
+          subscribed: existingSubscription.subscribed,
+          subscription_tier: existingSubscription.subscription_tier,
+          subscription_end: existingSubscription.subscription_end
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
