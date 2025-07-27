@@ -112,67 +112,30 @@ const Pricing = () => {
       <div className="max-w-4xl mx-auto px-6 py-16">
         {/* Header Section */}
         <div className="text-center mb-16">
-          <Badge className="mb-4 bg-primary text-primary-foreground">Choose Your Plan</Badge>
+          <Badge className="mb-4 bg-green-600 text-white">Free Premium Access</Badge>
           <h1 className="text-4xl font-bold mb-4 text-foreground">
-            Unlock Your University Dreams
+            All Premium Features Included
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Choose the plan that fits your needs and start your journey to top universities.
+            Simply sign up to access all our premium features at no cost. Start your journey to top universities today.
           </p>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="grid lg:grid-cols-2 gap-8 mb-16">
-          {/* Free Demo Card */}
-          <Card className="border-gray-200 shadow-sm">
-            <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl text-gray-900 mb-2">Free Demo</CardTitle>
-              <CardDescription className="text-gray-600">
-                Experience our AI-powered document review
-              </CardDescription>
-              <div className="mt-4">
-                <div className="text-3xl font-bold text-gray-900 mb-2">
-                  $0
-                  <span className="text-base font-normal text-gray-600">/forever</span>
-                </div>
-                <p className="text-gray-600">Perfect for trying out our platform</p>
-              </div>
-            </CardHeader>
-            <CardContent className="pb-6">
-              <ul className="space-y-3">
-                {freeFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full" 
-                variant="outline"
-                onClick={() => window.location.href = '/documents'}
-              >
-                Try Free Demo
-              </Button>
-            </CardFooter>
-          </Card>
-
-          {/* Premium Card */}
-          <Card className="border-gray-900 shadow-lg relative">
-            <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white">
-              Most Popular
+        {/* Single Card for Free Premium Access */}
+        <div className="max-w-2xl mx-auto mb-16">
+          <Card className="border-green-200 shadow-lg relative">
+            <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-600 text-white">
+              Free Premium Access
             </Badge>
             <CardHeader className="text-center pb-6 pt-8">
-              <CardTitle className="text-2xl text-gray-900 mb-2">Premium Plan</CardTitle>
+              <CardTitle className="text-2xl text-gray-900 mb-2">Complete Access Plan</CardTitle>
               <CardDescription className="text-gray-600">
-                Complete university application solution
+                All features included - no subscription required
               </CardDescription>
               <div className="mt-4">
-                <div className="text-3xl font-bold text-gray-900 mb-2">
-                  $9.99
-                  <span className="text-base font-normal text-gray-600">/month</span>
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  Free
+                  <span className="text-base font-normal text-gray-600">/forever</span>
                 </div>
                 <p className="text-gray-600">Everything you need to succeed</p>
               </div>
@@ -181,7 +144,7 @@ const Pricing = () => {
               <div className="space-y-4 mb-6">
                 {premiumFeatures.map((feature, index) => (
                   <div key={index} className="flex items-start gap-3">
-                    <div className="p-2 bg-gray-100 rounded-lg">
+                    <div className="p-2 bg-green-100 rounded-lg">
                       {feature.icon}
                     </div>
                     <div>
@@ -192,48 +155,48 @@ const Pricing = () => {
                 ))}
               </div>
               
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">Plus everything in Free:</h4>
+              <div className="p-4 bg-green-50 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-2">Included for all users:</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
-                    <Check className="h-3 w-3" />
-                    <span>CV reviews</span>
+                    <Check className="h-3 w-3 text-green-600" />
+                    <span>Unlimited CV reviews</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="h-3 w-3" />
-                    <span>Basic AI feedback</span>
+                    <Check className="h-3 w-3 text-green-600" />
+                    <span>Advanced AI feedback</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="h-3 w-3 text-green-600" />
+                    <span>Full program database</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="h-3 w-3 text-green-600" />
+                    <span>Application tracking</span>
                   </div>
                 </div>
               </div>
             </CardContent>
             <CardFooter>
-              {subscription?.subscribed ? (
+              {user ? (
                 <Button 
-                  className="w-full bg-gray-900 hover:bg-gray-800" 
-                  onClick={handleManageSubscription}
-                  disabled={loading}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white" 
+                  onClick={() => window.location.href = '/'}
                 >
-                  {loading ? "Loading..." : "Manage Subscription"}
+                  Access Dashboard
                 </Button>
               ) : (
                 <Button 
-                  className="w-full bg-gray-900 hover:bg-gray-800" 
-                  onClick={handleSubscribe}
-                  disabled={loading}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white" 
+                  onClick={() => window.location.href = '/auth'}
                 >
-                  {user ? "Subscribe Now" : "Sign Up to Subscribe"}
+                  Sign Up for Free Access
                 </Button>
               )}
             </CardFooter>
           </Card>
         </div>
 
-        {/* Enhanced Stripe Audit Panel - Remove in production */}
-        {user && (
-          <div className="mb-16">
-            <EnhancedStripeAudit />
-          </div>
-        )}
 
         {/* FAQ Section */}
         <div className="mb-12">
@@ -241,8 +204,8 @@ const Pricing = () => {
           <div className="space-y-4">
             <Card className="border-gray-200">
               <CardContent className="p-6">
-                <h3 className="font-semibold text-gray-900 mb-2">Can I cancel anytime?</h3>
-                <p className="text-gray-600">Yes, you can cancel your subscription at any time. You'll continue to have access until the end of your current billing period.</p>
+                <h3 className="font-semibold text-gray-900 mb-2">Is this really free?</h3>
+                <p className="text-gray-600">Yes! All our premium features are completely free. Simply sign up to get unlimited access to document reviews, program search, and application tracking.</p>
               </CardContent>
             </Card>
             <Card className="border-gray-200">
@@ -260,36 +223,25 @@ const Pricing = () => {
           </div>
         </div>
 
-        {/* Subscription Status */}
+        {/* Access Status */}
         {user && subscription && (
           <div className="text-center">
-            <Card className="max-w-md mx-auto border-gray-200">
+            <Card className="max-w-md mx-auto border-green-200">
               <CardHeader className="text-center">
-                <CardTitle className="text-gray-900">Your Subscription</CardTitle>
+                <CardTitle className="text-gray-900">Your Access Status</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-center">
-                    <Badge variant={subscription.subscribed ? "default" : "secondary"}>
-                      {subscription.subscribed ? "✅ Active Premium" : "❌ No Active Plan"}
+                    <Badge className="bg-green-600 text-white">
+                      ✅ Premium Access Active
                     </Badge>
                   </div>
-                  {subscription.subscription_tier && (
-                    <p className="text-gray-700 font-medium">Plan: {subscription.subscription_tier}</p>
-                  )}
-                  {subscription.subscription_end && (
-                    <p className="text-gray-600">
-                      Next billing: {new Date(subscription.subscription_end).toLocaleDateString()}
-                    </p>
-                  )}
+                  <p className="text-gray-700 font-medium">Plan: Free Premium Access</p>
+                  <p className="text-gray-600">
+                    All features included at no cost
+                  </p>
                 </div>
-                <Button 
-                  variant="outline" 
-                  className="mt-4 w-full"
-                  onClick={checkSubscription}
-                >
-                  Refresh Status
-                </Button>
               </CardContent>
             </Card>
           </div>
@@ -298,21 +250,21 @@ const Pricing = () => {
         {/* CTA for non-logged in users */}
         {!user && (
           <div className="text-center mt-12">
-            <Card className="border-gray-900 bg-gray-900 text-white">
+            <Card className="border-green-600 bg-green-600 text-white">
               <CardContent className="p-8">
                 <h3 className="text-xl font-bold mb-3">Ready to Get Started?</h3>
-                <p className="text-gray-300 mb-6">
-                  Join students worldwide and transform your university applications today.
+                <p className="text-green-100 mb-6">
+                  Join students worldwide and access all premium features completely free.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Link to="/auth?redirect=pricing">
-                    <Button className="bg-white text-gray-900 hover:bg-gray-100">
-                      Start Your Journey
+                  <Link to="/auth">
+                    <Button className="bg-white text-green-600 hover:bg-gray-100">
+                      Sign Up for Free Access
                     </Button>
                   </Link>
                   <Link to="/documents">
-                    <Button variant="outline" className="border-gray-400 text-white hover:bg-white hover:text-gray-900">
-                      Try Demo First
+                    <Button variant="outline" className="border-green-200 text-white hover:bg-white hover:text-green-600">
+                      Try Features Now
                     </Button>
                   </Link>
                 </div>
@@ -321,12 +273,6 @@ const Pricing = () => {
           </div>
         )}
 
-        {/* Checkout Modal */}
-        <CheckoutModal
-          isOpen={checkoutModalOpen}
-          onClose={() => setCheckoutModalOpen(false)}
-          onSuccess={handleCheckoutSuccess}
-        />
       </div>
     </div>
   );

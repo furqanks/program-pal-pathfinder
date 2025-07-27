@@ -38,22 +38,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!session) return;
     
     try {
-      console.log('🔄 Checking subscription status...');
-      const { data, error } = await supabase.functions.invoke('check-subscription', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      console.log('🔄 Setting premium access for authenticated user...');
+      // Default to premium access for all authenticated users
+      const premiumAccess = {
+        subscribed: true,
+        subscription_tier: 'Premium',
+        subscription_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year from now
+      };
       
-      if (error) {
-        console.error('❌ Error checking subscription:', error);
-        return;
-      }
-      
-      console.log('✅ Subscription status updated:', data);
-      setSubscription(data);
+      console.log('✅ Premium access granted:', premiumAccess);
+      setSubscription(premiumAccess);
     } catch (error) {
-      console.error('❌ Error checking subscription:', error);
+      console.error('❌ Error setting subscription:', error);
     }
   };
 

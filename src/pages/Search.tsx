@@ -8,8 +8,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useMarkdownRenderer } from "@/components/search/MarkdownRenderer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import SubscriptionGuard from "@/components/auth/SubscriptionGuard";
-
 const Search = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchResponse, setSearchResponse] = useState("");
@@ -178,8 +176,7 @@ const Search = () => {
   const generatedQuery = buildQueryFromAnswers();
 
   return (
-    <SubscriptionGuard feature="advanced program search">
-      <div className="w-full max-w-none px-4 py-8 bg-background">
+    <div className="w-full max-w-none px-4 py-8 bg-background">
       <div className="max-w-8xl mx-auto space-y-8">
         {/* Header Section with improved spacing */}
         <div className="text-center space-y-4">
@@ -382,8 +379,7 @@ const Search = () => {
           </Card>
         )}
       </div>
-      </div>
-    </SubscriptionGuard>
+    </div>
   );
 };
 

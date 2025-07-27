@@ -6,8 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Clock, FileText, Target } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import SubscriptionGuard from "@/components/auth/SubscriptionGuard";
-
 const Dashboard = () => {
   const { programs } = useProgramContext();
   const isMobile = useIsMobile();
@@ -28,8 +26,7 @@ const Dashboard = () => {
   const stats = getApplicationStats();
   
   return (
-    <SubscriptionGuard feature="the dashboard">
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
         <div className={cn(
           "w-full mx-auto space-y-6",
           isMobile ? "px-4 py-4" : "px-6 py-6 max-w-7xl"
@@ -226,7 +223,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    </SubscriptionGuard>
   );
 };
 

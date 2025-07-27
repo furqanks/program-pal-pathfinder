@@ -74,75 +74,26 @@ serve(async (req) => {
       }
     }
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    // Grant premium access to all authenticated users
+    logStep("Granting premium access to authenticated user");
+    const subscriptionTier = "Premium";
+    const subscriptionEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(); // 1 year from now
     
-    if (customers.data.length === 0) {
-      logStep("No customer found, updating unsubscribed state");
-      await supabaseClient.from("subscribers").upsert({
-        email: user.email,
-        user_id: user.id,
-        stripe_customer_id: null,
-        stripe_subscription_id: null,
-        subscription_status: 'inactive',
-        subscribed: false,
-        subscription_tier: null,
-        subscription_end: null,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'email' });
-      return new Response(JSON.stringify({ subscribed: false }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
-    const customerId = customers.data[0].id;
-    logStep("Found Stripe customer", { customerId });
-
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 1,
-    });
-    const hasActiveSub = subscriptions.data.length > 0;
-    let subscriptionTier = null;
-    let subscriptionEnd = null;
-
-    if (hasActiveSub) {
-      const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
-      // Determine subscription tier from price
-      const priceId = subscription.items.data[0].price.id;
-      const price = await stripe.prices.retrieve(priceId);
-      const amount = price.unit_amount || 0;
-      if (amount <= 999) {
-        subscriptionTier = "Basic";
-      } else if (amount <= 1999) {
-        subscriptionTier = "Premium";
-      } else {
-        subscriptionTier = "Enterprise";
-      }
-      logStep("Determined subscription tier", { priceId, amount, subscriptionTier });
-    } else {
-      logStep("No active subscription found");
-    }
-
     await supabaseClient.from("subscribers").upsert({
       email: user.email,
       user_id: user.id,
-      stripe_customer_id: customerId,
-      stripe_subscription_id: hasActiveSub ? subscriptions.data[0].id : null,
-      subscription_status: hasActiveSub ? subscriptions.data[0].status : 'inactive',
-      subscribed: hasActiveSub,
+      stripe_customer_id: null,
+      stripe_subscription_id: 'free_premium_access',
+      subscription_status: 'active',
+      subscribed: true,
       subscription_tier: subscriptionTier,
       subscription_end: subscriptionEnd,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'email' });
 
-    logStep("Updated database with subscription info", { subscribed: hasActiveSub, subscriptionTier });
+    logStep("Updated database with premium access", { subscribed: true, subscriptionTier });
     return new Response(JSON.stringify({
-      subscribed: hasActiveSub,
+      subscribed: true,
       subscription_tier: subscriptionTier,
       subscription_end: subscriptionEnd
     }), {
