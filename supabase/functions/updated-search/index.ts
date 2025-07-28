@@ -25,10 +25,10 @@ serve(async (req) => {
       )
     }
 
-    const updatedPerplexityApiKey = Deno.env.get('UPDATED_PERPLEXITY_API_KEY')
-    if (!updatedPerplexityApiKey) {
+    const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')
+    if (!perplexityApiKey) {
       return new Response(
-        JSON.stringify({ error: 'Updated Perplexity API key not configured' }),
+        JSON.stringify({ error: 'Perplexity API key not configured' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -60,11 +60,11 @@ Format the response clearly with proper headings and structure.`
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${updatedPerplexityApiKey}`,
+        'Authorization': `Bearer ${perplexityApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-large-128k-online',
+        model: 'llama-3.1-sonar-small-128k-online',
         messages: [
           {
             role: 'system',
@@ -85,11 +85,25 @@ Format the response clearly with proper headings and structure.`
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Updated Perplexity API error:', errorText)
+      console.error('Updated Perplexity API error - Status:', response.status, 'Response:', errorText)
+      
+      // Parse error details if possible
+      let errorDetails = 'Unknown API error'
+      try {
+        const errorData = JSON.parse(errorText)
+        errorDetails = errorData.error?.message || errorText
+      } catch {
+        errorDetails = errorText
+      }
+      
       return new Response(
-        JSON.stringify({ error: `API request failed: ${errorText}` }),
+        JSON.stringify({ 
+          error: `Perplexity API Error (${response.status}): ${errorDetails}`,
+          statusCode: response.status,
+          details: errorText
+        }),
         { 
-          status: 500, 
+          status: response.status >= 500 ? 500 : 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )

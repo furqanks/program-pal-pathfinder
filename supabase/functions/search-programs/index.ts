@@ -67,7 +67,7 @@ Please format your response using markdown with proper headers, tables, and bull
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-large-128k-online',
+        model: 'llama-3.1-sonar-small-128k-online',
         messages: [
           {
             role: 'system',
@@ -88,11 +88,25 @@ Please format your response using markdown with proper headers, tables, and bull
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Perplexity API error:', errorText)
+      console.error('Perplexity API error - Status:', response.status, 'Response:', errorText)
+      
+      // Parse error details if possible
+      let errorDetails = 'Unknown API error'
+      try {
+        const errorData = JSON.parse(errorText)
+        errorDetails = errorData.error?.message || errorText
+      } catch {
+        errorDetails = errorText
+      }
+      
       return new Response(
-        JSON.stringify({ error: `API request failed: ${errorText}` }),
+        JSON.stringify({ 
+          error: `Perplexity API Error (${response.status}): ${errorDetails}`,
+          statusCode: response.status,
+          details: errorText
+        }),
         { 
-          status: 500, 
+          status: response.status >= 500 ? 500 : 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
