@@ -69,10 +69,10 @@ const UpdatedSearch = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 space-y-6">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl space-y-6 sm:space-y-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2 text-foreground">Updated Search</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2 text-foreground">Updated Search</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Find university programs with official information from verified sources
           </p>
         </div>
@@ -87,34 +87,36 @@ const UpdatedSearch = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSearch} className="space-y-4">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <Input
                   placeholder="e.g., Computer Science Masters in UK, Psychology PhD programs..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 bg-background border-border text-foreground placeholder:text-muted-foreground"
                 />
-                <Button 
-                  type="submit" 
-                  disabled={isLoading || !searchQuery.trim()}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <SearchIcon className="h-4 w-4" />
-                  )}
-                </Button>
-                {searchResults && (
+                <div className="flex gap-2">
                   <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleClear}
-                    className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                    type="submit" 
+                    disabled={isLoading || !searchQuery.trim()}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 flex-1 sm:flex-none"
                   >
-                    Clear
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <SearchIcon className="h-4 w-4" />
+                    )}
                   </Button>
-                )}
+                  {searchResults && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleClear}
+                      className="border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
               </div>
             </form>
           </CardContent>
@@ -132,26 +134,26 @@ const UpdatedSearch = () => {
           </Card>
         )}
 
-      {/* Search Results */}
-      {searchResults && !isLoading && (
-        <div className="space-y-6">
-          <SearchReportHeader 
-            query={searchQuery}
-            citations={citations}
-            onSearchGoogle={handleSearchGoogle}
-          />
-          
-          <Card className="bg-card border-border">
-            <CardContent className="p-6">
-              <SearchReportContent rawContent={searchResults} query={searchQuery} />
-            </CardContent>
-          </Card>
-          
-          {citations.length > 0 && (
-            <SearchReportSources citations={citations} />
-          )}
-        </div>
-      )}
+        {/* Search Results */}
+        {searchResults && !isLoading && (
+          <div className="space-y-6">
+            <SearchReportHeader 
+              query={searchQuery}
+              citations={citations}
+              onSearchGoogle={handleSearchGoogle}
+            />
+            
+            <Card className="bg-card border-border">
+              <CardContent className="p-6">
+                <SearchReportContent rawContent={searchResults} query={searchQuery} />
+              </CardContent>
+            </Card>
+            
+            {citations.length > 0 && (
+              <SearchReportSources citations={citations} />
+            )}
+          </div>
+        )}
 
         {/* Empty State */}
         {!isLoading && !searchResults && (

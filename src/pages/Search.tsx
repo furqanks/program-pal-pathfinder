@@ -176,39 +176,39 @@ const Search = () => {
   const generatedQuery = buildQueryFromAnswers();
 
   return (
-    <div className="w-full max-w-none px-4 py-8 bg-background">
-      <div className="max-w-8xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background w-full">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl space-y-6 sm:space-y-8">
         {/* Header Section with improved spacing */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground">University Program Search</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <div className="text-center space-y-3 sm:space-y-4">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">University Program Search</h1>
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
             Find university programs worldwide with accurate information from official sources
           </p>
         </div>
 
         {/* Guided Search Card with improved spacing */}
         <Card className="shadow-lg bg-card border-border">
-          <CardHeader className="pb-6">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <GraduationCap className="h-6 w-6" />
+          <CardHeader className="pb-4 sm:pb-6">
+            <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
+              <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6" />
               Find Your Perfect Program
             </CardTitle>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Answer a few questions to get personalized program recommendations
             </p>
           </CardHeader>
-          <CardContent className="space-y-8">
+          <CardContent className="space-y-6 sm:space-y-8">
             {questions.map((question) => (
-              <div key={question.id} className="space-y-4">
-                <h4 className="font-medium text-foreground text-lg">{question.question}</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+              <div key={question.id} className="space-y-3 sm:space-y-4">
+                <h4 className="font-medium text-foreground text-base sm:text-lg">{question.question}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
                   {question.options.map((option) => (
                     <Button
                       key={option}
                       variant={selectedAnswers[question.id as keyof typeof selectedAnswers] === option ? "default" : "outline"}
                       size="sm"
                       onClick={() => handleAnswerSelect(question.id, option)}
-                      className="text-sm px-3 py-2 h-auto min-h-[44px] whitespace-normal text-left justify-start leading-tight"
+                      className="text-xs sm:text-sm px-2 sm:px-3 py-2 h-auto min-h-[40px] sm:min-h-[44px] whitespace-normal text-left justify-start leading-tight"
                     >
                       {option}
                     </Button>
@@ -230,7 +230,7 @@ const Search = () => {
               </div>
             )}
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button 
                 onClick={handleGuidedSearch} 
                 disabled={isLoading || !hasAnswers}
@@ -245,7 +245,7 @@ const Search = () => {
                 Search Programs
               </Button>
               {(searchResponse || hasAnswers) && (
-                <Button variant="outline" onClick={handleClearSearch} size="lg">
+                <Button variant="outline" onClick={handleClearSearch} size="lg" className="sm:w-auto">
                   <X className="h-4 w-4 mr-2" />
                   Clear
                 </Button>
@@ -256,25 +256,25 @@ const Search = () => {
 
         {/* Custom Search Option */}
         <Card className="shadow-lg">
-          <CardHeader className="pb-6">
-            <CardTitle className="flex items-center gap-3 text-xl">
-              <SearchIcon className="h-6 w-6" />
+          <CardHeader className="pb-4 sm:pb-6">
+            <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
+              <SearchIcon className="h-5 w-5 sm:h-6 sm:w-6" />
               Custom Search
             </CardTitle>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Or describe your requirements in your own words
             </p>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6">
             <form onSubmit={handleCustomSearch} className="space-y-4">
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Input
                   placeholder="e.g., Clinical Psychology Masters in UK with funding opportunities..."
                   value={customQuery}
                   onChange={(e) => setCustomQuery(e.target.value)}
-                  className="flex-1 h-12"
+                  className="flex-1 h-10 sm:h-12 text-sm sm:text-base"
                 />
-                <Button type="submit" disabled={isLoading || !customQuery.trim()} size="lg">
+                <Button type="submit" disabled={isLoading || !customQuery.trim()} size="lg" className="sm:w-auto">
                   {isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
@@ -291,7 +291,7 @@ const Search = () => {
                       Search Tips
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80">
+                  <PopoverContent className="w-80 z-50 bg-popover border border-border shadow-lg">
                     <div className="space-y-2">
                       <h4 className="font-medium">Search Tips</h4>
                       <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
@@ -358,21 +358,21 @@ const Search = () => {
               <p className="text-muted-foreground mb-8 max-w-md mx-auto text-lg">
                 Answer the questions above or use custom search to discover programs that match your goals, budget, and preferences.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-muted-foreground max-w-2xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-muted-foreground max-w-2xl mx-auto">
                 <div className="text-center">
-                  <GraduationCap className="h-8 w-8 mx-auto mb-3 text-primary" />
-                  <p className="font-semibold text-foreground">Comprehensive</p>
-                  <p className="text-sm">Programs from universities worldwide</p>
+                  <GraduationCap className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-3 text-primary" />
+                  <p className="font-semibold text-foreground text-sm sm:text-base">Comprehensive</p>
+                  <p className="text-xs sm:text-sm">Programs from universities worldwide</p>
                 </div>
                 <div className="text-center">
-                  <MapPin className="h-8 w-8 mx-auto mb-3 text-primary" />
-                  <p className="font-semibold text-foreground">Accurate</p>
-                  <p className="text-sm">Information from official sources</p>
+                  <MapPin className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-3 text-primary" />
+                  <p className="font-semibold text-foreground text-sm sm:text-base">Accurate</p>
+                  <p className="text-xs sm:text-sm">Information from official sources</p>
                 </div>
                 <div className="text-center">
-                  <DollarSign className="h-8 w-8 mx-auto mb-3 text-primary" />
-                  <p className="font-semibold text-foreground">Budget-Aware</p>
-                  <p className="text-sm">Find programs within your budget</p>
+                  <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-3 text-primary" />
+                  <p className="font-semibold text-foreground text-sm sm:text-base">Budget-Aware</p>
+                  <p className="text-xs sm:text-sm">Find programs within your budget</p>
                 </div>
               </div>
             </CardContent>
