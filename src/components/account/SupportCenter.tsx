@@ -65,7 +65,7 @@ const FAQ_ITEMS = [
 const HELP_RESOURCES = [
   {
     title: "Getting Started Guide",
-    description: "Learn the basics of using UniApp Space",
+    description: "Learn the basics of using Heygrad",
     icon: Book,
     link: "#"
   },

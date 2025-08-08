@@ -195,9 +195,9 @@ export const BillingCenter = () => {
             <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Active Subscription</h3>
             <p className="text-muted-foreground mb-4">
-              You don't have an active subscription. Upgrade to Premium to access billing features.
+              During beta, all features are free and billing is disabled.
             </p>
-            <Button>Upgrade to Premium</Button>
+            <Badge variant="secondary">All features enabled (Beta)</Badge>
           </CardContent>
         </Card>
       </div>

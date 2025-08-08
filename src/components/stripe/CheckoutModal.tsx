@@ -61,7 +61,7 @@ function PaymentForm({ onSuccess, onClose }: { onSuccess?: () => void; onClose: 
         
         toast({
           title: "Payment successful!",
-          description: "Welcome to UniApp Space Premium!",
+          description: "Welcome to Heygrad Premium!",
         });
 
         // Call success callback after a short delay
@@ -103,7 +103,7 @@ function PaymentForm({ onSuccess, onClose }: { onSuccess?: () => void; onClose: 
       <div className="space-y-4">
         <div className="p-4 bg-gray-50 rounded-lg">
           <div className="flex justify-between items-center mb-2">
-            <span className="font-medium">UniApp Space Premium</span>
+            <span className="font-medium">Heygrad Premium</span>
             <span className="font-bold">$9.99/month</span>
           </div>
           <p className="text-sm text-gray-600">

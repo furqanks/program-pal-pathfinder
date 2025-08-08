@@ -438,9 +438,9 @@ export const SubscriptionManager = () => {
 
           <div className="flex gap-2 flex-wrap">
             {!subscription?.subscribed ? (
-              <Button onClick={handleUpgrade} disabled={loading}>
+              <Button onClick={handleUpgrade} disabled={true}>
                 <Crown className="h-4 w-4 mr-2" />
-                Upgrade to Premium
+                All features enabled (Beta)
               </Button>
             ) : (
               <>
@@ -640,9 +640,9 @@ export const SubscriptionManager = () => {
             </ul>
             
             {!subscription?.subscribed && (
-              <Button className="w-full" onClick={handleUpgrade} disabled={loading}>
+              <Button className="w-full" onClick={handleUpgrade} disabled={true}>
                 <Crown className="h-4 w-4 mr-2" />
-                Upgrade Now
+                All features enabled (Beta)
               </Button>
             )}
           </CardContent>
@@ -676,7 +676,7 @@ export const SubscriptionManager = () => {
             </div>
             
             <div className="text-sm text-muted-foreground">
-              Upgrade to Premium for unlimited access to all features.
+              Beta: all features are currently free and unlimited.
             </div>
           </CardContent>
         </Card>

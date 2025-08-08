@@ -276,7 +276,7 @@ export const UsageAnalytics = ({ usageStats }: UsageAnalyticsProps) => {
             
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800">
-                <strong>Upgrade to Premium</strong> for unlimited access to all features and remove monthly limits.
+                <strong>Beta:</strong> All features are enabled and limits are lifted during the beta period.
               </p>
             </div>
           </CardContent>

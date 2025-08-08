@@ -38,6 +38,16 @@ export const useAuthHandlers = ({ setActiveTab, setLoginFormEmail }: AuthHandler
             description: "Please check your email and click the confirmation link before signing in.",
             variant: "destructive",
           });
+        } else if (
+          error.message.toLowerCase().includes('requested path is invalid') ||
+          error.message.toLowerCase().includes('redirect')
+        ) {
+          toast({
+            title: "Auth redirect not allowed",
+            description: `Add ${window.location.origin} to Supabase Auth URL Configuration (Site URL and Redirect URLs).`,
+            variant: "destructive",
+          });
+          navigate("/auth?redirectIssue=1");
         } else {
           toast({
             title: "Login failed",
@@ -92,6 +102,16 @@ export const useAuthHandlers = ({ setActiveTab, setLoginFormEmail }: AuthHandler
             description: "Password requirements not met. Please ensure your password is at least 6 characters long.",
             variant: "destructive",
           });
+        } else if (
+          error.message.toLowerCase().includes('requested path is invalid') ||
+          error.message.toLowerCase().includes('redirect')
+        ) {
+          toast({
+            title: "Signup failed: redirect not allowed",
+            description: `Add ${window.location.origin} to Supabase Auth URL Configuration (Site URL and Redirect URLs).`,
+            variant: "destructive",
+          });
+          navigate("/auth?redirectIssue=1");
         } else {
           toast({
             title: "Signup failed",
@@ -118,7 +138,7 @@ export const useAuthHandlers = ({ setActiveTab, setLoginFormEmail }: AuthHandler
           console.log('=== SIGNUP SUCCESS - USER CONFIRMED ===');
           toast({
             title: "Account created successfully!",
-            description: "Welcome to UniApp Space! Redirecting to pricing...",
+            description: "Welcome to Heygrad! Redirecting to pricing...",
           });
           
           setTimeout(() => {

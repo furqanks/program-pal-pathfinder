@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -113,6 +113,17 @@ interface AINotesContextType {
   organizeNotes: () => Promise<void>;
   convertExistingAIContent: () => Promise<void>;
   completeReminder: (id: string) => Promise<void>;
+  fetchAllData: () => Promise<void>;
+  healthCheck: () => Promise<{ ok: boolean; message?: string }>;
+  lastFetchStatus: {
+    notesCount: number;
+    foldersCount: number;
+    templatesCount: number;
+    insightsCount: number;
+    remindersCount: number;
+    lastError: string | null;
+    lastUpdated: string | null;
+  };
   loading: boolean;
   error: string | null;
 }
@@ -137,6 +148,16 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasFetchedData, setHasFetchedData] = useState(false);
+  const [lastFetchStatus, setLastFetchStatus] = useState({
+    notesCount: 0,
+    foldersCount: 0,
+    templatesCount: 0,
+    insightsCount: 0,
+    remindersCount: 0,
+    lastError: null as string | null,
+    lastUpdated: null as string | null,
+  });
+  const loadingTimeoutRef = useRef<number | null>(null);
   const { user } = useAuth();
 
   // Fetch data when user changes
@@ -164,7 +185,16 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
+      // Defensive timeout to avoid infinite spinner
+      if (loadingTimeoutRef.current) window.clearTimeout(loadingTimeoutRef.current);
+      loadingTimeoutRef.current = window.setTimeout(() => {
+        setError('Taking longer than expected to load notes. You can retry below.');
+        setLoading(false);
+      }, 6000);
+
+      let notesCount = 0, foldersCount = 0, templatesCount = 0, insightsCount = 0, remindersCount = 0;
+
       // Fetch notes (including shared ones)
       const { data: notesData, error: notesError } = await supabase
         .from('ai_notes')
@@ -175,11 +205,11 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (notesError) {
         console.error('Error fetching notes:', notesError);
-        setError('Failed to load notes');
-        return;
+        setError('Failed to load notes (ai_notes)');
+      } else {
+        setNotes(notesData || []);
+        notesCount = (notesData || []).length;
       }
-      
-      setNotes(notesData || []);
 
       // Fetch folders
       const { data: foldersData, error: foldersError } = await supabase
@@ -190,8 +220,10 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (foldersError) {
         console.error('Error fetching folders:', foldersError);
+        setLastFetchStatus(prev => ({ ...prev, lastError: `note_folders: ${foldersError.message}` }));
       } else {
         setFolders(foldersData || []);
+        foldersCount = (foldersData || []).length;
       }
 
       // Fetch templates
@@ -203,8 +235,10 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (templatesError) {
         console.error('Error fetching templates:', templatesError);
+        setLastFetchStatus(prev => ({ ...prev, lastError: `note_templates: ${templatesError.message}` }));
       } else {
         setTemplates(templatesData || []);
+        templatesCount = (templatesData || []).length;
       }
 
       // Fetch collaborations
@@ -216,6 +250,7 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (collaborationsError) {
         console.error('Error fetching collaborations:', collaborationsError);
+        setLastFetchStatus(prev => ({ ...prev, lastError: `note_collaborations: ${collaborationsError.message}` }));
       } else {
         setCollaborations(collaborationsData || []);
       }
@@ -230,8 +265,10 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (insightsError) {
         console.error('Error fetching insights:', insightsError);
+        setLastFetchStatus(prev => ({ ...prev, lastError: `ai_insights: ${insightsError.message}` }));
       } else {
         setInsights(insightsData || []);
+        insightsCount = (insightsData || []).length;
       }
 
       // Fetch reminders
@@ -244,9 +281,21 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
 
       if (remindersError) {
         console.error('Error fetching reminders:', remindersError);
+        setLastFetchStatus(prev => ({ ...prev, lastError: `smart_reminders: ${remindersError.message}` }));
       } else {
         setReminders(remindersData || []);
+        remindersCount = (remindersData || []).length;
       }
+
+      setLastFetchStatus({
+        notesCount,
+        foldersCount,
+        templatesCount,
+        insightsCount,
+        remindersCount,
+        lastError: null,
+        lastUpdated: new Date().toISOString(),
+      });
 
       console.log('Successfully loaded notes data');
 
@@ -254,6 +303,10 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       console.error('Error in fetchAllData:', error);
       setError('Failed to load notes data');
     } finally {
+      if (loadingTimeoutRef.current) {
+        window.clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
       setLoading(false);
     }
   };
@@ -706,6 +759,21 @@ export const AINotesProvider = ({ children }: { children: ReactNode }) => {
       organizeNotes,
       convertExistingAIContent,
       completeReminder,
+      fetchAllData,
+      healthCheck: async () => {
+        try {
+          if (!user) return { ok: false, message: 'Not authenticated' };
+          const { error } = await supabase.from('ai_notes').select('id').limit(1);
+          if (error) {
+            setLastFetchStatus(prev => ({ ...prev, lastError: `health_check: ${error.message}` }));
+            return { ok: false, message: error.message };
+          }
+          return { ok: true };
+        } catch (e) {
+          return { ok: false, message: String(e) };
+        }
+      },
+      lastFetchStatus,
       loading,
       error
     }}>

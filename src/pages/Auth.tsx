@@ -13,6 +13,7 @@ import {
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AuthTabs } from "@/components/auth/AuthTabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function Auth() {
   const { user, loading: authLoading } = useAuth();
@@ -46,10 +47,21 @@ export default function Auth() {
           </Link>
         </div>
 
+        {searchParams.get("redirectIssue") && (
+          <div className="mb-4">
+            <Alert>
+              <AlertTitle>Sign-up redirect not allowed</AlertTitle>
+              <AlertDescription>
+                Add this URL in Supabase Auth URL Configuration: {window.location.origin}
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <div className="h-8 w-8 bg-black rounded"></div>
-            <h1 className="text-3xl font-bold text-gray-900">UniApp Space</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Heygrad</h1>
           </div>
           <p className="text-gray-600 text-lg">Your AI-powered university application assistant</p>
         </div>
@@ -57,7 +69,7 @@ export default function Auth() {
         <Card className="shadow-lg border-0 bg-card/80 backdrop-blur-sm">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-2xl text-gray-900">
-              Welcome to UniApp Space
+              Welcome to Heygrad
             </CardTitle>
             <CardDescription className="text-gray-600 text-base">
               Sign in to your account or create a new one to get started
