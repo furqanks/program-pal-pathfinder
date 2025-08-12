@@ -180,30 +180,96 @@ Output format strictly:
     return [];
   };
 
+  // Extract facts from validated program HTML pages
+  const extractFactsFromHtml = async (url: string) => {
+    try {
+      const res = await fetchWithTimeout(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/html,application/xhtml+xml',
+          'User-Agent': UA,
+        },
+        redirect: 'follow',
+        timeoutMs: 12000,
+      });
+      const html = await res.text();
+      const text = html
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const grabNear = (labelPatterns: RegExp[], maxLen = 280) => {
+        for (const re of labelPatterns) {
+          const m = text.match(re);
+          if (m && m.index !== undefined) {
+            const start = Math.max(0, m.index);
+            const snippet = text.slice(start, start + maxLen);
+            return snippet.trim();
+          }
+        }
+        return '';
+      };
+
+      const tuition = grabNear([
+        /tuition[^\w]{0,10}fee[^\w]{0,5}/i,
+        /tuition[^\w]{0,10}cost/i,
+        /fees?[^\w]{0,10}(international|tuition)/i,
+      ]);
+
+      const deadlines = grabNear([
+        /(application|apply|deadline|closing)[^\w]{0,10}(date|deadline)/i,
+        /(key|important)[^\w]{0,10}(dates|deadlines)/i,
+      ]);
+
+      const requirements = grabNear([
+        /(entry|admission|eligibility)[^\w]{0,12}(requirements|criteria)/i,
+        /(academic|english|language)[^\w]{0,10}(requirements)/i,
+      ], 420);
+
+      const duration = grabNear([
+        /(duration|length)[^\w]{0,10}(program|course)?/i,
+        /(years?|months?)[^\w]{0,5}(full[-\s]?time|part[-\s]?time)?/i,
+      ], 180);
+
+      const cleanLine = (s: string) => s.replace(/\s{2,}/g, ' ').trim();
+
+      return {
+        tuition: cleanLine(tuition).slice(0, 300),
+        deadlines: cleanLine(deadlines).slice(0, 300),
+        requirements: cleanLine(requirements).slice(0, 500),
+        duration: cleanLine(duration).slice(0, 200),
+      };
+    } catch {
+      return { tuition: '', deadlines: '', requirements: '', duration: '' };
+    }
+  };
+
   // Generate a strict JSON prompt for Perplexity
   const buildJsonPrompt = (query: string, resultCount: number) => {
     return `You are a university program search assistant.
-Return ONLY JSON. No markdown, no commentary. Format: an array of program objects.
-Each program MUST be a real program with the exact official program page URL.
+    Return ONLY JSON. No markdown, no commentary. Format: an array of program objects.
+    Each program MUST be a real program with the exact official program page URL.
 
-CRITICAL RULES:
-- Use only official university domains (*.edu, *.ac.*, or the institution's primary domain).
-- Link directly to the program page.
-- Avoid third-party sites (mastersportal, keystone, coursera, edx, usnews, rankings, etc.).
-- Prefer diverse institutions. Aim for at least ${resultCount} distinct programs.
+    CRITICAL RULES:
+    - Use only official university domains (*.edu, *.ac.*, or the institution's primary domain).
+    - Link directly to the program page.
+    - Avoid third-party sites (mastersportal, keystone, coursera, edx, usnews, rankings, etc.).
+    - Prefer diverse institutions. Aim for at least ${resultCount} distinct programs.
 
-Each program object fields:
-- programName: string
-- university: string
-- degreeType: string
-- country: string
-- duration: string
-- tuition: string
-- deadlines: string
-- requirements: string
-- url: string (MUST be the program's exact official page)
+    Each program object fields:
+    - programName: string
+    - university: string
+    - degreeType: string
+    - country: string
+    - duration: string
+    - tuition: string
+    - deadlines: string
+    - requirements: string
+    - url: string (MUST be the program's exact official page)
 
-Query: ${query}`;
+    Query: ${query}`;
   };
 
   // Build cleaned markdown report from validated programs
@@ -217,10 +283,10 @@ Query: ${query}`;
       lines.push(`## ${p.programName} — ${p.university}`);
       lines.push(`- Degree: ${p.degreeType || 'N/A'}`);
       lines.push(`- Location: ${p.country || 'N/A'}`);
-      lines.push(`- Duration: ${p.duration || 'N/A'}`);
-      lines.push(`- Tuition: ${p.tuition || 'N/A'}`);
-      lines.push(`- Deadlines: ${p.deadlines || 'N/A'}`);
-      lines.push(`- Requirements: ${p.requirements || 'N/A'}`);
+      lines.push(`- Duration: ${p.duration || 'N/A'}${p.sources?.duration === 'html' ? ' (from source)' : ''}`);
+      lines.push(`- Tuition: ${p.tuition || 'N/A'}${p.sources?.tuition === 'html' ? ' (from source)' : ''}`);
+      lines.push(`- Deadlines: ${p.deadlines || 'N/A'}${p.sources?.deadlines === 'html' ? ' (from source)' : ''}`);
+      lines.push(`- Requirements: ${p.requirements || 'N/A'}${p.sources?.requirements === 'html' ? ' (from source)' : ''}`);
       lines.push(`- Program Page: ${p.urlValidated ? `[Verified Link](${p.finalUrl || p.url})` : (p.finalUrl || p.url ? `[Unverified Link](${p.finalUrl || p.url})` : 'Unavailable')}`);
       const flags: string[] = [];
       if (!p.isOfficialDomain) flags.push('Non-official domain');
@@ -363,10 +429,10 @@ Query: ${query}`;
       const university = (p.university || p.institution || '').toString().trim();
       const degreeType = (p.degreeType || p.degree || '').toString().trim();
       const country = (p.country || p.location || '').toString().trim();
-      const duration = (p.duration || '').toString().trim();
-      const tuition = (p.tuition || p.fees || '').toString().trim();
-      const deadlines = (p.deadlines || p.applicationDeadlines || p.deadline || '').toString().trim();
-      const requirements = (p.requirements || p.entryRequirements || '').toString().trim();
+      let duration = (p.duration || '').toString().trim();
+      let tuition = (p.tuition || p.fees || '').toString().trim();
+      let deadlines = (p.deadlines || p.applicationDeadlines || p.deadline || '').toString().trim();
+      let requirements = (p.requirements || p.entryRequirements || '').toString().trim();
       let url = (p.url || p.website || '').toString().trim();
 
       let urlValidated = false;
@@ -408,6 +474,24 @@ Query: ${query}`;
         }
       }
 
+      // Extract facts directly from the validated official page
+      let tuitionSource: 'model' | 'html' = 'model';
+      let deadlinesSource: 'model' | 'html' = 'model';
+      let requirementsSource: 'model' | 'html' = 'model';
+      let durationSource: 'model' | 'html' = 'model';
+
+      if (urlValidated && isOfficialDomain && (finalUrl || url)) {
+        try {
+          const facts = await extractFactsFromHtml(finalUrl || url);
+          if (facts.tuition) { tuition = facts.tuition; tuitionSource = 'html'; }
+          if (facts.deadlines) { deadlines = facts.deadlines; deadlinesSource = 'html'; }
+          if (facts.requirements) { requirements = facts.requirements; requirementsSource = 'html'; }
+          if (facts.duration) { duration = facts.duration; durationSource = 'html'; }
+        } catch (_) {
+          // ignore extraction failure, keep model fields
+        }
+      }
+
       validated.push({
         programName,
         university,
@@ -422,13 +506,21 @@ Query: ${query}`;
         isOfficialDomain,
         urlValidated,
         urlStatus,
+        sources: {
+          tuition: tuitionSource,
+          deadlines: deadlinesSource,
+          requirements: requirementsSource,
+          duration: durationSource,
+        },
       });
 
       if (validated.length >= resultCount) break;
     }
 
-    // Build cleaned markdown report for the UI
+    // Build cleaned markdown reports for the UI
     const cleanedMarkdown = buildCleanedReport(validated, query);
+    const verifiedOnly = validated.filter((p) => p.urlValidated && p.isOfficialDomain);
+    const cleanedVerifiedMarkdown = buildCleanedReport(verifiedOnly, `${query} (Verified links only)`);
 
     // Compose response
     return new Response(
@@ -436,10 +528,12 @@ Query: ${query}`;
         searchResults: validated,
         citations: data.citations || [],
         rawContent: cleanedMarkdown,
+        rawContentVerifiedOnly: cleanedVerifiedMarkdown,
         original: { modelOutput: content },
         searchMetadata: {
           query,
           resultCount: validated.length,
+          verifiedCount: verifiedOnly.length,
           requestedCount: resultCount,
           model: data.model || 'sonar-pro',
           hasStructuredData: true,

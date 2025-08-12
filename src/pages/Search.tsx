@@ -8,9 +8,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useMarkdownRenderer } from "@/components/search/MarkdownRenderer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 const Search = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchResponse, setSearchResponse] = useState("");
+  const [allResponse, setAllResponse] = useState("");
+  const [verifiedResponse, setVerifiedResponse] = useState("");
+  const [meta, setMeta] = useState<any>(null);
+  const [isVerifiedOnly, setIsVerifiedOnly] = useState(true);
   const [customQuery, setCustomQuery] = useState("");
   const [selectedAnswers, setSelectedAnswers] = useState({
     field: "",
@@ -128,12 +134,18 @@ const Search = () => {
         throw new Error(error.message || 'Error searching programs');
       }
 
-      // Extract the raw content from the response
+      // Extract the raw contents from the response
       const rawContent = data?.rawContent || data?.searchResults?.[0]?.description || '';
+      const rawVerified = data?.rawContentVerifiedOnly || '';
+
+      setVerifiedResponse(rawVerified || "");
+      setMeta(data?.searchMetadata || null);
       
-      if (rawContent) {
-        setSearchResponse(rawContent);
-        toast.success("Search completed successfully");
+      const contentToShow = (isVerifiedOnly && rawVerified) ? rawVerified : rawContent;
+      if (contentToShow) {
+        setSearchResponse(contentToShow);
+        const countsMsg = data?.searchMetadata ? ` (${data.searchMetadata.verifiedCount || 0}/${data.searchMetadata.resultCount || 0} verified)` : '';
+        toast.success(`Search completed successfully${countsMsg}`);
       } else {
         throw new Error('No content received from search');
       }
@@ -170,6 +182,9 @@ const Search = () => {
       format: ""
     });
     setSearchResponse("");
+    setVerifiedResponse("");
+    setMeta(null);
+    setIsVerifiedOnly(true);
   };
 
   const hasAnswers = Object.values(selectedAnswers).some(answer => answer);
@@ -311,6 +326,28 @@ const Search = () => {
             </form>
           </CardContent>
         </Card>
+
+        {/* Results Controls */}
+        {(allResponse || verifiedResponse) && (
+          <div className="flex items-center justify-end gap-3">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="verified-only" className="text-sm">Verified links only</Label>
+              <Switch
+                id="verified-only"
+                checked={isVerifiedOnly}
+                onCheckedChange={(v) => {
+                  setIsVerifiedOnly(v);
+                  setSearchResponse(v ? (verifiedResponse || allResponse) : (allResponse || verifiedResponse));
+                }}
+              />
+            </div>
+            {meta && (
+              <span className="text-xs text-muted-foreground">
+                {meta.verifiedCount || 0}/{meta.resultCount || 0} verified
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Markdown Response Display */}
         {searchResponse && (
