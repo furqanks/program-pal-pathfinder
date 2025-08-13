@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Save, Sparkles, RotateCcw } from "lucide-react";
+import { Save, Sparkles, RotateCcw, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EditorActionsProps {
@@ -10,6 +10,7 @@ interface EditorActionsProps {
   onSave: () => void;
   onSaveAndGenerateFeedback: () => void;
   onGenerateTempFeedback: () => void;
+  onUseTemplate?: () => void;
   isEditMode?: boolean;
   onReset?: () => void;
 }
@@ -21,6 +22,7 @@ const EditorActions = ({
   onSave,
   onSaveAndGenerateFeedback,
   onGenerateTempFeedback,
+  onUseTemplate,
   isEditMode = false,
   onReset
 }: EditorActionsProps) => {
@@ -80,6 +82,20 @@ const EditorActions = ({
         <Sparkles className="mr-2 h-4 w-4" />
         {isGeneratingFeedback ? "Generating..." : "Test AI Feedback"}
       </Button>
+      
+      {onUseTemplate && (
+        <Button 
+          onClick={onUseTemplate}
+          variant="outline"
+          className={cn(
+            isMobile ? "w-full h-12" : "",
+            "min-h-[44px]"
+          )}
+        >
+          <FileText className="mr-2 h-4 w-4" />
+          Use Template
+        </Button>
+      )}
     </div>
   );
 };

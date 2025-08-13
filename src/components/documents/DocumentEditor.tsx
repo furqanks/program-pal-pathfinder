@@ -6,6 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import DocumentContentEditor from "./editor/DocumentContentEditor";
 import FeedbackPreview from "./editor/FeedbackPreview";
 import EditorActions from "./editor/EditorActions";
+import DocumentTemplates from "./templates/DocumentTemplates";
 import { generateTestFeedback } from "@/services/document.service";
 import { QuotedImprovement } from "@/types/document.types";
 
@@ -36,6 +37,16 @@ const DocumentEditor = ({
     improvementPoints?: string[];
     quotedImprovements?: QuotedImprovement[];
     score?: number;
+    detailedScores?: {
+      clarity?: number;
+      authenticity?: number;
+      structure?: number;
+      impact?: number;
+      grammar?: number;
+      programFit?: number;
+    };
+    strengthsIdentified?: string[];
+    industrySpecificAdvice?: string[];
   } | null>(null);
   
   // State for file upload related functionality
@@ -47,6 +58,7 @@ const DocumentEditor = ({
   // State for edit mode
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingDocumentId, setEditingDocumentId] = useState<string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   // Effect to handle document selection
   useEffect(() => {
@@ -68,6 +80,13 @@ const DocumentEditor = ({
     setEditingDocumentId(null);
     setTempFeedback(null);
     setShowFeedback(false);
+    setShowTemplates(false);
+  };
+
+  const handleTemplateSelect = (template: any) => {
+    setDocumentContent(template.content);
+    setShowTemplates(false);
+    toast.success(`${template.name} template loaded`);
   };
 
   const handleFileContent = (content: string, uploadedFileName: string) => {
@@ -166,7 +185,10 @@ const DocumentEditor = ({
         feedback: feedback.summary,
         improvementPoints: feedback.improvementPoints,
         quotedImprovements: feedback.quotedImprovements,
-        score: feedback.score
+        score: feedback.score,
+        detailedScores: (feedback as any).detailedScores,
+        strengthsIdentified: (feedback as any).strengthsIdentified,
+        industrySpecificAdvice: (feedback as any).industrySpecificAdvice
       });
       
       setShowFeedback(true);
@@ -255,8 +277,16 @@ const DocumentEditor = ({
         onSave={handleCreateDocument}
         onSaveAndGenerateFeedback={saveAndGenerateFeedback}
         onGenerateTempFeedback={handleGenerateTempFeedback}
+        onUseTemplate={() => setShowTemplates(true)}
         isEditMode={isEditMode}
         onReset={resetEditor}
+      />
+      
+      <DocumentTemplates
+        documentType={activeDocumentType}
+        onSelectTemplate={handleTemplateSelect}
+        isOpen={showTemplates}
+        onClose={() => setShowTemplates(false)}
       />
     </div>
   );

@@ -117,14 +117,30 @@ FEEDBACK STYLE:
 - Make suggestions feel doable, not overwhelming
 - Include specific examples of how to improve
 
+MULTI-DIMENSIONAL SCORING:
+Provide detailed scores for different aspects:
+
 RESPONSE FORMAT (JSON only):
 
 {
   "summary": "Write 2-3 paragraphs of friendly, encouraging feedback that feels like advice from a mentor. Start with strengths, then address areas for improvement. Use a warm, conversational tone that builds confidence while being honest about what needs work.",
-  "score": [Number 1-10 with encouraging context],
+  "overallScore": [Number 1-10 with encouraging context],
+  "detailedScores": {
+    "clarity": [Number 1-10],
+    "authenticity": [Number 1-10], 
+    "structure": [Number 1-10],
+    "impact": [Number 1-10],
+    "grammar": [Number 1-10],
+    "programFit": [Number 1-10]
+  },
+  "strengthsIdentified": [
+    "Key strengths in the document that should be highlighted",
+    "Areas where the writer's personality shines through",
+    "Well-executed sections or compelling stories"
+  ],
   "improvementPoints": [
     "Specific, actionable advice written in friendly tone",
-    "Suggestions that help the writer's authentic voice shine",
+    "Suggestions that help the writer's authentic voice shine", 
     "Concrete examples of what to add or change",
     "Encouraging guidance on structure and flow",
     "Tips for making the writing more engaging",
@@ -134,9 +150,14 @@ RESPONSE FORMAT (JSON only):
   "quotedImprovements": [
     {
       "originalText": "Exact quote from document",
-      "improvedText": "Improved version that sounds more natural and engaging",
+      "improvedText": "Improved version that sounds more natural and engaging", 
       "explanation": "Friendly explanation of why this version works better, focusing on authenticity and impact"
     }
+  ],
+  "industrySpecificAdvice": [
+    "Advice specific to their field/program type",
+    "Industry standards and expectations to consider",
+    "Common pitfalls in this type of application"
   ]
 }
 
@@ -195,14 +216,15 @@ async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: s
   console.log("Sample content:", content.substring(0, 100) + "...");
   
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
+        'x-api-key': openaiApiKey,
         'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'gpt-4o', 
+        model: 'claude-3-5-sonnet-20241022', 
         messages: [
           {
             role: 'system',
@@ -213,7 +235,8 @@ async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: s
             content
           }
         ],
-        temperature: 0.7, // Slightly higher temperature for more conversational tone
+        max_tokens: 4000,
+        temperature: 0.7
       }),
     });
 
@@ -223,7 +246,7 @@ async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: s
     }
 
     const data = await response.json();
-    return data.choices[0].message.content;
+    return data.content[0].text;
   } catch (error) {
     console.error('OpenAI API call error:', error);
     throw error;
@@ -320,10 +343,10 @@ serve(async (req) => {
       return createErrorResponse('Missing document content', 400);
     }
 
-    // Get OpenAI API key
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    // Get Claude API key
+    const openaiApiKey = Deno.env.get('ANTHROPIC_API_KEY');
     if (!openaiApiKey) {
-      console.error('Missing OpenAI API key');
+      console.error('Missing Anthropic API key');
       return createErrorResponse('Server configuration error: Missing API key', 500);
     }
     
@@ -390,13 +413,16 @@ serve(async (req) => {
           return createErrorResponse('Failed to parse AI response', 500);
         }
 
-        // Return comprehensive response
+        // Return comprehensive response with enhanced feedback
         return new Response(
           JSON.stringify({
             summary: feedbackData.summary,
-            score: feedbackData.score,
+            score: feedbackData.overallScore || feedbackData.score,
+            detailedScores: feedbackData.detailedScores || {},
+            strengthsIdentified: feedbackData.strengthsIdentified || [],
             improvementPoints: feedbackData.improvementPoints,
-            quotedImprovements: feedbackData.quotedImprovements || []
+            quotedImprovements: feedbackData.quotedImprovements || [],
+            industrySpecificAdvice: feedbackData.industrySpecificAdvice || []
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );

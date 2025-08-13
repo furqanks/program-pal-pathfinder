@@ -14,6 +14,16 @@ interface FeedbackPreviewProps {
     improvementPoints?: string[];
     quotedImprovements?: QuotedImprovement[];
     score?: number;
+    detailedScores?: {
+      clarity?: number;
+      authenticity?: number;
+      structure?: number;
+      impact?: number;
+      grammar?: number;
+      programFit?: number;
+    };
+    strengthsIdentified?: string[];
+    industrySpecificAdvice?: string[];
   } | null;
   showFeedback: boolean;
   documentType?: string;
@@ -77,18 +87,53 @@ const FeedbackPreview = ({
         </div>
         
         {feedback.score !== undefined && (
-          <div className="mt-4 flex items-center gap-2">
-            <span className="font-medium">Overall Score:</span>
-            <Badge>{feedback.score}/10</Badge>
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Overall Score:</span>
+              <Badge>{feedback.score}/10</Badge>
+            </div>
+            
+            {feedback.detailedScores && Object.keys(feedback.detailedScores).length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {Object.entries(feedback.detailedScores).map(([category, score]) => (
+                  <div key={category} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded">
+                    <span className="capitalize">{category}:</span>
+                    <Badge variant="outline" className="text-xs">{score}/10</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
         
+        {feedback.strengthsIdentified && feedback.strengthsIdentified.length > 0 && (
+          <div className="mt-4">
+            <h4 className="font-medium mb-2 text-green-700">Key Strengths</h4>
+            <ul className="list-disc pl-5 space-y-1">
+              {feedback.strengthsIdentified.map((strength, index) => (
+                <li key={index} className="text-sm text-green-600">{strength}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {feedback.improvementPoints && feedback.improvementPoints.length > 0 && (
           <div className="mt-4">
-            <h4 className="font-medium mb-2">Improvement Points</h4>
+            <h4 className="font-medium mb-2">Areas for Improvement</h4>
             <ul className="list-disc pl-5 space-y-1">
               {feedback.improvementPoints.map((point, index) => (
                 <li key={index} className="text-sm">{point}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {feedback.industrySpecificAdvice && feedback.industrySpecificAdvice.length > 0 && (
+          <div className="mt-4">
+            <h4 className="font-medium mb-2 text-blue-700">Industry-Specific Insights</h4>
+            <ul className="list-disc pl-5 space-y-1">
+              {feedback.industrySpecificAdvice.map((advice, index) => (
+                <li key={index} className="text-sm text-blue-600">{advice}</li>
               ))}
             </ul>
           </div>
