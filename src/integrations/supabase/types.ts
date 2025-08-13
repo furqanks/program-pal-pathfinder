@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
@@ -175,6 +175,232 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      document_analytics: {
+        Row: {
+          created_at: string
+          document_id: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_analytics_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "user_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_collaborations: {
+        Row: {
+          accepted_at: string | null
+          collaborator_id: string
+          document_id: string
+          id: string
+          invited_at: string
+          invited_by: string
+          permission_level: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          collaborator_id: string
+          document_id: string
+          id?: string
+          invited_at?: string
+          invited_by: string
+          permission_level: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          collaborator_id?: string
+          document_id?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string
+          permission_level?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_collaborations_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "user_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_comments: {
+        Row: {
+          content: string
+          created_at: string
+          document_id: string
+          id: string
+          is_resolved: boolean | null
+          parent_comment_id: string | null
+          position_end: number | null
+          position_start: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          document_id: string
+          id?: string
+          is_resolved?: boolean | null
+          parent_comment_id?: string | null
+          position_end?: number | null
+          position_start?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          is_resolved?: boolean | null
+          parent_comment_id?: string | null
+          position_end?: number | null
+          position_start?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_comments_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "user_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "document_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_templates: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          created_by: string
+          description: string | null
+          document_type: string
+          id: string
+          is_public: boolean | null
+          name: string
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          document_type: string
+          id?: string
+          is_public?: boolean | null
+          name: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          document_type?: string
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
+      document_versions: {
+        Row: {
+          branch_name: string | null
+          change_summary: string | null
+          content_raw: string
+          created_at: string
+          document_id: string
+          id: string
+          is_branch: boolean | null
+          parent_version_id: string | null
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          branch_name?: string | null
+          change_summary?: string | null
+          content_raw: string
+          created_at?: string
+          document_id: string
+          id?: string
+          is_branch?: boolean | null
+          parent_version_id?: string | null
+          user_id: string
+          version_number: number
+        }
+        Update: {
+          branch_name?: string | null
+          change_summary?: string | null
+          content_raw?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          is_branch?: boolean | null
+          parent_version_id?: string | null
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "user_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_versions_parent_version_id_fkey"
+            columns: ["parent_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       note_collaborations: {
         Row: {
@@ -675,6 +901,50 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      writing_sessions: {
+        Row: {
+          document_id: string
+          ended_at: string | null
+          id: string
+          keystrokes: number | null
+          started_at: string
+          time_spent_seconds: number | null
+          user_id: string
+          word_count_end: number | null
+          word_count_start: number | null
+        }
+        Insert: {
+          document_id: string
+          ended_at?: string | null
+          id?: string
+          keystrokes?: number | null
+          started_at?: string
+          time_spent_seconds?: number | null
+          user_id: string
+          word_count_end?: number | null
+          word_count_start?: number | null
+        }
+        Update: {
+          document_id?: string
+          ended_at?: string | null
+          id?: string
+          keystrokes?: number | null
+          started_at?: string
+          time_spent_seconds?: number | null
+          user_id?: string
+          word_count_end?: number | null
+          word_count_start?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "writing_sessions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "user_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
