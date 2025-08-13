@@ -7,8 +7,13 @@ import DocumentContentEditor from "./editor/DocumentContentEditor";
 import FeedbackPreview from "./editor/FeedbackPreview";
 import EditorActions from "./editor/EditorActions";
 import DocumentTemplates from "./templates/DocumentTemplates";
+import { RealtimeWritingAssistant } from "./realtime/RealtimeWritingAssistant";
+import { DocumentExport } from "./export/DocumentExport";
+import { DocumentCollaboration } from "./collaboration/DocumentCollaboration";
+import { DocumentAnalyticsDashboard } from "./analytics/DocumentAnalyticsDashboard";
 import { generateTestFeedback } from "@/services/document.service";
 import { QuotedImprovement } from "@/types/document.types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface DocumentEditorProps {
   activeDocumentType: string;
@@ -59,6 +64,8 @@ const DocumentEditor = ({
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingDocumentId, setEditingDocumentId] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [activeTab, setActiveTab] = useState("editor");
+  const [realtimeMode, setRealtimeMode] = useState(false);
 
   // Effect to handle document selection
   useEffect(() => {
@@ -253,34 +260,76 @@ const DocumentEditor = ({
 
   return (
     <div className="space-y-6">
-      <DocumentContentEditor
-        documentContent={documentContent}
-        setDocumentContent={setDocumentContent}
-        documentTypeLabel={documentTypeLabels[activeDocumentType]}
-        isMobile={isMobile}
-        onFileContent={handleFileContent}
-        isUploading={isUploading}
-        setIsUploading={setIsUploading}
-      />
-      
-      <FeedbackPreview 
-        feedback={tempFeedback} 
-        showFeedback={showFeedback}
-        documentType={activeDocumentType}
-        onDraftGenerated={handleDraftGenerated}
-      />
-      
-      <EditorActions
-        isMobile={isMobile}
-        isSaving={isSaving}
-        isGeneratingFeedback={isGeneratingFeedback}
-        onSave={handleCreateDocument}
-        onSaveAndGenerateFeedback={saveAndGenerateFeedback}
-        onGenerateTempFeedback={handleGenerateTempFeedback}
-        onUseTemplate={() => setShowTemplates(true)}
-        isEditMode={isEditMode}
-        onReset={resetEditor}
-      />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="editor">Editor</TabsTrigger>
+          <TabsTrigger value="collaboration">Collaborate</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="export">Export</TabsTrigger>
+          <TabsTrigger value="assistant">AI Assistant</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="editor" className="space-y-6">
+          <DocumentContentEditor
+            documentContent={documentContent}
+            setDocumentContent={setDocumentContent}
+            documentTypeLabel={documentTypeLabels[activeDocumentType]}
+            isMobile={isMobile}
+            onFileContent={handleFileContent}
+            isUploading={isUploading}
+            setIsUploading={setIsUploading}
+          />
+          
+          {realtimeMode && (
+            <RealtimeWritingAssistant
+              documentContent={documentContent}
+              documentType={activeDocumentType}
+              onContentUpdate={setDocumentContent}
+            />
+          )}
+          
+          <FeedbackPreview 
+            feedback={tempFeedback} 
+            showFeedback={showFeedback}
+            documentType={activeDocumentType}
+            onDraftGenerated={handleDraftGenerated}
+          />
+          
+          <EditorActions
+            isMobile={isMobile}
+            isSaving={isSaving}
+            isGeneratingFeedback={isGeneratingFeedback}
+            onSave={handleCreateDocument}
+            onSaveAndGenerateFeedback={saveAndGenerateFeedback}
+            onGenerateTempFeedback={handleGenerateTempFeedback}
+            onUseTemplate={() => setShowTemplates(true)}
+            isEditMode={isEditMode}
+            onReset={resetEditor}
+            onToggleRealtimeMode={() => setRealtimeMode(!realtimeMode)}
+            realtimeMode={realtimeMode}
+          />
+        </TabsContent>
+        
+        <TabsContent value="collaboration">
+          <DocumentCollaboration documentId={editingDocumentId} isOwner={true} />
+        </TabsContent>
+        
+        <TabsContent value="analytics">
+          <DocumentAnalyticsDashboard />
+        </TabsContent>
+        
+        <TabsContent value="export">
+          <DocumentExport documentId={editingDocumentId} />
+        </TabsContent>
+        
+        <TabsContent value="assistant">
+          <RealtimeWritingAssistant
+            documentContent={documentContent}
+            documentType={activeDocumentType}
+            onContentUpdate={setDocumentContent}
+          />
+        </TabsContent>
+      </Tabs>
       
       <DocumentTemplates
         documentType={activeDocumentType}

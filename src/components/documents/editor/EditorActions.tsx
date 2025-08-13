@@ -13,6 +13,8 @@ interface EditorActionsProps {
   onUseTemplate?: () => void;
   isEditMode?: boolean;
   onReset?: () => void;
+  onToggleRealtimeMode?: () => void;
+  realtimeMode?: boolean;
 }
 
 const EditorActions = ({
@@ -24,7 +26,9 @@ const EditorActions = ({
   onGenerateTempFeedback,
   onUseTemplate,
   isEditMode = false,
-  onReset
+  onReset,
+  onToggleRealtimeMode,
+  realtimeMode
 }: EditorActionsProps) => {
   return (
     <div className={cn(

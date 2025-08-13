@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import FileUploadButton from "./FileUploadButton";
+import VoiceInput from "./VoiceInput";
+import OCRUpload from "./OCRUpload";
 
 interface DocumentContentEditorProps {
   documentContent: string;
@@ -25,6 +27,22 @@ const DocumentContentEditor = ({
   setIsUploading
 }: DocumentContentEditorProps) => {
   
+  const handleVoiceTranscription = (text: string) => {
+    if (documentContent.trim()) {
+      setDocumentContent(documentContent + " " + text);
+    } else {
+      setDocumentContent(text);
+    }
+  };
+
+  const handleOCRExtraction = (text: string) => {
+    if (documentContent.trim()) {
+      setDocumentContent(documentContent + "\n\n" + text);
+    } else {
+      setDocumentContent(text);
+    }
+  };
+  
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -33,11 +51,21 @@ const DocumentContentEditor = ({
             {documentTypeLabel}
           </Badge>
         </div>
-        <FileUploadButton 
-          onFileContent={onFileContent}
-          isUploading={isUploading}
-          setIsUploading={setIsUploading}
-        />
+        <div className="flex gap-2 flex-wrap">
+          <FileUploadButton 
+            onFileContent={onFileContent}
+            isUploading={isUploading}
+            setIsUploading={setIsUploading}
+          />
+          <VoiceInput 
+            onTranscription={handleVoiceTranscription}
+            disabled={isUploading}
+          />
+          <OCRUpload 
+            onTextExtracted={handleOCRExtraction}
+            disabled={isUploading}
+          />
+        </div>
       </div>
       <Textarea
         value={documentContent}
