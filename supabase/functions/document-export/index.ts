@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
 );
 
 serve(async (req) => {
@@ -18,7 +18,10 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Received export request:', await req.clone().text());
     const { action, documentId, userId, format = 'pdf', ...params } = await req.json();
+    
+    console.log('Export parameters:', { action, documentId, userId, format, params });
     
     let result;
     
@@ -39,13 +42,21 @@ serve(async (req) => {
         throw new Error(`Unknown action: ${action}`);
     }
 
+    console.log('Export successful:', { action, filename: result.filename });
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
     
   } catch (error) {
-    console.error('Export error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Export error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: error.stack 
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -53,6 +64,8 @@ serve(async (req) => {
 });
 
 async function exportDocument(documentId: string, userId: string, format: string, options: any) {
+  console.log('Fetching document:', { documentId, userId, format });
+  
   // Get document
   const { data: document, error: docError } = await supabase
     .from('user_documents')
@@ -61,13 +74,22 @@ async function exportDocument(documentId: string, userId: string, format: string
     .eq('user_id', userId)
     .single();
 
-  if (docError || !document) {
+  console.log('Document query result:', { document, error: docError });
+
+  if (docError) {
+    console.error('Database error:', docError);
+    throw new Error(`Database error: ${docError.message}`);
+  }
+  
+  if (!document) {
     throw new Error('Document not found or access denied');
   }
 
-  let content = document.original_text;
+  let content = document.original_text || '';
   let mimeType = 'text/plain';
   let filename = `${document.document_type}_${new Date().toISOString().split('T')[0]}`;
+
+  console.log('Processing format:', format, 'for document type:', document.document_type);
 
   switch (format.toLowerCase()) {
     case 'pdf':
@@ -97,9 +119,16 @@ async function exportDocument(documentId: string, userId: string, format: string
       throw new Error(`Unsupported format: ${format}`);
   }
 
-  // In a real implementation, you'd upload to storage and return a download URL
-  // For now, return the content directly encoded
-  const base64Content = btoa(content);
+  console.log('Generated content length:', content.length, 'type:', typeof content);
+
+  // For text formats, encode directly
+  let base64Content;
+  if (mimeType === 'text/plain' || mimeType === 'text/html' || mimeType === 'application/x-latex') {
+    base64Content = btoa(unescape(encodeURIComponent(content)));
+  } else {
+    // For binary formats like PDF, content should already be base64 or binary
+    base64Content = content.startsWith('data:') ? content.split(',')[1] : (typeof content === 'string' ? btoa(content) : content);
+  }
 
   return {
     filename,
@@ -213,7 +242,7 @@ async function createPrintVersion(documentId: string, userId: string, options: a
     <!DOCTYPE html>
     <html>
     <head>
-      <title>${document.data.document_type}</title>
+      <title>${document.document_type}</title>
       <style>
         @page { 
           margin: 1in;
@@ -264,41 +293,104 @@ async function createPrintVersion(documentId: string, userId: string, options: a
 
 // Helper functions for different formats
 async function generatePDF(document: any, options: any): Promise<string> {
-  // Generate basic HTML structure for PDF conversion
+  console.log('Generating PDF for document:', document.document_type);
+  
+  // Generate comprehensive HTML structure optimized for PDF conversion
   const htmlContent = `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
       <style>
-        @page { margin: 1in; size: letter; }
-        body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; }
-        h1 { font-size: 18pt; text-align: center; margin-bottom: 20pt; }
-        .document-meta { margin-bottom: 20pt; color: #666; }
-        .content { text-align: justify; }
-        .feedback { margin-top: 30pt; padding: 15pt; background: #f5f5f5; }
+        @page { 
+          margin: 1in; 
+          size: letter; 
+        }
+        body { 
+          font-family: 'Times New Roman', serif; 
+          font-size: 12pt; 
+          line-height: 1.6; 
+          color: #000;
+          margin: 0;
+          padding: 0;
+        }
+        h1 { 
+          font-size: 18pt; 
+          text-align: center; 
+          margin-bottom: 20pt; 
+          font-weight: bold;
+        }
+        .document-meta { 
+          margin-bottom: 20pt; 
+          color: #666; 
+          font-size: 10pt;
+          text-align: center;
+        }
+        .content { 
+          text-align: justify; 
+          margin-bottom: 20pt;
+        }
+        .content p {
+          margin-bottom: 12pt;
+          text-indent: 0.5in;
+        }
+        .feedback { 
+          margin-top: 30pt; 
+          padding: 15pt; 
+          background: #f9f9f9; 
+          border: 1px solid #ddd;
+          page-break-inside: avoid;
+        }
+        .feedback h3 {
+          margin-top: 0;
+          color: #333;
+        }
+        .improvement-points {
+          margin-top: 15pt;
+        }
+        .improvement-points ul {
+          padding-left: 20pt;
+        }
+        .improvement-points li {
+          margin-bottom: 8pt;
+        }
       </style>
     </head>
     <body>
-      <h1>${document.document_type}</h1>
+      <h1>${document.document_type || 'Document'}</h1>
       <div class="document-meta">
         Created: ${new Date(document.created_at).toLocaleDateString()}
         ${document.score ? ` | Score: ${document.score}/10` : ''}
+        ${document.version_number ? ` | Version: ${document.version_number}` : ''}
       </div>
       <div class="content">
-        ${document.original_text.split('\n').map(p => p.trim() ? `<p>${p}</p>` : '<br>').join('')}
+        ${(document.original_text || '').split('\n\n').map(p => 
+          p.trim() ? `<p>${p.replace(/\n/g, '<br>')}</p>` : ''
+        ).filter(Boolean).join('')}
       </div>
-      ${document.feedback_summary ? `
+      ${document.feedback_summary || document.improvement_points ? `
         <div class="feedback">
-          <h3>AI Feedback</h3>
-          <p>${document.feedback_summary}</p>
+          <h3>AI Analysis & Feedback</h3>
+          ${document.feedback_summary ? `<p><strong>Summary:</strong> ${document.feedback_summary}</p>` : ''}
+          ${document.improvement_points && document.improvement_points.length > 0 ? `
+            <div class="improvement-points">
+              <p><strong>Key Improvement Areas:</strong></p>
+              <ul>
+                ${document.improvement_points.map(point => `<li>${point}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
         </div>
       ` : ''}
     </body>
     </html>
   `;
   
-  return htmlContent; // Return HTML that can be converted to PDF
+  console.log('Generated HTML content length:', htmlContent.length);
+  
+  // For now, return the HTML content. In production, this would be converted to actual PDF
+  // using a library like Puppeteer or similar PDF generation service
+  return htmlContent;
 }
 
 async function generateDOCX(document: any, options: any): Promise<string> {
