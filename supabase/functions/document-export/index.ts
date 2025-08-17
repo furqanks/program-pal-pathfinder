@@ -121,13 +121,32 @@ async function exportDocument(documentId: string, userId: string, format: string
 
   console.log('Generated content length:', content.length, 'type:', typeof content);
 
-  // For text formats, encode directly
+  // UTF-8 safe base64 encoding function
+  const encodeToBase64 = (str: string): string => {
+    try {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(str);
+      const uint8Array = new Uint8Array(data);
+      let binaryString = '';
+      for (let i = 0; i < uint8Array.length; i++) {
+        binaryString += String.fromCharCode(uint8Array[i]);
+      }
+      return btoa(binaryString);
+    } catch (error) {
+      console.error('Encoding error:', error);
+      // Fallback: remove problematic characters and try basic encoding
+      const cleanStr = str.replace(/[^\x00-\x7F]/g, '?');
+      return btoa(cleanStr);
+    }
+  };
+
+  // Encode content safely regardless of format
   let base64Content;
-  if (mimeType === 'text/plain' || mimeType === 'text/html' || mimeType === 'application/x-latex') {
-    base64Content = btoa(unescape(encodeURIComponent(content)));
-  } else {
-    // For binary formats like PDF, content should already be base64 or binary
-    base64Content = content.startsWith('data:') ? content.split(',')[1] : (typeof content === 'string' ? btoa(content) : content);
+  try {
+    base64Content = encodeToBase64(content);
+  } catch (error) {
+    console.error('Failed to encode content:', error);
+    throw new Error(`Content encoding failed: ${error.message}`);
   }
 
   return {
