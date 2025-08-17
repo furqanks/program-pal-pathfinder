@@ -265,8 +265,45 @@ const SimpleDocumentInterface = () => {
   };
 
   // Export to PDF (placeholder for now)
-  const handleExport = () => {
-    toast.info("PDF export coming soon");
+  const handleExport = async () => {
+    if (!selectedDocument) {
+      toast.error("Please select a document to export");
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please log in to export documents");
+        return;
+      }
+
+      toast.info("Generating PDF export...");
+      
+      const { data, error } = await supabase.functions.invoke('document-export', {
+        body: {
+          action: 'export_document',
+          documentId: selectedDocument.id,
+          userId: user.id,
+          format: 'pdf'
+        }
+      });
+
+      if (error) throw error;
+
+      // Create download link
+      const link = document.createElement('a');
+      link.href = data.downloadUrl;
+      link.download = data.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("Document exported successfully!");
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export document. Please try again.");
+    }
   };
 
   return (

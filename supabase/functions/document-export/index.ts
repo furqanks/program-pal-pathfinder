@@ -197,15 +197,15 @@ async function generatePortfolio(userId: string, programId: string, options: any
 }
 
 async function createPrintVersion(documentId: string, userId: string, options: any) {
-  const document = await supabase
+  const { data: document, error } = await supabase
     .from('user_documents')
     .select('*')
     .eq('id', documentId)
     .eq('user_id', userId)
     .single();
 
-  if (!document.data) {
-    throw new Error('Document not found');
+  if (error || !document) {
+    throw new Error('Document not found or access denied');
   }
 
   // Format for printing with proper margins, fonts, etc.
@@ -242,10 +242,10 @@ async function createPrintVersion(documentId: string, userId: string, options: a
     </head>
     <body>
       <div class="header">
-        <h1>${document.data.document_type}</h1>
+        <h1>${document.document_type}</h1>
       </div>
       <div class="content">
-        ${document.data.original_text.split('\n\n').map(p => `<p>${p}</p>`).join('')}
+        ${document.original_text.split('\n\n').map(p => `<p>${p}</p>`).join('')}
       </div>
     </body>
     </html>
@@ -254,7 +254,7 @@ async function createPrintVersion(documentId: string, userId: string, options: a
   const base64Content = btoa(printHTML);
 
   return {
-    filename: `${document.data.document_type}_Print.html`,
+    filename: `${document.document_type}_Print.html`,
     mimeType: 'text/html',
     content: base64Content,
     downloadUrl: `data:text/html;base64,${base64Content}`,
@@ -264,17 +264,41 @@ async function createPrintVersion(documentId: string, userId: string, options: a
 
 // Helper functions for different formats
 async function generatePDF(document: any, options: any): Promise<string> {
-  // Simplified PDF generation - in production use proper PDF library
-  const content = `
-    ${document.document_type}
-    
-    ${document.original_text}
-    
-    ${document.feedback_summary ? `\n\nAI Feedback:\n${document.feedback_summary}` : ''}
-    ${document.score ? `\n\nScore: ${document.score}/10` : ''}
+  // Generate basic HTML structure for PDF conversion
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        @page { margin: 1in; size: letter; }
+        body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; }
+        h1 { font-size: 18pt; text-align: center; margin-bottom: 20pt; }
+        .document-meta { margin-bottom: 20pt; color: #666; }
+        .content { text-align: justify; }
+        .feedback { margin-top: 30pt; padding: 15pt; background: #f5f5f5; }
+      </style>
+    </head>
+    <body>
+      <h1>${document.document_type}</h1>
+      <div class="document-meta">
+        Created: ${new Date(document.created_at).toLocaleDateString()}
+        ${document.score ? ` | Score: ${document.score}/10` : ''}
+      </div>
+      <div class="content">
+        ${document.original_text.split('\n').map(p => p.trim() ? `<p>${p}</p>` : '<br>').join('')}
+      </div>
+      ${document.feedback_summary ? `
+        <div class="feedback">
+          <h3>AI Feedback</h3>
+          <p>${document.feedback_summary}</p>
+        </div>
+      ` : ''}
+    </body>
+    </html>
   `;
   
-  return content; // In real implementation, return actual PDF binary
+  return htmlContent; // Return HTML that can be converted to PDF
 }
 
 async function generateDOCX(document: any, options: any): Promise<string> {

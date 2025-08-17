@@ -216,15 +216,14 @@ async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: s
   console.log("Sample content:", content.substring(0, 100) + "...");
   
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'x-api-key': openaiApiKey,
+        'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022', 
+        model: 'gpt-4.1-2025-04-14', 
         messages: [
           {
             role: 'system',
@@ -235,8 +234,7 @@ async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: s
             content
           }
         ],
-        max_tokens: 4000,
-        temperature: 0.7
+        max_completion_tokens: 4000
       }),
     });
 
@@ -246,7 +244,7 @@ async function callOpenAI(content: string, systemPrompt: string, openaiApiKey: s
     }
 
     const data = await response.json();
-    return data.content[0].text;
+    return data.choices[0].message.content;
   } catch (error) {
     console.error('OpenAI API call error:', error);
     throw error;
@@ -343,10 +341,10 @@ serve(async (req) => {
       return createErrorResponse('Missing document content', 400);
     }
 
-    // Get Claude API key
-    const openaiApiKey = Deno.env.get('ANTHROPIC_API_KEY');
+    // Get OpenAI API key
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiApiKey) {
-      console.error('Missing Anthropic API key');
+      console.error('Missing OpenAI API key');
       return createErrorResponse('Server configuration error: Missing API key', 500);
     }
     
