@@ -963,6 +963,14 @@ export type Database = {
         }
         Returns: number
       }
+      logout_all_user_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_user_session_activity: {
+        Args: { session_token_param: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
