@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Upload, Plus, Trash2, FileText } from 'lucide-react'
+import { Upload, Plus, Trash2, FileText, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -17,6 +17,7 @@ export const ResumeEditor: React.FC = () => {
     education: []
   })
   const [isUploading, setIsUploading] = useState(false)
+  const [isImproving, setIsImproving] = useState(false)
   const [confidence, setConfidence] = useState<number | null>(null)
   const { toast } = useToast()
 
@@ -115,6 +116,63 @@ export const ResumeEditor: React.FC = () => {
     }
   }
 
+  const handleImproveWithAI = async () => {
+    if (!resume.basics.fullName || resume.experience.length === 0) {
+      toast({
+        title: 'Resume incomplete',
+        description: 'Please add basic information and at least one experience before improving',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    setIsImproving(true)
+
+    try {
+      const { data, error } = await supabase.functions.invoke('improve-resume', {
+        body: { resume }
+      })
+
+      if (error) {
+        throw error
+      }
+
+      // Validate the improved resume
+      const validatedResume = ResumeZ.safeParse(data.resume)
+      if (validatedResume.success) {
+        setResume(validatedResume.data as Resume)
+        toast({
+          title: 'Resume improved successfully',
+          description: 'AI has enhanced your resume content and structure'
+        })
+      } else {
+        console.error('AI returned invalid resume:', validatedResume.error)
+        toast({
+          title: 'Improvement failed',
+          description: 'AI returned invalid data. Please try again.',
+          variant: 'destructive'
+        })
+      }
+    } catch (error: any) {
+      console.error('Improve resume error:', error)
+      let errorMessage = 'Failed to improve resume'
+      
+      if (error.message?.includes('Rate limit')) {
+        errorMessage = 'Daily improvement limit reached (50/day)'
+      } else if (error.message?.includes('authorization')) {
+        errorMessage = 'Authentication failed'
+      }
+      
+      toast({
+        title: 'Improvement failed',
+        description: errorMessage,
+        variant: 'destructive'
+      })
+    } finally {
+      setIsImproving(false)
+    }
+  }
+
   const addExperience = () => {
     setResume(prev => ({
       ...prev,
@@ -196,11 +254,21 @@ export const ResumeEditor: React.FC = () => {
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Resume Editor</h1>
-        {confidence !== null && (
-          <div className="text-sm text-muted-foreground">
-            Parse confidence: {(confidence * 100).toFixed(0)}%
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+          {confidence !== null && (
+            <div className="text-sm text-muted-foreground">
+              Parse confidence: {(confidence * 100).toFixed(0)}%
+            </div>
+          )}
+          <Button 
+            onClick={handleImproveWithAI} 
+            disabled={isImproving || !resume.basics.fullName}
+            className="flex items-center gap-2"
+          >
+            <Sparkles className="w-4 h-4" />
+            {isImproving ? 'Improving...' : 'Improve with AI'}
+          </Button>
+        </div>
       </div>
 
       {/* File Upload */}

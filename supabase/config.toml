@@ -87,3 +87,6 @@ verify_jwt = false
 
 [functions.resume-parser]
 verify_jwt = true
+
+[functions.improve-resume]
+verify_jwt = true
