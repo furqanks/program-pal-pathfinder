@@ -35,6 +35,11 @@ const navItems = [
     icon: FileText
   },
   {
+    path: '/resume',
+    label: 'Resume Editor',
+    icon: User
+  },
+  {
     path: '/notes',
     label: 'My Notes',
     icon: StickyNote

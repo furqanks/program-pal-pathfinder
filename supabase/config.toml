@@ -84,3 +84,6 @@ verify_jwt = true
 
 [functions.updated-search]
 verify_jwt = false
+
+[functions.resume-parser]
+verify_jwt = true

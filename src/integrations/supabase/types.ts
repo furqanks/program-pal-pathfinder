@@ -146,6 +146,27 @@ export type Database = {
           },
         ]
       }
+      api_usage: {
+        Row: {
+          count: number
+          day: string
+          endpoint: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          day?: string
+          endpoint: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          day?: string
+          endpoint?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       data_export_requests: {
         Row: {
           created_at: string
