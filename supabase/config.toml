@@ -90,3 +90,6 @@ verify_jwt = true
 
 [functions.improve-resume]
 verify_jwt = true
+
+[functions.document-export]
+verify_jwt = true

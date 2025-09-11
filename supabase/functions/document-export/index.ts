@@ -1,529 +1,587 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-);
+}
 
 serve(async (req) => {
+  console.log('Document export function called')
+  
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('Received export request:', await req.clone().text());
-    const { action, documentId, userId, format = 'pdf', ...params } = await req.json();
-    
-    console.log('Export parameters:', { action, documentId, userId, format, params });
-    
-    let result;
-    
-    switch (action) {
-      case 'export_document':
-        result = await exportDocument(documentId, userId, format, params);
-        break;
-      case 'batch_export':
-        result = await batchExport(userId, params.documentIds, format, params);
-        break;
-      case 'generate_portfolio':
-        result = await generatePortfolio(userId, params.programId, params);
-        break;
-      case 'create_print_version':
-        result = await createPrintVersion(documentId, userId, params);
-        break;
-      default:
-        throw new Error(`Unknown action: ${action}`);
+    // Get the authorization header
+    const authHeader = req.headers.get('authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
-    console.log('Export successful:', { action, filename: result.filename });
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-    
-  } catch (error) {
-    console.error('Export error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+    // Initialize Supabase client with the user's JWT
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    )
+
+    // Get the authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      console.error('User authentication failed:', userError)
+      return new Response(JSON.stringify({ error: 'Authentication failed' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    console.log(`Authenticated user: ${user.id}`)
+
+    // Rate limiting
+    const today = new Date().toISOString().split('T')[0]
+    const endpoint = 'export-pdf'
+
+    // Check current usage
+    const { data: usage, error: usageError } = await supabase
+      .from('api_usage')
+      .select('count')
+      .eq('user_id', user.id)
+      .eq('endpoint', endpoint)
+      .eq('day', today)
+      .single()
+
+    if (usageError && usageError.code !== 'PGRST116') {
+      console.error('Usage check failed:', usageError)
+      throw new Error('Rate limit check failed')
+    }
+
+    const currentCount = usage?.count || 0
+    if (currentCount >= 20) {
+      return new Response(JSON.stringify({ error: 'Daily export limit reached (20/day)' }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Parse request body
+    const body = await req.json()
+    const { resume, template = 'classic', format = 'pdf' } = body
+
+    if (!resume) {
+      return new Response(JSON.stringify({ error: 'Resume data is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Validate resume structure
+    if (!resume.basics?.fullName || !Array.isArray(resume.experience) || !Array.isArray(resume.education)) {
+      return new Response(JSON.stringify({ error: 'Invalid resume structure' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Generate HTML template
+    const html = generateResumeHTML(resume, template)
+
+    if (format === 'docx') {
+      // For DOCX, we'll use a simplified approach since docx package isn't available in Deno
+      return new Response(JSON.stringify({ error: 'DOCX export not yet implemented in this runtime' }), {
+        status: 501,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // For PDF generation, we'll use a simplified approach since Puppeteer isn't available in Deno Edge Functions
+    // This would normally use Puppeteer/Chromium but we'll return the HTML for now
+    console.log('Generated resume HTML for user:', user.id)
+
+    // Increment usage counter
+    await supabase
+      .from('api_usage')
+      .upsert({
+        user_id: user.id,
+        endpoint,
+        day: today,
+        count: currentCount + 1
+      })
+
+    // Return HTML for now (in production, this would be converted to PDF)
+    return new Response(html, {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'text/html',
+        'Content-Disposition': `attachment; filename="resume-${template}.html"`
+      }
+    })
+
+  } catch (error: any) {
+    console.error('Document export error:', error)
     return new Response(JSON.stringify({ 
-      error: error.message,
-      details: error.stack 
+      error: error.message || 'Export failed' 
     }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
   }
-});
+})
 
-async function exportDocument(documentId: string, userId: string, format: string, options: any) {
-  console.log('Fetching document:', { documentId, userId, format });
+function generateResumeHTML(resume: any, template: string): string {
+  const isModern = template === 'modern'
   
-  // Get document
-  const { data: document, error: docError } = await supabase
-    .from('user_documents')
-    .select('*')
-    .eq('id', documentId)
-    .eq('user_id', userId)
-    .single();
-
-  console.log('Document query result:', { document, error: docError });
-
-  if (docError) {
-    console.error('Database error:', docError);
-    throw new Error(`Database error: ${docError.message}`);
+  // Mask PII in logs
+  const logSafeResume = {
+    ...resume,
+    basics: {
+      ...resume.basics,
+      email: resume.basics?.email ? '[EMAIL]' : undefined,
+      phone: resume.basics?.phone ? '[PHONE]' : undefined
+    }
   }
-  
-  if (!document) {
-    throw new Error('Document not found or access denied');
-  }
+  console.log('Generating template for resume:', JSON.stringify(logSafeResume).substring(0, 200))
 
-  let content = document.original_text || '';
-  let mimeType = 'text/plain';
-  let filename = `${document.document_type}_${new Date().toISOString().split('T')[0]}`;
-
-  console.log('Processing format:', format, 'for document type:', document.document_type);
-
-  switch (format.toLowerCase()) {
-    case 'pdf':
-      content = await generatePDF(document, options);
-      mimeType = 'application/pdf';
-      filename += '.pdf';
-      break;
-    case 'docx':
-      content = await generateDOCX(document, options);
-      mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-      filename += '.docx';
-      break;
-    case 'html':
-      content = await generateHTML(document, options);
-      mimeType = 'text/html';
-      filename += '.html';
-      break;
-    case 'txt':
-      filename += '.txt';
-      break;
-    case 'latex':
-      content = await generateLaTeX(document, options);
-      mimeType = 'application/x-latex';
-      filename += '.tex';
-      break;
-    default:
-      throw new Error(`Unsupported format: ${format}`);
-  }
-
-  console.log('Generated content length:', content.length, 'type:', typeof content);
-
-  // UTF-8 safe base64 encoding function
-  const encodeToBase64 = (str: string): string => {
-    try {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(str);
-      const uint8Array = new Uint8Array(data);
-      let binaryString = '';
-      for (let i = 0; i < uint8Array.length; i++) {
-        binaryString += String.fromCharCode(uint8Array[i]);
+  if (isModern) {
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Resume - ${resume.basics.fullName}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Calibri', 'Arial', sans-serif;
+      font-size: 11pt;
+      line-height: 1.5;
+      color: #2c3e50;
+      max-width: 8.5in;
+      margin: 0 auto;
+      padding: 0.75in;
+      background: white;
+    }
+    .header {
+      margin-bottom: 0.4in;
+      padding: 0.3in;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 8pt;
+    }
+    .name {
+      font-size: 22pt;
+      font-weight: 300;
+      letter-spacing: 1pt;
+      margin-bottom: 0.1in;
+    }
+    .title {
+      font-size: 14pt;
+      font-weight: 400;
+      margin-bottom: 0.15in;
+      opacity: 0.9;
+    }
+    .contact-info {
+      font-size: 10pt;
+      margin-bottom: 0.05in;
+    }
+    .section {
+      margin-bottom: 0.35in;
+      page-break-inside: avoid;
+    }
+    .section-title {
+      font-size: 16pt;
+      font-weight: 600;
+      color: #667eea;
+      margin-bottom: 0.2in;
+      padding-bottom: 0.08in;
+      border-bottom: 2pt solid #667eea;
+    }
+    .experience-item, .education-item, .project-item {
+      margin-bottom: 0.25in;
+      padding: 0.15in;
+      background: #f8f9fa;
+      border-radius: 6pt;
+      border-left: 3pt solid #667eea;
+      page-break-inside: avoid;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.1in;
+      align-items: flex-start;
+    }
+    .company, .institution, .project-name {
+      font-weight: 600;
+      font-size: 13pt;
+      color: #2c3e50;
+    }
+    .role, .degree {
+      font-size: 11pt;
+      color: #667eea;
+      font-weight: 500;
+      margin-top: 0.02in;
+    }
+    .date {
+      font-size: 10pt;
+      color: #7f8c8d;
+      font-weight: 500;
+      background: white;
+      padding: 0.05in 0.1in;
+      border-radius: 12pt;
+      white-space: nowrap;
+    }
+    ul {
+      margin: 0.1in 0 0 0.2in;
+      padding-left: 0;
+    }
+    li {
+      margin-bottom: 0.08in;
+      list-style: none;
+      position: relative;
+      padding-left: 0.15in;
+    }
+    li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: #667eea;
+      font-weight: bold;
+    }
+    .summary {
+      text-align: justify;
+      margin-bottom: 0.2in;
+      line-height: 1.6;
+      padding: 0.2in;
+      background: #f8f9fa;
+      border-radius: 6pt;
+      border-left: 3pt solid #667eea;
+      font-style: italic;
+    }
+    @media print {
+      body { padding: 0.5in; }
+      .section { page-break-inside: avoid; }
+      .header {
+        background: #667eea !important;
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
       }
-      return btoa(binaryString);
-    } catch (error) {
-      console.error('Encoding error:', error);
-      // Fallback: remove problematic characters and try basic encoding
-      const cleanStr = str.replace(/[^\x00-\x7F]/g, '?');
-      return btoa(cleanStr);
     }
-  };
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="name">${resume.basics.fullName}</div>
+    ${resume.basics.title ? `<div class="title">${resume.basics.title}</div>` : ''}
+    <div class="contact-info">
+      ${[resume.basics.email, resume.basics.phone, resume.basics.location].filter(Boolean).join(' • ')}
+      ${resume.basics.links ? resume.basics.links.map((link: any) => `${link.label}: ${link.url}`).join(' • ') : ''}
+    </div>
+  </div>
 
-  // Encode content safely regardless of format
-  let base64Content;
-  try {
-    base64Content = encodeToBase64(content);
-  } catch (error) {
-    console.error('Failed to encode content:', error);
-    throw new Error(`Content encoding failed: ${error.message}`);
-  }
+  ${resume.summary ? `
+    <div class="section">
+      <div class="section-title">Professional Summary</div>
+      <div class="summary">${resume.summary}</div>
+    </div>
+  ` : ''}
 
-  return {
-    filename,
-    mimeType,
-    content: base64Content,
-    downloadUrl: `data:${mimeType};base64,${base64Content}`,
-    size: content.length
-  };
-}
-
-async function batchExport(userId: string, documentIds: string[], format: string, options: any) {
-  // Get all documents
-  const { data: documents, error } = await supabase
-    .from('user_documents')
-    .select('*')
-    .eq('user_id', userId)
-    .in('id', documentIds);
-
-  if (error) {
-    throw new Error(`Failed to fetch documents: ${error.message}`);
-  }
-
-  const exports = [];
-  
-  for (const document of documents || []) {
-    try {
-      const exportResult = await exportDocument(document.id, userId, format, options);
-      exports.push({
-        documentId: document.id,
-        documentType: document.document_type,
-        success: true,
-        ...exportResult
-      });
-    } catch (error) {
-      exports.push({
-        documentId: document.id,
-        documentType: document.document_type,
-        success: false,
-        error: error.message
-      });
-    }
-  }
-
-  return {
-    exports,
-    totalRequested: documentIds.length,
-    successful: exports.filter(e => e.success).length,
-    failed: exports.filter(e => !e.success).length
-  };
-}
-
-async function generatePortfolio(userId: string, programId: string, options: any) {
-  // Get program details
-  const { data: program, error: programError } = await supabase
-    .from('programs_saved')
-    .select('*')
-    .eq('id', programId)
-    .eq('user_id', userId)
-    .single();
-
-  if (programError || !program) {
-    throw new Error('Program not found');
-  }
-
-  // Get all documents for this program
-  const { data: documents, error: docsError } = await supabase
-    .from('user_documents')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('program_id', programId)
-    .order('document_type');
-
-  if (docsError) {
-    throw new Error(`Failed to fetch documents: ${docsError.message}`);
-  }
-
-  // Generate portfolio HTML
-  const portfolioHTML = generatePortfolioHTML(program, documents || [], options);
-  
-  // Convert to PDF (simplified - in production use proper PDF library)
-  const portfolioPDF = await generatePDFFromHTML(portfolioHTML);
-  
-  const filename = `${program.program_name}_Portfolio_${new Date().toISOString().split('T')[0]}.pdf`;
-  const base64Content = btoa(portfolioPDF);
-
-  return {
-    filename,
-    mimeType: 'application/pdf',
-    content: base64Content,
-    downloadUrl: `data:application/pdf;base64,${base64Content}`,
-    documentsIncluded: documents?.length || 0,
-    programName: program.program_name,
-    university: program.university
-  };
-}
-
-async function createPrintVersion(documentId: string, userId: string, options: any) {
-  const { data: document, error } = await supabase
-    .from('user_documents')
-    .select('*')
-    .eq('id', documentId)
-    .eq('user_id', userId)
-    .single();
-
-  if (error || !document) {
-    throw new Error('Document not found or access denied');
-  }
-
-  // Format for printing with proper margins, fonts, etc.
-  const printHTML = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>${document.document_type}</title>
-      <style>
-        @page { 
-          margin: 1in;
-          size: letter;
-        }
-        body { 
-          font-family: 'Times New Roman', serif;
-          font-size: 12pt;
-          line-height: 1.6;
-          color: #000;
-        }
-        h1 { 
-          font-size: 14pt;
-          margin-bottom: 0.5in;
-          text-align: center;
-        }
-        p { 
-          margin-bottom: 12pt;
-          text-align: justify;
-        }
-        .header {
-          text-align: center;
-          margin-bottom: 0.5in;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <h1>${document.document_type}</h1>
-      </div>
-      <div class="content">
-        ${document.original_text.split('\n\n').map(p => `<p>${p}</p>`).join('')}
-      </div>
-    </body>
-    </html>
-  `;
-
-  const base64Content = btoa(printHTML);
-
-  return {
-    filename: `${document.document_type}_Print.html`,
-    mimeType: 'text/html',
-    content: base64Content,
-    downloadUrl: `data:text/html;base64,${base64Content}`,
-    optimizedForPrint: true
-  };
-}
-
-// Helper functions for different formats
-async function generatePDF(document: any, options: any): Promise<string> {
-  console.log('Generating PDF for document:', document.document_type);
-  
-  // Generate comprehensive HTML structure optimized for PDF conversion
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <style>
-        @page { 
-          margin: 1in; 
-          size: letter; 
-        }
-        body { 
-          font-family: 'Times New Roman', serif; 
-          font-size: 12pt; 
-          line-height: 1.6; 
-          color: #000;
-          margin: 0;
-          padding: 0;
-        }
-        h1 { 
-          font-size: 18pt; 
-          text-align: center; 
-          margin-bottom: 20pt; 
-          font-weight: bold;
-        }
-        .document-meta { 
-          margin-bottom: 20pt; 
-          color: #666; 
-          font-size: 10pt;
-          text-align: center;
-        }
-        .content { 
-          text-align: justify; 
-          margin-bottom: 20pt;
-        }
-        .content p {
-          margin-bottom: 12pt;
-          text-indent: 0.5in;
-        }
-        .feedback { 
-          margin-top: 30pt; 
-          padding: 15pt; 
-          background: #f9f9f9; 
-          border: 1px solid #ddd;
-          page-break-inside: avoid;
-        }
-        .feedback h3 {
-          margin-top: 0;
-          color: #333;
-        }
-        .improvement-points {
-          margin-top: 15pt;
-        }
-        .improvement-points ul {
-          padding-left: 20pt;
-        }
-        .improvement-points li {
-          margin-bottom: 8pt;
-        }
-      </style>
-    </head>
-    <body>
-      <h1>${document.document_type || 'Document'}</h1>
-      <div class="document-meta">
-        Created: ${new Date(document.created_at).toLocaleDateString()}
-        ${document.score ? ` | Score: ${document.score}/10` : ''}
-        ${document.version_number ? ` | Version: ${document.version_number}` : ''}
-      </div>
-      <div class="content">
-        ${(document.original_text || '').split('\n\n').map(p => 
-          p.trim() ? `<p>${p.replace(/\n/g, '<br>')}</p>` : ''
-        ).filter(Boolean).join('')}
-      </div>
-      ${document.feedback_summary || document.improvement_points ? `
-        <div class="feedback">
-          <h3>AI Analysis & Feedback</h3>
-          ${document.feedback_summary ? `<p><strong>Summary:</strong> ${document.feedback_summary}</p>` : ''}
-          ${document.improvement_points && document.improvement_points.length > 0 ? `
-            <div class="improvement-points">
-              <p><strong>Key Improvement Areas:</strong></p>
-              <ul>
-                ${document.improvement_points.map(point => `<li>${point}</li>`).join('')}
-              </ul>
+  ${resume.experience && resume.experience.length > 0 ? `
+    <div class="section">
+      <div class="section-title">Professional Experience</div>
+      ${resume.experience.map((exp: any) => `
+        <div class="experience-item">
+          <div class="item-header">
+            <div>
+              <div class="company">${exp.company}</div>
+              <div class="role">${exp.role}</div>
             </div>
+            <div class="date">${exp.start} - ${exp.end || 'Present'}</div>
+          </div>
+          ${exp.bullets && exp.bullets.length > 0 ? `
+            <ul>
+              ${exp.bullets.map((bullet: string) => `<li>${bullet}</li>`).join('')}
+            </ul>
           ` : ''}
         </div>
-      ` : ''}
-    </body>
-    </html>
-  `;
-  
-  console.log('Generated HTML content length:', htmlContent.length);
-  
-  // For now, return the HTML content. In production, this would be converted to actual PDF
-  // using a library like Puppeteer or similar PDF generation service
-  return htmlContent;
-}
+      `).join('')}
+    </div>
+  ` : ''}
 
-async function generateDOCX(document: any, options: any): Promise<string> {
-  // Simplified DOCX generation - in production use proper DOCX library
-  const content = `
-    Document Type: ${document.document_type}
-    Created: ${new Date(document.created_at).toLocaleDateString()}
-    
-    ${document.original_text}
-  `;
-  
-  return content;
-}
-
-async function generateHTML(document: any, options: any): Promise<string> {
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>${document.document_type}</title>
-      <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        h1 { color: #333; border-bottom: 2px solid #eee; }
-        .meta { color: #666; font-size: 0.9em; margin-bottom: 20px; }
-        .content { line-height: 1.6; }
-        .feedback { background: #f5f5f5; padding: 15px; margin-top: 20px; border-radius: 5px; }
-      </style>
-    </head>
-    <body>
-      <h1>${document.document_type}</h1>
-      <div class="meta">
-        Created: ${new Date(document.created_at).toLocaleDateString()}
-        ${document.score ? ` | Score: ${document.score}/10` : ''}
-      </div>
-      <div class="content">
-        ${document.original_text.split('\n\n').map(p => `<p>${p}</p>`).join('')}
-      </div>
-      ${document.feedback_summary ? `
-        <div class="feedback">
-          <h3>AI Feedback</h3>
-          <p>${document.feedback_summary}</p>
-        </div>
-      ` : ''}
-    </body>
-    </html>
-  `;
-}
-
-async function generateLaTeX(document: any, options: any): Promise<string> {
-  return `
-\\documentclass[12pt]{article}
-\\usepackage[margin=1in]{geometry}
-\\usepackage{times}
-
-\\title{${document.document_type}}
-\\author{}
-\\date{${new Date(document.created_at).toLocaleDateString()}}
-
-\\begin{document}
-\\maketitle
-
-${document.original_text.split('\n\n').map(p => `${p}\n`).join('\n')}
-
-${document.score ? `\\vspace{1em}\n\\noindent\\textbf{Score:} ${document.score}/10` : ''}
-
-\\end{document}
-  `;
-}
-
-function generatePortfolioHTML(program: any, documents: any[], options: any): string {
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Application Portfolio - ${program.program_name}</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-        .program-info { margin-bottom: 30px; }
-        .document { margin-bottom: 40px; page-break-before: auto; }
-        .document h2 { color: #333; border-bottom: 1px solid #ccc; }
-        h1 { color: #333; }
-        .meta { color: #666; font-size: 0.9em; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <h1>Application Portfolio</h1>
-        <div class="program-info">
-          <h2>${program.program_name}</h2>
-          <p><strong>University:</strong> ${program.university}</p>
-          <p><strong>Country:</strong> ${program.country}</p>
-          ${program.deadline ? `<p><strong>Deadline:</strong> ${program.deadline}</p>` : ''}
-        </div>
-      </div>
-      
-      ${documents.map(doc => `
-        <div class="document">
-          <h2>${doc.document_type}</h2>
-          <div class="meta">
-            Version ${doc.version_number} | Created: ${new Date(doc.created_at).toLocaleDateString()}
-            ${doc.score ? ` | Score: ${doc.score}/10` : ''}
+  ${resume.education && resume.education.length > 0 ? `
+    <div class="section">
+      <div class="section-title">Education</div>
+      ${resume.education.map((edu: any) => `
+        <div class="education-item">
+          <div class="item-header">
+            <div>
+              <div class="institution">${edu.institution}</div>
+              <div class="degree">${edu.degree}</div>
+            </div>
+            <div class="date">${edu.start} - ${edu.end}</div>
           </div>
-          <div class="content">
-            ${doc.original_text.split('\n\n').map(p => `<p>${p}</p>`).join('')}
-          </div>
+          ${edu.details && edu.details.length > 0 ? `
+            <ul>
+              ${edu.details.map((detail: string) => `<li>${detail}</li>`).join('')}
+            </ul>
+          ` : ''}
         </div>
       `).join('')}
-    </body>
-    </html>
-  `;
-}
+    </div>
+  ` : ''}
 
-async function generatePDFFromHTML(html: string): Promise<string> {
-  // Simplified - in production use proper HTML to PDF conversion
-  return html;
+  ${resume.projects && resume.projects.length > 0 ? `
+    <div class="section">
+      <div class="section-title">Notable Projects</div>
+      ${resume.projects.map((project: any) => `
+        <div class="project-item">
+          <div class="project-name">
+            ${project.name}
+            ${project.link ? `<span style="font-weight: normal; font-size: 10pt; margin-left: 0.1in; color: #667eea;">— ${project.link}</span>` : ''}
+          </div>
+          ${project.description ? `<div style="font-style: italic; margin-bottom: 0.08in; color: #6c757d;">${project.description}</div>` : ''}
+          ${project.bullets && project.bullets.length > 0 ? `
+            <ul>
+              ${project.bullets.map((bullet: string) => `<li>${bullet}</li>`).join('')}
+            </ul>
+          ` : ''}
+        </div>
+      `).join('')}
+    </div>
+  ` : ''}
+
+  ${resume.skills && resume.skills.length > 0 ? `
+    <div class="section">
+      <div class="section-title">Core Competencies</div>
+      ${resume.skills.map((skillCategory: any) => `
+        <div style="margin-bottom: 0.15in; background: #f8f9fa; padding: 0.15in; border-radius: 6pt; border: 1pt solid #e9ecef;">
+          <span style="font-weight: 600; color: #667eea; font-size: 11pt; display: block; margin-bottom: 0.08in;">${skillCategory.category}</span>
+          <div style="font-size: 10pt; line-height: 1.4; color: #495057;">${skillCategory.items.join(' • ')}</div>
+        </div>
+      `).join('')}
+    </div>
+  ` : ''}
+
+  ${resume.awards && resume.awards.length > 0 ? `
+    <div class="section">
+      <div class="section-title">Awards & Recognition</div>
+      ${resume.awards.map((award: any) => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.1in 0.15in; background: #f8f9fa; margin-bottom: 0.1in; border-radius: 6pt; border-left: 3pt solid #28a745;">
+          <div>
+            <div style="font-weight: 600; color: #2c3e50;">${award.name}</div>
+            ${award.by ? `<div style="font-size: 10pt; color: #6c757d;">by ${award.by}</div>` : ''}
+          </div>
+          ${award.year ? `<div style="font-size: 10pt; color: #6c757d;">${award.year}</div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  ` : ''}
+</body>
+</html>`
+  }
+
+  // Classic template
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Resume - ${resume.basics.fullName}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Times New Roman', serif;
+      font-size: 11pt;
+      line-height: 1.4;
+      color: #333;
+      max-width: 8.5in;
+      margin: 0 auto;
+      padding: 0.75in;
+      background: white;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 0.5in;
+      border-bottom: 1pt solid #333;
+      padding-bottom: 0.25in;
+    }
+    .name {
+      font-size: 18pt;
+      font-weight: bold;
+      margin-bottom: 0.1in;
+    }
+    .title {
+      font-size: 12pt;
+      font-style: italic;
+      margin-bottom: 0.1in;
+    }
+    .contact-info {
+      font-size: 10pt;
+      margin-bottom: 0.05in;
+    }
+    .section {
+      margin-bottom: 0.3in;
+      page-break-inside: avoid;
+    }
+    .section-title {
+      font-size: 14pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      border-bottom: 1pt solid #333;
+      margin-bottom: 0.15in;
+      padding-bottom: 0.05in;
+    }
+    .experience-item, .education-item, .project-item {
+      margin-bottom: 0.2in;
+      page-break-inside: avoid;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.05in;
+    }
+    .company, .institution, .project-name {
+      font-weight: bold;
+      font-size: 12pt;
+    }
+    .role, .degree {
+      font-style: italic;
+      font-size: 11pt;
+    }
+    .date {
+      font-size: 10pt;
+      color: #666;
+    }
+    ul {
+      margin: 0.1in 0 0 0.2in;
+      padding-left: 0;
+    }
+    li {
+      margin-bottom: 0.05in;
+      list-style-type: disc;
+    }
+    .summary {
+      text-align: justify;
+      margin-bottom: 0.2in;
+      line-height: 1.3;
+    }
+    @media print {
+      body { padding: 0.5in; }
+      .section { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="name">${resume.basics.fullName}</div>
+    ${resume.basics.title ? `<div class="title">${resume.basics.title}</div>` : ''}
+    <div class="contact-info">
+      ${[resume.basics.email, resume.basics.phone, resume.basics.location].filter(Boolean).join(' • ')}
+      ${resume.basics.links ? resume.basics.links.map((link: any) => `${link.label}: ${link.url}`).join(' • ') : ''}
+    </div>
+  </div>
+
+  ${resume.summary ? `
+    <div class="section">
+      <div class="section-title">Summary</div>
+      <div class="summary">${resume.summary}</div>
+    </div>
+  ` : ''}
+
+  ${resume.experience && resume.experience.length > 0 ? `
+    <div class="section">
+      <div class="section-title">Experience</div>
+      ${resume.experience.map((exp: any) => `
+        <div class="experience-item">
+          <div class="item-header">
+            <div>
+              <div class="company">${exp.company}</div>
+              <div class="role">${exp.role}</div>
+            </div>
+            <div class="date">${exp.start} - ${exp.end || 'Present'}</div>
+          </div>
+          ${exp.bullets && exp.bullets.length > 0 ? `
+            <ul>
+              ${exp.bullets.map((bullet: string) => `<li>${bullet}</li>`).join('')}
+            </ul>
+          ` : ''}
+        </div>
+      `).join('')}
+    </div>
+  ` : ''}
+
+  ${resume.education && resume.education.length > 0 ? `
+    <div class="section">
+      <div class="section-title">Education</div>
+      ${resume.education.map((edu: any) => `
+        <div class="education-item">
+          <div class="item-header">
+            <div>
+              <div class="institution">${edu.institution}</div>
+              <div class="degree">${edu.degree}</div>
+            </div>
+            <div class="date">${edu.start} - ${edu.end}</div>
+          </div>
+          ${edu.details && edu.details.length > 0 ? `
+            <ul>
+              ${edu.details.map((detail: string) => `<li>${detail}</li>`).join('')}
+            </ul>
+          ` : ''}
+        </div>
+      `).join('')}
+    </div>
+  ` : ''}
+
+  ${resume.projects && resume.projects.length > 0 ? `
+    <div class="section">
+      <div class="section-title">Projects</div>
+      ${resume.projects.map((project: any) => `
+        <div class="project-item">
+          <div class="project-name">
+            ${project.name}
+            ${project.link ? `<span style="font-weight: normal; font-size: 10pt; margin-left: 0.1in;">(${project.link})</span>` : ''}
+          </div>
+          ${project.description ? `<div style="font-style: italic; margin-bottom: 0.05in;">${project.description}</div>` : ''}
+          ${project.bullets && project.bullets.length > 0 ? `
+            <ul>
+              ${project.bullets.map((bullet: string) => `<li>${bullet}</li>`).join('')}
+            </ul>
+          ` : ''}
+        </div>
+      `).join('')}
+    </div>
+  ` : ''}
+
+  ${resume.skills && resume.skills.length > 0 ? `
+    <div class="section">
+      <div class="section-title">Skills</div>
+      ${resume.skills.map((skillCategory: any) => `
+        <div style="margin-bottom: 0.1in;">
+          <span style="font-weight: bold;">${skillCategory.category}:</span>
+          <span style="margin-left: 0.1in;">${skillCategory.items.join(', ')}</span>
+        </div>
+      `).join('')}
+    </div>
+  ` : ''}
+
+  ${resume.awards && resume.awards.length > 0 ? `
+    <div class="section">
+      <div class="section-title">Awards & Achievements</div>
+      ${resume.awards.map((award: any) => `
+        <div style="margin-bottom: 0.1in;">
+          <span style="font-weight: bold;">${award.name}</span>
+          ${award.by ? ` - ${award.by}` : ''}
+          ${award.year ? ` (${award.year})` : ''}
+        </div>
+      `).join('')}
+    </div>
+  ` : ''}
+</body>
+</html>`
 }

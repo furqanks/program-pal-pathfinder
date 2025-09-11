@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { Upload, Plus, Trash2, FileText, Sparkles } from 'lucide-react'
+import { Upload, Plus, Trash2, FileText, Sparkles, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { Resume, ResumeParseResult } from '@/types/resume'
@@ -18,6 +19,8 @@ export const ResumeEditor: React.FC = () => {
   })
   const [isUploading, setIsUploading] = useState(false)
   const [isImproving, setIsImproving] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState<'classic' | 'modern'>('classic')
   const [confidence, setConfidence] = useState<number | null>(null)
   const { toast } = useToast()
 
@@ -173,6 +176,66 @@ export const ResumeEditor: React.FC = () => {
     }
   }
 
+  const handleExportPDF = async () => {
+    if (!resume.basics.fullName) {
+      toast({
+        title: 'Resume incomplete',
+        description: 'Please add at least basic information before exporting',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    setIsExporting(true)
+
+    try {
+      const { data, error } = await supabase.functions.invoke('document-export', {
+        body: { 
+          resume, 
+          template: selectedTemplate,
+          format: 'pdf'
+        }
+      })
+
+      if (error) {
+        throw error
+      }
+
+      // Create and download the file
+      const blob = new Blob([data], { type: 'text/html' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `resume-${selectedTemplate}.html`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast({
+        title: 'Resume exported successfully',
+        description: 'Your resume has been downloaded'
+      })
+    } catch (error: any) {
+      console.error('Export resume error:', error)
+      let errorMessage = 'Failed to export resume'
+      
+      if (error.message?.includes('Rate limit')) {
+        errorMessage = 'Daily export limit reached (20/day)'
+      } else if (error.message?.includes('authorization')) {
+        errorMessage = 'Authentication failed'
+      }
+      
+      toast({
+        title: 'Export failed',
+        description: errorMessage,
+        variant: 'destructive'
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   const addExperience = () => {
     setResume(prev => ({
       ...prev,
@@ -260,6 +323,27 @@ export const ResumeEditor: React.FC = () => {
               Parse confidence: {(confidence * 100).toFixed(0)}%
             </div>
           )}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="template-select">Template:</Label>
+            <Select value={selectedTemplate} onValueChange={(value: 'classic' | 'modern') => setSelectedTemplate(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="classic">Classic</SelectItem>
+                <SelectItem value="modern">Modern</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button 
+            onClick={handleExportPDF} 
+            disabled={isExporting || !resume.basics.fullName}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            {isExporting ? 'Exporting...' : 'Download PDF'}
+          </Button>
           <Button 
             onClick={handleImproveWithAI} 
             disabled={isImproving || !resume.basics.fullName}
