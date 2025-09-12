@@ -266,64 +266,41 @@ const SimpleDocumentInterface = () => {
     }
   };
 
-  // Export document using Node.js API
+  // Export document locally as DOCX to avoid server issues
   const handleExport = async () => {
-    if (!selectedDocument) {
-      toast.error("Please select a document to export");
+    const currentContent = selectedDocument ? selectedDocument.contentRaw : content;
+    const currentType = selectedDocument ? selectedDocument.documentType : selectedType || 'Document';
+    const createdAt = selectedDocument?.createdAt || new Date().toISOString();
+
+    if (!currentContent?.trim()) {
+      toast.error("There's no content to export");
       return;
     }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error("Please log in to export documents");
-        return;
-      }
+      const { generateDocxBlob, buildDocxFilename } = await import('@/utils/docxExport');
 
-      toast.info("Generating DOCX export...");
-      
-      const response = await fetch('/api/export-document', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          action: 'export_document',
-          documentId: selectedDocument.id,
-          format: 'docx'
-        }),
+      toast.info('Generating DOCX...');
+
+      const blob = await generateDocxBlob({
+        title: currentType,
+        content: currentContent,
+        createdAt,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Export failed' }));
-        console.error('Export API error:', errorData);
-        throw new Error(errorData.details || errorData.error || 'Export failed');
-      }
-
-      // Get filename from headers or generate one
-      const contentDisposition = response.headers.get('content-disposition');
-      const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
-      const filename = filenameMatch?.[1] || `${selectedDocument.documentType}.docx`;
-
-      // Create blob and download
-      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      
       const link = document.createElement('a');
       link.href = url;
-      link.download = filename;
+      link.download = buildDocxFilename(currentType);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      // Clean up
       window.URL.revokeObjectURL(url);
 
-      toast.success("DOCX document exported successfully!");
+      toast.success('DOCX downloaded successfully');
     } catch (error) {
       console.error('Export error:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to export document. Please try again.";
+      const errorMessage = error instanceof Error ? error.message : 'Failed to export document. Please try again.';
       toast.error(`Export failed: ${errorMessage}`);
     }
   };

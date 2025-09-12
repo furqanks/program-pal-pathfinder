@@ -84,6 +84,44 @@ export const DocumentExport = ({ documentId, documentIds, programId, isPortfolio
     setExportProgress(10);
 
     try {
+      // For DOCX, export locally to ensure reliability in all environments
+      if (selectedFormat === 'docx') {
+        setExportProgress(30);
+        toast.info('Generating DOCX...');
+
+        // Fetch content of the document client-side (already in context in some flows). Fallback to API if needed later.
+        const { data, error } = await supabase
+          .from('user_documents')
+          .select('document_type, original_text, created_at')
+          .eq('id', documentId)
+          .maybeSingle();
+
+        if (error || !data) {
+          throw new Error('Unable to load document content for export');
+        }
+
+        const { generateDocxBlob, buildDocxFilename } = await import('@/utils/docxExport');
+        const blob = await generateDocxBlob({
+          title: data.document_type || 'Document',
+          content: data.original_text || '',
+          createdAt: data.created_at,
+        });
+
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = buildDocxFilename(data.document_type || 'document');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        setExportProgress(100);
+        toast.success('DOCX downloaded successfully');
+        return;
+      }
+
+      // For other formats, use the API (PDF/HTML/TXT)
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         toast.error('Please log in to export documents');
@@ -93,7 +131,6 @@ export const DocumentExport = ({ documentId, documentIds, programId, isPortfolio
       setExportProgress(30);
       toast.info('Generating export...');
 
-      // Call our Node.js API instead of edge function
       const response = await fetch('/api/export-document', {
         method: 'POST',
         headers: {
@@ -119,25 +156,20 @@ export const DocumentExport = ({ documentId, documentIds, programId, isPortfolio
 
       setExportProgress(90);
 
-      // Get the filename from response headers or generate one
       const contentDisposition = response.headers.get('content-disposition');
       const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
       const filename = filenameMatch?.[1] || `document.${selectedFormat}`;
 
-      // Create blob and download
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      // Clean up
       window.URL.revokeObjectURL(url);
-      
+
       setExportProgress(100);
       toast.success('Export completed successfully!');
 
