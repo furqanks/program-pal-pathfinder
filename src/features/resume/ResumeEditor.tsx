@@ -73,7 +73,7 @@ export const ResumeEditor: React.FC = () => {
       if (result.resume) {
         const validatedResume = ResumeZ.safeParse(result.resume)
         if (validatedResume.success) {
-          setResume(validatedResume.data)
+          setResume(validatedResume.data as Resume)
           setConfidence(result.confidence)
           toast({
             title: 'Resume parsed successfully',
@@ -88,14 +88,41 @@ export const ResumeEditor: React.FC = () => {
               email: result.resume?.basics?.email,
               phone: result.resume?.basics?.phone,
               location: result.resume?.basics?.location,
-              links: result.resume?.basics?.links || []
+              links: result.resume?.basics?.links?.map((link: any) => ({
+                label: link.label || '',
+                url: link.url || ''
+              })) || []
             },
             summary: result.resume?.summary,
-            experience: result.resume?.experience || [],
-            education: result.resume?.education || [],
-            projects: result.resume?.projects,
-            skills: result.resume?.skills,
-            awards: result.resume?.awards
+            experience: result.resume?.experience?.map((exp: any) => ({
+              company: exp.company || '',
+              role: exp.role || '',
+              start: exp.start || '',
+              end: exp.end,
+              bullets: exp.bullets || []
+            })) || [],
+            education: result.resume?.education?.map((edu: any) => ({
+              institution: edu.institution || '',
+              degree: edu.degree || '',
+              start: edu.start || '',
+              end: edu.end || '',
+              details: edu.details
+            })) || [],
+            projects: result.resume?.projects?.map((proj: any) => ({
+              name: proj.name || '',
+              description: proj.description,
+              bullets: proj.bullets,
+              link: proj.link
+            })),
+            skills: result.resume?.skills?.map((skill: any) => ({
+              category: skill.category || '',
+              items: skill.items || []
+            })),
+            awards: result.resume?.awards?.map((award: any) => ({
+              name: award.name || '',
+              by: award.by,
+              year: award.year
+            }))
           }
           setResume(defaultResume)
           setConfidence(result.confidence * 0.5)
@@ -150,7 +177,7 @@ export const ResumeEditor: React.FC = () => {
       if (result.resume) {
         const validatedResume = ResumeZ.safeParse(result.resume)
         if (validatedResume.success) {
-          setResume(validatedResume.data)
+          setResume(validatedResume.data as Resume)
           toast({
             title: 'Resume improved successfully',
             description: 'AI has enhanced your resume content and structure'
