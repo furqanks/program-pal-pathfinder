@@ -75,79 +75,78 @@ export const DocumentExport = ({ documentId, documentIds, programId, isPortfolio
   const [downloadUrl, setDownloadUrl] = useState('');
 
   const handleExport = async () => {
-    if (!user) return;
+    if (!user || !documentId) {
+      toast.error('Please select a document to export');
+      return;
+    }
 
     setLoading(true);
-    setExportProgress(0);
+    setExportProgress(10);
 
     try {
-      let exportResult;
-
-      if (isPortfolio && programId) {
-        // Export complete portfolio
-        exportResult = await supabase.functions.invoke('document-export', {
-          body: {
-            action: 'generate_portfolio',
-            userId: user.id,
-            programId,
-            format: selectedFormat,
-            includeMetadata,
-            includeFeedback,
-            includeVersions
-          }
-        });
-      } else if (documentIds && documentIds.length > 1) {
-        // Batch export
-        exportResult = await supabase.functions.invoke('document-export', {
-          body: {
-            action: 'batch_export',
-            userId: user.id,
-            documentIds,
-            format: selectedFormat,
-            includeMetadata,
-            includeFeedback,
-            includeVersions
-          }
-        });
-      } else {
-        // Single document export
-        exportResult = await supabase.functions.invoke('document-export', {
-          body: {
-            action: optimizeForPrint ? 'create_print_version' : 'export_document',
-            documentId,
-            userId: user.id,
-            format: selectedFormat,
-            includeMetadata,
-            includeFeedback,
-            includeVersions
-          }
-        });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Please log in to export documents');
+        return;
       }
 
-      if (exportResult.error) {
-        throw exportResult.error;
+      setExportProgress(30);
+      toast.info('Generating export...');
+
+      // Call our Node.js API instead of edge function
+      const response = await fetch('/api/export-document', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          action: optimizeForPrint ? 'create_print_version' : 'export_document',
+          documentId,
+          format: selectedFormat,
+          includeMetadata,
+          includeFeedback,
+          includeVersions
+        }),
+      });
+
+      setExportProgress(70);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Export failed' }));
+        throw new Error(errorData.error || 'Export failed');
       }
 
-      setExportProgress(100);
-      setDownloadUrl(exportResult.data.downloadUrl);
+      setExportProgress(90);
+
+      // Get the filename from response headers or generate one
+      const contentDisposition = response.headers.get('content-disposition');
+      const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
+      const filename = filenameMatch?.[1] || `document.${selectedFormat}`;
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       
-      if (exportResult.data.downloadUrl) {
-        // Trigger download
-        const link = document.createElement('a');
-        link.href = exportResult.data.downloadUrl;
-        link.download = exportResult.data.filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        toast.success('Export completed successfully!');
-      }
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      
+      setExportProgress(100);
+      toast.success('Export completed successfully!');
 
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Failed to export document');
+      toast.error(error instanceof Error ? error.message : 'Failed to export document');
     } finally {
       setLoading(false);
+      setTimeout(() => setExportProgress(0), 2000);
     }
   };
 

@@ -264,7 +264,7 @@ const SimpleDocumentInterface = () => {
     }
   };
 
-  // Export to PDF (placeholder for now)
+  // Export document using Node.js API
   const handleExport = async () => {
     if (!selectedDocument) {
       toast.error("Please select a document to export");
@@ -272,37 +272,55 @@ const SimpleDocumentInterface = () => {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
         toast.error("Please log in to export documents");
         return;
       }
 
       toast.info("Generating PDF export...");
       
-      const { data, error } = await supabase.functions.invoke('document-export', {
-        body: {
+      const response = await fetch('/api/export-document', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
           action: 'export_document',
           documentId: selectedDocument.id,
-          userId: user.id,
           format: 'pdf'
-        }
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Export failed' }));
+        throw new Error(errorData.error || 'Export failed');
+      }
 
-      // Create download link
+      // Get filename from headers or generate one
+      const contentDisposition = response.headers.get('content-disposition');
+      const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
+      const filename = filenameMatch?.[1] || `${selectedDocument.documentType}.pdf`;
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
       const link = document.createElement('a');
-      link.href = data.downloadUrl;
-      link.download = data.filename;
+      link.href = url;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
 
       toast.success("Document exported successfully!");
     } catch (error) {
       console.error('Export error:', error);
-      toast.error("Failed to export document. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Failed to export document. Please try again.");
     }
   };
 

@@ -163,7 +163,7 @@ const FileUploadButton = ({
         >
           <span>
             <FileUp className="h-4 w-4" />
-            {isUploading ? `Uploading... ${uploadProgress}%` : "Upload Document"}
+            {isUploading ? `Uploading... ${uploadProgress}%` : "Upload Document (PDF, DOCX, TXT)"}
           </span>
         </Button>
       </label>
