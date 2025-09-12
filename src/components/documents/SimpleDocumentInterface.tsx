@@ -280,7 +280,7 @@ const SimpleDocumentInterface = () => {
         return;
       }
 
-      toast.info("Generating PDF export...");
+      toast.info("Generating DOCX export...");
       
       const response = await fetch('/api/export-document', {
         method: 'POST',
@@ -297,13 +297,14 @@ const SimpleDocumentInterface = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Export failed' }));
-        throw new Error(errorData.error || 'Export failed');
+        console.error('Export API error:', errorData);
+        throw new Error(errorData.details || errorData.error || 'Export failed');
       }
 
       // Get filename from headers or generate one
       const contentDisposition = response.headers.get('content-disposition');
       const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
-      const filename = filenameMatch?.[1] || `${selectedDocument.documentType}.pdf`;
+      const filename = filenameMatch?.[1] || `${selectedDocument.documentType}.docx`;
 
       // Create blob and download
       const blob = await response.blob();
@@ -319,10 +320,11 @@ const SimpleDocumentInterface = () => {
       // Clean up
       window.URL.revokeObjectURL(url);
 
-      toast.success("Document exported successfully!");
+      toast.success("DOCX document exported successfully!");
     } catch (error) {
       console.error('Export error:', error);
-      toast.error(error instanceof Error ? error.message : "Failed to export document. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Failed to export document. Please try again.";
+      toast.error(`Export failed: ${errorMessage}`);
     }
   };
 
