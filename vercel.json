@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/ingest.ts": { "memory": 512, "maxDuration": 30 },
+    "api/improve-resume.ts": { "memory": 512, "maxDuration": 30 },
+    "api/export-pdf.ts": { "memory": 1536, "maxDuration": 60 },
+    "api/export-docx.ts": { "memory": 512, "maxDuration": 30 }
+  }
+}

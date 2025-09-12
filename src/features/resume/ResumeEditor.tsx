@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Upload, Plus, Trash2, FileText, Sparkles, Download } from 'lucide-react'
+import React, { useState, useRef } from 'react'
+import { Upload, Plus, Trash2, FileText, Sparkles, Download, File, Wand2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -7,29 +7,43 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { supabase } from '@/integrations/supabase/client'
-import { Resume, ResumeParseResult } from '@/types/resume'
+import { Resume } from '@/types/resume'
 import { ResumeZ } from '@/types/resume.zod'
 
 export const ResumeEditor: React.FC = () => {
   const [resume, setResume] = useState<Resume>({
-    basics: { fullName: '' },
+    basics: { 
+      fullName: '',
+      title: '',
+      email: '',
+      phone: '',
+      location: '',
+      links: []
+    },
+    summary: '',
     experience: [],
-    education: []
+    education: [],
+    projects: [],
+    skills: [],
+    awards: []
   })
   const [isUploading, setIsUploading] = useState(false)
   const [isImproving, setIsImproving] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<'classic' | 'modern'>('classic')
   const [confidence, setConfidence] = useState<number | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
-    const fileType = file.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'docx'
-    
+    // Reset the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+
     if (!file.name.toLowerCase().endsWith('.pdf') && !file.name.toLowerCase().endsWith('.docx')) {
       toast({
         title: 'Invalid file type',
@@ -44,71 +58,58 @@ export const ResumeEditor: React.FC = () => {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('type', fileType)
 
-      const { data, error } = await supabase.functions.invoke('resume-parser', {
-        body: formData
+      const response = await fetch('/api/ingest', {
+        method: 'POST',
+        body: formData,
       })
 
-      if (error) {
-        throw error
+      if (!response.ok) {
+        throw new Error('Failed to parse document')
       }
 
-      const result = data as ResumeParseResult
+      const result = await response.json()
       
-      // Validate the result
-      const validatedResume = ResumeZ.safeParse(result.resume)
-      if (validatedResume.success) {
-        setResume(validatedResume.data as Resume)
-        setConfidence(result.confidence)
-        toast({
-          title: 'Resume parsed successfully',
-          description: `Confidence: ${(result.confidence * 100).toFixed(0)}%`
-        })
-      } else {
-        // Try to salvage what we can with proper type safety
-        const parsedResult = result.resume as any
-        const salvaged: Resume = {
-          basics: {
-            fullName: String(parsedResult?.basics?.fullName || 'Unknown'),
-            title: parsedResult?.basics?.title ? String(parsedResult.basics.title) : undefined,
-            email: parsedResult?.basics?.email ? String(parsedResult.basics.email) : undefined,
-            phone: parsedResult?.basics?.phone ? String(parsedResult.basics.phone) : undefined,
-            links: Array.isArray(parsedResult?.basics?.links) 
-              ? parsedResult.basics.links
-                  .filter((link: any) => link?.label && link?.url)
-                  .map((link: any) => ({ label: String(link.label), url: String(link.url) }))
-              : undefined,
-            location: parsedResult?.basics?.location ? String(parsedResult.basics.location) : undefined
-          },
-          experience: Array.isArray(parsedResult?.experience) ? parsedResult.experience
-            .map((exp: any) => ({
-              company: String(exp?.company || ''),
-              role: String(exp?.role || ''),
-              start: String(exp?.start || ''),
-              end: exp?.end ? String(exp.end) : undefined,
-              bullets: Array.isArray(exp?.bullets) ? exp.bullets.map(String).filter((bullet: string) => bullet) : []
-            }))
-            .filter((exp: any) => exp.company && exp.role) : [],
-          education: Array.isArray(parsedResult?.education) ? parsedResult.education
-            .map((edu: any) => ({
-              institution: String(edu?.institution || ''),
-              degree: String(edu?.degree || ''),
-              start: String(edu?.start || ''),
-              end: String(edu?.end || ''),
-              details: Array.isArray(edu?.details) ? edu.details.map(String) : undefined
-            }))
-            .filter((edu: any) => edu.institution && edu.degree) : []
+      if (result.resume) {
+        const validatedResume = ResumeZ.safeParse(result.resume)
+        if (validatedResume.success) {
+          setResume(validatedResume.data)
+          setConfidence(result.confidence)
+          toast({
+            title: 'Resume parsed successfully',
+            description: `Confidence: ${(result.confidence * 100).toFixed(0)}%`
+          })
+        } else {
+          // Create a valid resume with default values
+          const defaultResume: Resume = {
+            basics: {
+              fullName: result.resume?.basics?.fullName || 'Unknown',
+              title: result.resume?.basics?.title,
+              email: result.resume?.basics?.email,
+              phone: result.resume?.basics?.phone,
+              location: result.resume?.basics?.location,
+              links: result.resume?.basics?.links || []
+            },
+            summary: result.resume?.summary,
+            experience: result.resume?.experience || [],
+            education: result.resume?.education || [],
+            projects: result.resume?.projects,
+            skills: result.resume?.skills,
+            awards: result.resume?.awards
+          }
+          setResume(defaultResume)
+          setConfidence(result.confidence * 0.5)
+          toast({
+            title: 'Resume partially parsed',
+            description: 'Some sections may need manual editing',
+            variant: 'destructive'
+          })
         }
-        setResume(salvaged)
-        setConfidence(result.confidence * 0.5) // Reduce confidence for partial parse
-        toast({
-          title: 'Resume partially parsed',
-          description: 'Some sections may need manual editing',
-          variant: 'destructive'
-        })
+      } else {
+        throw new Error('No resume data in response')
       }
     } catch (error: any) {
+      console.error('Upload error:', error)
       toast({
         title: 'Upload failed',
         description: error.message || 'Failed to parse resume',
@@ -120,10 +121,10 @@ export const ResumeEditor: React.FC = () => {
   }
 
   const handleImproveWithAI = async () => {
-    if (!resume.basics.fullName || resume.experience.length === 0) {
+    if (!resume.basics.fullName) {
       toast({
         title: 'Resume incomplete',
-        description: 'Please add basic information and at least one experience before improving',
+        description: 'Please add at least basic information before improving',
         variant: 'destructive'
       })
       return
@@ -132,29 +133,36 @@ export const ResumeEditor: React.FC = () => {
     setIsImproving(true)
 
     try {
-      const { data, error } = await supabase.functions.invoke('improve-resume', {
-        body: { resume }
+      const response = await fetch('/api/improve-resume', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ resume }),
       })
 
-      if (error) {
-        throw error
+      if (!response.ok) {
+        throw new Error('Failed to improve resume')
       }
 
-      // Validate the improved resume
-      const validatedResume = ResumeZ.safeParse(data.resume)
-      if (validatedResume.success) {
-        setResume(validatedResume.data as Resume)
-        toast({
-          title: 'Resume improved successfully',
-          description: 'AI has enhanced your resume content and structure'
-        })
-      } else {
-        console.error('AI returned invalid resume:', validatedResume.error)
-        toast({
-          title: 'Improvement failed',
-          description: 'AI returned invalid data. Please try again.',
-          variant: 'destructive'
-        })
+      const result = await response.json()
+      
+      if (result.resume) {
+        const validatedResume = ResumeZ.safeParse(result.resume)
+        if (validatedResume.success) {
+          setResume(validatedResume.data)
+          toast({
+            title: 'Resume improved successfully',
+            description: 'AI has enhanced your resume content and structure'
+          })
+        } else {
+          console.error('AI returned invalid resume:', validatedResume.error)
+          toast({
+            title: 'Improvement failed',
+            description: 'AI returned invalid data. Please try again.',
+            variant: 'destructive'
+          })
+        }
       }
     } catch (error: any) {
       console.error('Improve resume error:', error)
@@ -189,24 +197,23 @@ export const ResumeEditor: React.FC = () => {
     setIsExporting(true)
 
     try {
-      const { data, error } = await supabase.functions.invoke('document-export', {
-        body: { 
-          resume, 
-          template: selectedTemplate,
-          format: 'pdf'
-        }
+      const response = await fetch('/api/export-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ resume, template: selectedTemplate }),
       })
 
-      if (error) {
-        throw error
+      if (!response.ok) {
+        throw new Error('Failed to export PDF')
       }
 
-      // Create and download the file
-      const blob = new Blob([data], { type: 'text/html' })
+      const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `resume-${selectedTemplate}.html`
+      a.download = 'resume.pdf'
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -214,21 +221,64 @@ export const ResumeEditor: React.FC = () => {
 
       toast({
         title: 'Resume exported successfully',
-        description: 'Your resume has been downloaded'
+        description: 'PDF downloaded successfully'
       })
     } catch (error: any) {
       console.error('Export resume error:', error)
-      let errorMessage = 'Failed to export resume'
-      
-      if (error.message?.includes('Rate limit')) {
-        errorMessage = 'Daily export limit reached (20/day)'
-      } else if (error.message?.includes('authorization')) {
-        errorMessage = 'Authentication failed'
-      }
-      
       toast({
         title: 'Export failed',
-        description: errorMessage,
+        description: 'Failed to export PDF. Please try again.',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleExportDOCX = async () => {
+    if (!resume.basics.fullName) {
+      toast({
+        title: 'Resume incomplete',
+        description: 'Please add at least basic information before exporting',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    setIsExporting(true)
+
+    try {
+      const response = await fetch('/api/export-docx', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ resume }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to export DOCX')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'resume.docx'
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast({
+        title: 'Resume exported successfully',
+        description: 'DOCX downloaded successfully'
+      })
+    } catch (error: any) {
+      console.error('Export resume error:', error)
+      toast({
+        title: 'Export failed',
+        description: 'Failed to export DOCX. Please try again.',
         variant: 'destructive'
       })
     } finally {
@@ -344,12 +394,16 @@ export const ResumeEditor: React.FC = () => {
             <Download className="w-4 h-4" />
             {isExporting ? 'Exporting...' : 'Download PDF'}
           </Button>
+          <Button onClick={handleExportDOCX} disabled={isExporting} variant="outline">
+            <File className="w-4 h-4" />
+            Export DOCX
+          </Button>
           <Button 
             onClick={handleImproveWithAI} 
             disabled={isImproving || !resume.basics.fullName}
             className="flex items-center gap-2"
           >
-            <Sparkles className="w-4 h-4" />
+            <Wand2 className="w-4 h-4" />
             {isImproving ? 'Improving...' : 'Improve with AI'}
           </Button>
         </div>
@@ -371,13 +425,14 @@ export const ResumeEditor: React.FC = () => {
                 <Button variant="outline" disabled={isUploading}>
                   {isUploading ? 'Parsing...' : 'Upload PDF or DOCX'}
                 </Button>
-                <Input
-                  id="file-upload"
-                  type="file"
-                  accept=".pdf,.docx"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
+              <Input
+                id="file-upload"
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.docx"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
               </Label>
             </div>
             <p className="mt-2 text-sm text-gray-500">
