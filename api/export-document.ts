@@ -5,10 +5,10 @@ import chromium from '@sparticuz/chromium';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 
 const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!;
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
 
 // CORS helper
 const setCorsHeaders = (res: NextApiResponse, origin: string) => {
@@ -231,11 +231,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const token = authHeader.split(' ')[1];
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
     
     if (authError || !user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
+
+    // Create an authenticated client for RLS-aware DB access
+    const db = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
 
     // Rate limiting
     if (!checkRateLimit(user.id)) {
@@ -248,8 +253,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Document ID is required' });
     }
 
-    // Fetch document
-    const { data: document, error: fetchError } = await supabase
+    // Fetch document with RLS using user's token
+    const { data: document, error: fetchError } = await db
       .from('documents')
       .select('*')
       .eq('id', documentId)

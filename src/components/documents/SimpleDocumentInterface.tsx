@@ -11,6 +11,7 @@ import { generateTestFeedback } from "@/services/document.service";
 import { Document } from "@/types/document.types";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import FileUploadButton from "./editor/FileUploadButton";
 
 // Simplified document types
 const DOCUMENT_TYPES = {
@@ -61,6 +62,7 @@ const SimpleDocumentInterface = () => {
   // Document management
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Load selected document content
   useEffect(() => {
@@ -289,7 +291,7 @@ const SimpleDocumentInterface = () => {
         body: JSON.stringify({
           action: 'export_document',
           documentId: selectedDocument.id,
-          format: 'pdf'
+          format: 'docx'
         }),
       });
 
@@ -342,27 +344,32 @@ const SimpleDocumentInterface = () => {
               <CardTitle className="text-subheading">
                 {isEditing ? "Edit Document" : "New Document"}
               </CardTitle>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleNew}
-                  disabled={!content && !selectedDocument}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  New
-                </Button>
-                {content && (
+                <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleExport}
+                    onClick={handleNew}
+                    disabled={!content && !selectedDocument}
                   >
-                    <Download className="h-4 w-4 mr-1" />
-                    Export
+                    <Plus className="h-4 w-4 mr-1" />
+                    New
                   </Button>
-                )}
-              </div>
+                  <FileUploadButton
+                    onFileContent={(fileContent: string, _fileName: string) => setContent(fileContent)}
+                    isUploading={isUploading}
+                    setIsUploading={setIsUploading}
+                  />
+                  {content && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExport}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Export
+                    </Button>
+                  )}
+                </div>
             </div>
           </CardHeader>
           
