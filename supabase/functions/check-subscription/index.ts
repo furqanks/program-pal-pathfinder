@@ -50,7 +50,7 @@ serve(async (req) => {
     const { data: existingSubscription } = await supabaseClient
       .from("subscribers")
       .select("*")
-      .eq("email", user.email)
+      .eq("user_id", user.id)
       .single();
 
     // If we have recent data (less than 5 minutes old), return it to avoid rate limits
@@ -80,7 +80,6 @@ serve(async (req) => {
     const subscriptionEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(); // 1 year from now
     
     await supabaseClient.from("subscribers").upsert({
-      email: user.email,
       user_id: user.id,
       stripe_customer_id: null,
       stripe_subscription_id: 'free_premium_access',
@@ -89,7 +88,7 @@ serve(async (req) => {
       subscription_tier: subscriptionTier,
       subscription_end: subscriptionEnd,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'email' });
+    }, { onConflict: 'user_id' });
 
     logStep("Updated database with premium access", { subscribed: true, subscriptionTier });
     return new Response(JSON.stringify({

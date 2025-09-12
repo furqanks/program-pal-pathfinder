@@ -74,16 +74,15 @@ serve(async (req) => {
 
     // Update subscribers table
     await supabaseClient.from("subscribers").upsert({
-      email: user.email,
       user_id: user.id,
       stripe_customer_id: customerId,
-      stripe_subscription_id: scheduledToCancelSub.id,
-      subscription_status: updatedSubscription.status,
+      stripe_subscription_id: updatedSubscription.id,
+      subscription_status: 'active',
       subscribed: true,
       subscription_tier: 'Premium',
       subscription_end: new Date(updatedSubscription.current_period_end * 1000).toISOString(),
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'email' });
+    }, { onConflict: 'user_id' });
 
     return new Response(JSON.stringify({
       success: true,

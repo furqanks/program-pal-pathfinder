@@ -84,7 +84,6 @@ serve(async (req) => {
     // Update subscribers table
     const isStillActive = updatedSubscription.status === 'active' && !immediate;
     await supabaseClient.from("subscribers").upsert({
-      email: user.email,
       user_id: user.id,
       stripe_customer_id: customerId,
       stripe_subscription_id: immediate ? null : subscription.id,
@@ -95,7 +94,7 @@ serve(async (req) => {
         ? new Date(updatedSubscription.current_period_end * 1000).toISOString() 
         : null,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'email' });
+    }, { onConflict: 'user_id' });
 
     logStep("Updated database with cancellation info", { 
       isStillActive, 

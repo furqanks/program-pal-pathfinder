@@ -153,7 +153,6 @@ serve(async (req) => {
 
     // Update our database with the subscription info
     await supabaseClient.from("subscribers").upsert({
-      email: user.email,
       user_id: user.id,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscription.id,
@@ -161,7 +160,7 @@ serve(async (req) => {
       subscribed: false, // Will be true once payment is confirmed
       subscription_tier: 'Premium',
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'email' });
+    }, { onConflict: 'user_id' });
 
     logStep("Database updated with subscription info");
 

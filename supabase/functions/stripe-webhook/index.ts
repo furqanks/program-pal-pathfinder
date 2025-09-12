@@ -77,22 +77,33 @@ serve(async (req) => {
           const customerEmail = customer.email;
 
           if (customerEmail) {
-            // Update subscriber status to active
-            await supabaseClient.from("subscribers").upsert({
-              email: customerEmail,
-              stripe_customer_id: customerId,
-              stripe_subscription_id: subscriptionId,
-              subscription_status: subscription.status,
-              subscribed: true,
-              subscription_tier: 'Premium',
-              subscription_end: new Date(subscription.current_period_end * 1000).toISOString(),
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'email' });
+            // Find existing subscriber record by stripe_customer_id
+            const { data: existingSubscriber } = await supabaseClient
+              .from("subscribers")
+              .select("user_id")
+              .eq("stripe_customer_id", customerId)
+              .single();
 
-            logStep("Updated subscriber status to active", { 
-              email: customerEmail,
-              subscriptionId 
-            });
+            if (existingSubscriber) {
+              // Update subscriber status to active
+              await supabaseClient.from("subscribers").upsert({
+                user_id: existingSubscriber.user_id,
+                stripe_customer_id: customerId,
+                stripe_subscription_id: subscriptionId,
+                subscription_status: subscription.status,
+                subscribed: true,
+                subscription_tier: 'Premium',
+                subscription_end: new Date(subscription.current_period_end * 1000).toISOString(),
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'user_id' });
+
+              logStep("Updated subscriber status to active", { 
+                userId: existingSubscriber.user_id,
+                subscriptionId 
+              });
+            } else {
+              logStep("WARNING: No existing subscriber found for customer", { customerId, customerEmail });
+            }
           }
         }
         break;
@@ -112,23 +123,34 @@ serve(async (req) => {
         const customerEmail = customer.email;
 
         if (customerEmail) {
-          await supabaseClient.from("subscribers").upsert({
-            email: customerEmail,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscription.id,
-            subscription_status: subscription.status,
-            subscribed: subscription.status === 'active',
-            subscription_tier: subscription.status === 'active' ? 'Premium' : null,
-            subscription_end: subscription.current_period_end 
-              ? new Date(subscription.current_period_end * 1000).toISOString() 
-              : null,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'email' });
+          // Find existing subscriber record by stripe_customer_id
+          const { data: existingSubscriber } = await supabaseClient
+            .from("subscribers")
+            .select("user_id")
+            .eq("stripe_customer_id", customerId)
+            .single();
 
-          logStep("Updated subscriber from subscription update", { 
-            email: customerEmail,
-            status: subscription.status 
-          });
+          if (existingSubscriber) {
+            await supabaseClient.from("subscribers").upsert({
+              user_id: existingSubscriber.user_id,
+              stripe_customer_id: customerId,
+              stripe_subscription_id: subscription.id,
+              subscription_status: subscription.status,
+              subscribed: subscription.status === 'active',
+              subscription_tier: subscription.status === 'active' ? 'Premium' : null,
+              subscription_end: subscription.current_period_end 
+                ? new Date(subscription.current_period_end * 1000).toISOString() 
+                : null,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id' });
+
+            logStep("Updated subscriber from subscription update", { 
+              userId: existingSubscriber.user_id,
+              status: subscription.status 
+            });
+          } else {
+            logStep("WARNING: No existing subscriber found for customer", { customerId, customerEmail });
+          }
         }
         break;
       }
@@ -146,20 +168,31 @@ serve(async (req) => {
         const customerEmail = customer.email;
 
         if (customerEmail) {
-          await supabaseClient.from("subscribers").upsert({
-            email: customerEmail,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: null,
-            subscription_status: 'canceled',
-            subscribed: false,
-            subscription_tier: null,
-            subscription_end: null,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'email' });
+          // Find existing subscriber record by stripe_customer_id
+          const { data: existingSubscriber } = await supabaseClient
+            .from("subscribers")
+            .select("user_id")
+            .eq("stripe_customer_id", customerId)
+            .single();
 
-          logStep("Updated subscriber status to canceled", { 
-            email: customerEmail 
-          });
+          if (existingSubscriber) {
+            await supabaseClient.from("subscribers").upsert({
+              user_id: existingSubscriber.user_id,
+              stripe_customer_id: customerId,
+              stripe_subscription_id: null,
+              subscription_status: 'canceled',
+              subscribed: false,
+              subscription_tier: null,
+              subscription_end: null,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id' });
+
+            logStep("Updated subscriber status to canceled", { 
+              userId: existingSubscriber.user_id
+            });
+          } else {
+            logStep("WARNING: No existing subscriber found for customer", { customerId, customerEmail });
+          }
         }
         break;
       }
@@ -183,25 +216,36 @@ serve(async (req) => {
           const customerEmail = customer.email;
 
           if (customerEmail) {
-            // If subscription is past due or unpaid, revoke access
-            if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
-              await supabaseClient.from("subscribers").upsert({
-                email: customerEmail,
-                stripe_customer_id: customerId,
-                stripe_subscription_id: subscriptionId,
-                subscription_status: subscription.status,
-                subscribed: false, // Revoke access on payment failure
-                subscription_tier: null,
-                subscription_end: subscription.current_period_end 
-                  ? new Date(subscription.current_period_end * 1000).toISOString() 
-                  : null,
-                updated_at: new Date().toISOString(),
-              }, { onConflict: 'email' });
+            // Find existing subscriber record by stripe_customer_id
+            const { data: existingSubscriber } = await supabaseClient
+              .from("subscribers")
+              .select("user_id")
+              .eq("stripe_customer_id", customerId)
+              .single();
 
-              logStep("Revoked access due to payment failure", { 
-                email: customerEmail,
-                status: subscription.status 
-              });
+            if (existingSubscriber) {
+              // If subscription is past due or unpaid, revoke access
+              if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
+                await supabaseClient.from("subscribers").upsert({
+                  user_id: existingSubscriber.user_id,
+                  stripe_customer_id: customerId,
+                  stripe_subscription_id: subscriptionId,
+                  subscription_status: subscription.status,
+                  subscribed: false, // Revoke access on payment failure
+                  subscription_tier: null,
+                  subscription_end: subscription.current_period_end 
+                    ? new Date(subscription.current_period_end * 1000).toISOString() 
+                    : null,
+                  updated_at: new Date().toISOString(),
+                }, { onConflict: 'user_id' });
+
+                logStep("Revoked access due to payment failure", { 
+                  userId: existingSubscriber.user_id,
+                  status: subscription.status 
+                });
+              }
+            } else {
+              logStep("WARNING: No existing subscriber found for customer", { customerId, customerEmail });
             }
           }
         }
