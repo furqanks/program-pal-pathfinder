@@ -32,12 +32,14 @@ interface SecurityLog {
 
 interface UserSession {
   id: string;
-  ip_address: string;
-  user_agent: string;
+  ip_display: string;
+  browser_display: string;
   location: string;
   is_active: boolean;
   last_activity: string;
   created_at: string;
+  expires_at: string;
+  is_expired: boolean;
 }
 
 export const SecuritySettings = () => {
@@ -76,11 +78,10 @@ export const SecuritySettings = () => {
         setSecurityLogs(logsData);
       }
 
-      // Load active sessions
+      // Load active sessions using secure view
       const { data: sessionsData } = await supabase
-        .from('user_sessions')
+        .from('user_sessions_safe')
         .select('*')
-        .eq('user_id', user?.id)
         .eq('is_active', true)
         .order('last_activity', { ascending: false });
 
@@ -145,11 +146,8 @@ export const SecuritySettings = () => {
   const handleLogoutAllSessions = async () => {
     setLoading(true);
     try {
-      // Update all sessions to inactive
-      const { error } = await supabase
-        .from('user_sessions')
-        .update({ is_active: false })
-        .eq('user_id', user?.id);
+      // Use the secure function to invalidate all user sessions
+      const { error } = await supabase.rpc('invalidate_user_sessions');
 
       if (error) throw error;
 
@@ -322,19 +320,24 @@ export const SecuritySettings = () => {
                     <div className="flex items-center gap-2">
                       <Monitor className="h-4 w-4" />
                       <span className="font-medium">
-                        {session.user_agent?.includes('Chrome') ? 'Chrome' : 
-                         session.user_agent?.includes('Firefox') ? 'Firefox' : 
-                         session.user_agent?.includes('Safari') ? 'Safari' : 'Unknown Browser'}
+                        {session.browser_display}
                       </span>
+                      {session.is_expired && (
+                        <Badge variant="destructive" className="text-xs">Expired</Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {session.location || session.ip_address}
+                        {session.location || session.ip_display}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {new Date(session.last_activity).toLocaleDateString()}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Expires: {new Date(session.expires_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
