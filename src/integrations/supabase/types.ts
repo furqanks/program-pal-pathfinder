@@ -923,34 +923,55 @@ export type Database = {
       user_sessions: {
         Row: {
           created_at: string
+          device_fingerprint: string | null
+          expires_at: string | null
           id: string
           ip_address: unknown | null
+          ip_hash: string | null
           is_active: boolean | null
           last_activity: string | null
+          last_rotation: string | null
           location: string | null
+          locked_until: string | null
+          login_attempts: number | null
           session_token: string
+          session_token_hash: string | null
           user_agent: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string
+          device_fingerprint?: string | null
+          expires_at?: string | null
           id?: string
           ip_address?: unknown | null
+          ip_hash?: string | null
           is_active?: boolean | null
           last_activity?: string | null
+          last_rotation?: string | null
           location?: string | null
+          locked_until?: string | null
+          login_attempts?: number | null
           session_token: string
+          session_token_hash?: string | null
           user_agent?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string
+          device_fingerprint?: string | null
+          expires_at?: string | null
           id?: string
           ip_address?: unknown | null
+          ip_hash?: string | null
           is_active?: boolean | null
           last_activity?: string | null
+          last_rotation?: string | null
           location?: string | null
+          locked_until?: string | null
+          login_attempts?: number | null
           session_token?: string
+          session_token_hash?: string | null
           user_agent?: string | null
           user_id?: string | null
         }
@@ -1002,12 +1023,64 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_sessions_safe: {
+        Row: {
+          browser_display: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string | null
+          ip_display: string | null
+          is_active: boolean | null
+          is_expired: boolean | null
+          last_activity: string | null
+          location: string | null
+          user_id: string | null
+        }
+        Insert: {
+          browser_display?: never
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string | null
+          ip_display?: never
+          is_active?: boolean | null
+          is_expired?: never
+          last_activity?: string | null
+          location?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          browser_display?: never
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string | null
+          ip_display?: never
+          is_active?: boolean | null
+          is_expired?: never
+          last_activity?: string | null
+          location?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_access_note: {
         Args: { note_id: string; user_id: string }
         Returns: boolean
+      }
+      cleanup_expired_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_secure_session: {
+        Args: {
+          p_ip_address: unknown
+          p_location?: string
+          p_session_token: string
+          p_user_agent?: string
+          p_user_id: string
+        }
+        Returns: string
       }
       get_next_version_number: {
         Args: {
@@ -1015,6 +1088,18 @@ export type Database = {
           p_program_id: string
           p_user_id: string
         }
+        Returns: number
+      }
+      hash_ip_address: {
+        Args: { ip_text: string }
+        Returns: string
+      }
+      hash_session_token: {
+        Args: { token_text: string }
+        Returns: string
+      }
+      invalidate_user_sessions: {
+        Args: { target_user_id?: string }
         Returns: number
       }
       logout_all_user_sessions: {
