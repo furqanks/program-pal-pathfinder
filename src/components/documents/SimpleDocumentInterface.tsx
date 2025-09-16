@@ -13,6 +13,8 @@ import { Document } from "@/types/document.types";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import FileUploadButton from "./editor/FileUploadButton";
+import RichTextEditor from "@/components/editor/RichTextEditor";
+import type { JSONContent } from '@tiptap/react';
 
 // Simplified document types
 const DOCUMENT_TYPES = {
@@ -44,9 +46,11 @@ const SimpleDocumentInterface = () => {
   
   // Main interface state
   const [content, setContent] = useState("");
+  const [contentJson, setContentJson] = useState<JSONContent>({ type: 'doc', content: [{ type: 'paragraph' }] });
   const [selectedType, setSelectedType] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saving, setSaving] = useState(false);
   
   // Feedback state
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
@@ -70,6 +74,20 @@ const SimpleDocumentInterface = () => {
   useEffect(() => {
     if (selectedDocument) {
       setContent(selectedDocument.contentRaw);
+      // Convert text to TipTap JSON if needed
+      if (selectedDocument.contentRaw) {
+        const paragraphs = selectedDocument.contentRaw.split('\n\n').filter(p => p.trim());
+        setContentJson({
+          type: "doc",
+          content: paragraphs.length > 0 ? paragraphs.map(paragraph => ({
+            type: "paragraph",
+            content: paragraph.trim() ? [{
+              type: "text",
+              text: paragraph.trim()
+            }] : []
+          })) : [{ type: "paragraph" }]
+        });
+      }
       setSelectedType(selectedDocument.documentType);
       setIsEditing(true);
       if (selectedDocument.contentFeedback) {
@@ -92,7 +110,8 @@ const SimpleDocumentInterface = () => {
 
   // Handle document analysis
   const handleAnalyze = async () => {
-    if (!content.trim()) {
+    const plainText = getPlainTextFromJson(contentJson);
+    if (!plainText.trim()) {
       toast.error("Please enter document content");
       return;
     }
@@ -105,7 +124,7 @@ const SimpleDocumentInterface = () => {
     setShowFeedback(false);
     
     try {
-      const result = await generateTestFeedback(content, selectedType);
+      const result = await generateTestFeedback(plainText, selectedType);
       setFeedback(result);
       setShowFeedback(true);
       toast.success("Analysis complete!");
@@ -117,9 +136,50 @@ const SimpleDocumentInterface = () => {
     }
   };
 
+  // Convert TipTap JSON to text for backward compatibility
+  const getPlainTextFromJson = (json: JSONContent): string => {
+    if (!json.content) return '';
+    return json.content.map(node => {
+      if (node.type === 'paragraph' && node.content) {
+        return node.content.map(child => child.text || '').join('');
+      }
+      return '';
+    }).join('\n\n');
+  };
+
+  // Auto-save function for rich text editor
+  const handleContentChange = async (json: JSONContent) => {
+    setContentJson(json);
+    setContent(getPlainTextFromJson(json));
+    
+    if (!selectedType) return;
+    
+    setSaving(true);
+    try {
+      // Save to Supabase with both formats for compatibility
+      const { error } = await supabase
+        .from('application_documents')
+        .upsert({
+          content_json: json,
+          content_raw: getPlainTextFromJson(json),
+          document_type: selectedType,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Auto-save error:', error);
+      toast.error('Failed to auto-save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Handle document save
   const handleSave = async () => {
-    if (!content.trim()) {
+    const plainText = getPlainTextFromJson(contentJson);
+    if (!plainText.trim()) {
       toast.error("Please enter document content");
       return;
     }
@@ -134,7 +194,7 @@ const SimpleDocumentInterface = () => {
       await addDocument({
         documentType: selectedType as any,
         linkedProgramId: null,
-        contentRaw: content,
+        contentRaw: plainText,
         fileName: null
       });
       
@@ -178,7 +238,8 @@ const SimpleDocumentInterface = () => {
 
   // Handle custom AI analysis
   const handleCustomAnalysis = async () => {
-    if (!content.trim()) {
+    const plainText = getPlainTextFromJson(contentJson);
+    if (!plainText.trim()) {
       toast.error("Please enter document content");
       return;
     }
@@ -197,7 +258,7 @@ const SimpleDocumentInterface = () => {
     try {
       const { data, error } = await supabase.functions.invoke('custom-document-analysis', {
         body: {
-          content,
+          content: plainText,
           documentType: selectedType,
           customPrompt,
           generateDraft: false
@@ -222,7 +283,8 @@ const SimpleDocumentInterface = () => {
 
   // Handle improved draft generation
   const handleGenerateDraft = async () => {
-    if (!content.trim() || !selectedType || !customPrompt.trim()) {
+    const plainText = getPlainTextFromJson(contentJson);
+    if (!plainText.trim() || !selectedType || !customPrompt.trim()) {
       toast.error("Please ensure all fields are filled");
       return;
     }
@@ -232,7 +294,7 @@ const SimpleDocumentInterface = () => {
     try {
       const { data, error } = await supabase.functions.invoke('custom-document-analysis', {
         body: {
-          content,
+          content: plainText,
           documentType: selectedType,
           customPrompt,
           generateDraft: true
@@ -254,7 +316,21 @@ const SimpleDocumentInterface = () => {
 
   // Handle accepting improved draft
   const handleAcceptDraft = () => {
-    setContent(improvedDraft);
+    // Convert improved text to TipTap JSON
+    const paragraphs = improvedDraft.split('\n\n').filter(p => p.trim());
+    const newJson = {
+      type: "doc" as const,
+      content: paragraphs.length > 0 ? paragraphs.map(paragraph => ({
+        type: "paragraph" as const,
+        content: paragraph.trim() ? [{
+          type: "text" as const,
+          text: paragraph.trim()
+        }] : []
+      })) : [{ type: "paragraph" as const }]
+    };
+    
+    setContentJson(newJson);
+    setContent(getPlainTextFromJson(newJson));
     setShowComparison(false);
     setImprovedDraft("");
     toast.success("Draft accepted and applied!");
@@ -270,6 +346,7 @@ const SimpleDocumentInterface = () => {
   // Handle new document
   const handleNew = () => {
     setContent("");
+    setContentJson({ type: 'doc', content: [{ type: 'paragraph' }] });
     setSelectedType("");
     setFeedback(null);
     setShowFeedback(false);
@@ -298,7 +375,7 @@ const SimpleDocumentInterface = () => {
 
   // Export document locally as DOCX to avoid server issues
   const handleExport = async () => {
-    const currentContent = selectedDocument ? selectedDocument.contentRaw : content;
+    const currentContent = selectedDocument ? selectedDocument.contentRaw : getPlainTextFromJson(contentJson);
     const currentType = selectedDocument ? selectedDocument.documentType : selectedType || 'Document';
     const createdAt = selectedDocument?.createdAt || new Date().toISOString();
 
@@ -364,7 +441,22 @@ const SimpleDocumentInterface = () => {
                     New
                   </Button>
                   <FileUploadButton
-                    onFileContent={(fileContent: string, _fileName: string) => setContent(fileContent)}
+                    onFileContent={(fileContent: string, _fileName: string) => {
+                      // Convert imported text to TipTap JSON
+                      const paragraphs = fileContent.split('\n\n').filter(p => p.trim());
+                      const newJson = {
+                        type: "doc" as const,
+                        content: paragraphs.length > 0 ? paragraphs.map(paragraph => ({
+                          type: "paragraph" as const,
+                          content: paragraph.trim() ? [{
+                            type: "text" as const,
+                            text: paragraph.trim()
+                          }] : []
+                        })) : [{ type: "paragraph" as const }]
+                      };
+                      setContentJson(newJson);
+                      setContent(getPlainTextFromJson(newJson));
+                    }}
                     isUploading={isUploading}
                     setIsUploading={setIsUploading}
                   />
@@ -400,17 +492,17 @@ const SimpleDocumentInterface = () => {
               </Select>
             </div>
 
-            {/* Content Editor */}
+            {/* Rich Text Content Editor */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Content</label>
-              <Textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Start writing your document..."
-                className="min-h-[400px] resize-none"
+              <RichTextEditor
+                initialContent={contentJson}
+                onChange={handleContentChange}
+                className="min-h-[400px]"
               />
-              <div className="text-xs text-muted-foreground text-right">
-                {content.length} characters
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{saving ? 'Saving…' : 'Saved'}</span>
+                <span>{content.length} characters</span>
               </div>
             </div>
 
@@ -438,7 +530,7 @@ const SimpleDocumentInterface = () => {
               <div className="flex gap-2">
                 <Button
                   onClick={handleCustomAnalysis}
-                  disabled={isCustomAnalyzing || !content.trim() || !selectedType || !customPrompt.trim()}
+                  disabled={isCustomAnalyzing || !getPlainTextFromJson(contentJson).trim() || !selectedType || !customPrompt.trim()}
                   variant="outline"
                   size="sm"
                   className="flex-1"
@@ -450,7 +542,7 @@ const SimpleDocumentInterface = () => {
                 {showCustomAnalysis && customAnalysis && (
                   <Button
                     onClick={handleGenerateDraft}
-                    disabled={isGeneratingDraft || !content.trim() || !selectedType || !customPrompt.trim()}
+                    disabled={isGeneratingDraft || !getPlainTextFromJson(contentJson).trim() || !selectedType || !customPrompt.trim()}
                     size="sm"
                     className="flex-1"
                   >
@@ -465,7 +557,7 @@ const SimpleDocumentInterface = () => {
             <div className="flex gap-3">
               <Button
                 onClick={handleAnalyze}
-                disabled={isAnalyzing || !content.trim() || !selectedType}
+                disabled={isAnalyzing || !getPlainTextFromJson(contentJson).trim() || !selectedType}
                 className="flex-1"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
@@ -475,27 +567,12 @@ const SimpleDocumentInterface = () => {
               <Button
                 variant="outline"
                 onClick={handleSave}
-                disabled={isSaving || !content.trim() || !selectedType}
+                disabled={isSaving || !getPlainTextFromJson(contentJson).trim() || !selectedType}
               >
                 {isSaving ? "Saving..." : "Save"}
               </Button>
             </div>
 
-            {/* Rich Text Editor Button */}
-            <div className="mt-4 pt-4 border-t">
-              <Button
-                onClick={handleCreateRichText}
-                disabled={isSaving || !selectedType}
-                variant="secondary"
-                className="w-full"
-              >
-                <PenTool className="h-4 w-4 mr-2" />
-                {isSaving ? "Creating..." : "Create with Rich Text Editor"}
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                Use the rich text editor for advanced formatting, headings, lists, and more
-              </p>
-            </div>
           </CardContent>
         </Card>
 
