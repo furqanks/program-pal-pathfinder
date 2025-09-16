@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, PlusCircle, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { FileText, PlusCircle, Edit, Trash2, MoreHorizontal, Pen } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Document } from "@/types/document.types";
 import { format } from "date-fns";
 import { useDocumentContext } from "@/contexts/DocumentContext";
@@ -23,6 +24,7 @@ const DocumentsList = ({
   onSelectDocument,
   onCreateNew
 }: DocumentsListProps) => {
+  const navigate = useNavigate();
   const {
     getVersions,
     deleteDocument,
@@ -129,6 +131,13 @@ const DocumentsList = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="z-50 bg-background border shadow-md">
+                    <DropdownMenuItem onClick={e => {
+                e.stopPropagation();
+                navigate(`/documents/${doc.id}/edit`);
+              }}>
+                      <Pen className="h-3 w-3 mr-2" />
+                      Edit with Rich Text
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={e => {
                 e.stopPropagation();
                 console.log("Rename clicked for document:", doc.id);

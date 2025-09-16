@@ -5,7 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { FileText, Sparkles, Download, Plus, Trash2, MessageSquare, GitCompare, CheckCircle2, X } from "lucide-react";
+import { FileText, Sparkles, Download, Plus, Trash2, MessageSquare, GitCompare, CheckCircle2, X, PenTool } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useDocumentContext } from "@/contexts/DocumentContext";
 import { generateTestFeedback } from "@/services/document.service";
 import { Document } from "@/types/document.types";
@@ -38,6 +39,7 @@ interface CustomAnalysis {
 }
 
 const SimpleDocumentInterface = () => {
+  const navigate = useNavigate();
   const { documents, addDocument, deleteDocument } = useDocumentContext();
   
   // Main interface state
@@ -141,6 +143,34 @@ const SimpleDocumentInterface = () => {
     } catch (error) {
       console.error("Save error:", error);
       toast.error("Failed to save document");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle creating new document with rich text editor
+  const handleCreateRichText = async () => {
+    if (!selectedType) {
+      toast.error("Please select document type first");
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      const newDoc = await addDocument({
+        documentType: selectedType as any,
+        linkedProgramId: null,
+        contentRaw: content || "",
+        fileName: null
+      });
+      
+      if (newDoc) {
+        navigate(`/documents/${newDoc.id}/edit`);
+      }
+    } catch (error) {
+      console.error("Create error:", error);
+      toast.error("Failed to create document");
     } finally {
       setIsSaving(false);
     }
@@ -449,6 +479,22 @@ const SimpleDocumentInterface = () => {
               >
                 {isSaving ? "Saving..." : "Save"}
               </Button>
+            </div>
+
+            {/* Rich Text Editor Button */}
+            <div className="mt-4 pt-4 border-t">
+              <Button
+                onClick={handleCreateRichText}
+                disabled={isSaving || !selectedType}
+                variant="secondary"
+                className="w-full"
+              >
+                <PenTool className="h-4 w-4 mr-2" />
+                {isSaving ? "Creating..." : "Create with Rich Text Editor"}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Use the rich text editor for advanced formatting, headings, lists, and more
+              </p>
             </div>
           </CardContent>
         </Card>
