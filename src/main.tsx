@@ -2,6 +2,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import './styles/editor.css'
 
 // Get the root element and render the app
 const rootElement = document.getElementById("root");

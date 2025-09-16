@@ -1,0 +1,32 @@
+/* TipTap content area */
+.ProseMirror {
+  min-height: 260px;
+  line-height: 1.6;
+  padding: 0.25rem 0; /* inner breathing room */
+}
+
+/* Remove the unwanted black outline/border on focus/selection */
+.ProseMirror:focus { outline: none; }
+.ProseMirror *:focus { outline: none; }
+.ProseMirror-selectednode { outline: none; }
+
+/* Headings visible */
+.ProseMirror h1 { font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0; }
+.ProseMirror h2 { font-size: 1.25rem; font-weight: 700; margin: 0.5rem 0; }
+.ProseMirror h3 { font-size: 1.125rem; font-weight: 600; margin: 0.5rem 0; }
+
+/* Lists visible (Tailwind/Preflight can zero them out) */
+.ProseMirror ul { list-style: disc; padding-left: 1.25rem; margin: 0.5rem 0; }
+.ProseMirror ol { list-style: decimal; padding-left: 1.25rem; margin: 0.5rem 0; }
+.ProseMirror li { margin: 0.25rem 0; }
+
+/* Blockquote style */
+.ProseMirror blockquote {
+  border-left: 3px solid #e5e7eb;
+  margin: 0.75rem 0;
+  padding-left: 0.75rem;
+  color: #374151;
+}
+
+/* Paragraph spacing */
+.ProseMirror p { margin: 0.25rem 0; }

@@ -49,11 +49,11 @@ function Toolbar({ editor }: { editor: Editor | null }) {
         }
         onChange={(e) => {
           const v = e.target.value;
-          const chain = editor.chain().focus();
-          chain.setParagraph().run();
-          if (v === 'h1') editor.chain().focus().toggleHeading({ level: 1 }).run();
-          if (v === 'h2') editor.chain().focus().toggleHeading({ level: 2 }).run();
-          if (v === 'h3') editor.chain().focus().toggleHeading({ level: 3 }).run();
+          const ch = editor.chain().focus();
+          if (v === 'p') ch.setParagraph().run();
+          if (v === 'h1') ch.setHeading({ level: 1 }).run();
+          if (v === 'h2') ch.setHeading({ level: 2 }).run();
+          if (v === 'h3') ch.setHeading({ level: 3 }).run();
         }}
       >
         <option value="p">Paragraph</option>
@@ -101,7 +101,7 @@ export default function RichTextEditor({ initialContent, onChange, readOnly, cla
   }, [readOnly]);
 
   return (
-    <div className={`border rounded-md bg-white ${className || ''}`} data-testid="rte-root">
+    <div className={`rounded-md bg-white ${className || ''}`} data-testid="rte-root">
       {!readOnly && <Toolbar editor={editor} />}
       <div className="p-4">
         <EditorContent editor={editor} />
