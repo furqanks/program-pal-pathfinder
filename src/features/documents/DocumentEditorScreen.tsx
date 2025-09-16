@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { RichTextEditor, RichTextEditorRef } from './RichTextEditor';
+import RichTextEditor from '@/components/editor/RichTextEditor';
+import { JSONContent } from '@tiptap/react';
 import FileUploadButton from '@/components/documents/editor/FileUploadButton';
 import { ArrowLeft, Save, Download, Upload, Clock, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,11 +26,10 @@ export const DocumentEditorScreen: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const editorRef = useRef<RichTextEditorRef>(null);
 
   const [document, setDocument] = useState<DocumentData | null>(null);
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState<any>({ 
+  const [content, setContent] = useState<JSONContent>({ 
     type: "doc", 
     content: [{ type: "paragraph" }] 
   });
@@ -37,7 +37,6 @@ export const DocumentEditorScreen: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
   // Load document on mount
   useEffect(() => {
@@ -123,7 +122,7 @@ export const DocumentEditorScreen: React.FC = () => {
   }, [id, user, navigate]);
 
   // Autosave function
-  const saveDocument = async (contentToSave?: any, titleToSave?: string) => {
+  const saveDocument = async (contentToSave?: JSONContent, titleToSave?: string) => {
     if (!document || !user || isSaving) return;
 
     setIsSaving(true);
@@ -161,64 +160,46 @@ export const DocumentEditorScreen: React.FC = () => {
     }
   };
 
-  // Debounced autosave for content changes
-  const handleContentChange = (newContent: any) => {
+  // Handle content changes with autosave
+  const handleContentChange = (newContent: JSONContent) => {
     setContent(newContent);
-
-    // Clear existing timeout
-    if (saveTimeoutId) {
-      clearTimeout(saveTimeoutId);
-    }
-
-    // Set new timeout for autosave (1500ms debounce)
-    const timeoutId = setTimeout(() => {
-      saveDocument(newContent);
-    }, 1500);
-
-    setSaveTimeoutId(timeoutId);
+    saveDocument(newContent);
   };
 
-  // Handle title changes (also debounced)
+  // Handle title changes
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
-
-    // Clear existing timeout
-    if (saveTimeoutId) {
-      clearTimeout(saveTimeoutId);
-    }
-
-    // Set new timeout for autosave
-    const timeoutId = setTimeout(() => {
-      saveDocument(undefined, newTitle);
-    }, 1500);
-
-    setSaveTimeoutId(timeoutId);
+    saveDocument(undefined, newTitle);
   };
 
   // Manual save
   const handleManualSave = async () => {
-    if (saveTimeoutId) {
-      clearTimeout(saveTimeoutId);
-    }
     await saveDocument(content, title);
   };
 
   // Handle DOCX import
   const handleFileContent = async (extractedContent: string) => {
-    if (!editorRef.current) return;
-
     try {
-      // Set content as HTML in the editor
-      editorRef.current.setContent(extractedContent);
+      // Convert HTML to TipTap JSON format for import
+      // For now, we'll set it as basic text content
+      const importedContent = {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                type: "text",
+                text: extractedContent.replace(/<[^>]*>/g, '') // Strip HTML tags for now
+              }
+            ]
+          }
+        ]
+      };
       
-      // Get the JSON representation and save it
-      setTimeout(() => {
-        const jsonContent = editorRef.current?.getJSON();
-        if (jsonContent) {
-          handleContentChange(jsonContent);
-          toast.success('Document imported successfully');
-        }
-      }, 100);
+      setContent(importedContent);
+      handleContentChange(importedContent);
+      toast.success('Document imported successfully');
     } catch (error) {
       console.error('Error importing document:', error);
       toast.error('Failed to import document');
@@ -227,15 +208,13 @@ export const DocumentEditorScreen: React.FC = () => {
 
   // Handle DOCX export
   const handleExportDocx = async () => {
-    if (!document || !editorRef.current) return;
+    if (!document) return;
 
     try {
-      const jsonContent = editorRef.current.getJSON();
-      
       const response = await supabase.functions.invoke('export-docx-tiptap', {
         body: {
           title: title || 'Document',
-          content_json: jsonContent,
+          content_json: content,
           document_type: document.document_type,
         },
       });
@@ -346,10 +325,8 @@ export const DocumentEditorScreen: React.FC = () => {
         </CardHeader>
         <CardContent>
           <RichTextEditor
-            ref={editorRef}
-            content={content}
+            initialContent={content}
             onChange={handleContentChange}
-            placeholder="Start writing your document..."
           />
         </CardContent>
       </Card>
