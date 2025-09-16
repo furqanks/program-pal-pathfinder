@@ -809,6 +809,7 @@ export type Database = {
       }
       user_documents: {
         Row: {
+          content_json: Json | null
           created_at: string
           document_type: string
           feedback_summary: string | null
@@ -823,6 +824,7 @@ export type Database = {
           version_number: number
         }
         Insert: {
+          content_json?: Json | null
           created_at?: string
           document_type: string
           feedback_summary?: string | null
@@ -837,6 +839,7 @@ export type Database = {
           version_number: number
         }
         Update: {
+          content_json?: Json | null
           created_at?: string
           document_type?: string
           feedback_summary?: string | null

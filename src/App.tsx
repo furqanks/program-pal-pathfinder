@@ -9,6 +9,7 @@ import Search from "./pages/Search";
 import UpdatedSearch from "./pages/UpdatedSearch";
 import USSearch from "./pages/USSearch";
 import Documents from "./pages/Documents";
+import DocumentEditor from "./pages/DocumentEditor";
 import Resume from "./pages/Resume";
 import Notes from "./pages/Notes";
 import Insights from "./pages/Insights";
@@ -68,6 +69,7 @@ const AppRoutes = () => {
       }>
         <Route index element={<Dashboard />} />
         <Route path="documents" element={<Documents />} />
+        <Route path="documents/:id/edit" element={<DocumentEditor />} />
         <Route path="resume" element={<Resume />} />
         <Route path="search" element={<Search />} />
         <Route path="updated-search" element={<UpdatedSearch />} />
