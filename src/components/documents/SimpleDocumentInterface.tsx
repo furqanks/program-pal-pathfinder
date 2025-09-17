@@ -147,33 +147,11 @@ const SimpleDocumentInterface = () => {
     }).join('\n\n');
   };
 
-  // Auto-save function for rich text editor
+  // Auto-save function for rich text editor - simplified, no database save
   const handleContentChange = async (json: JSONContent) => {
     setContentJson(json);
     setContent(getPlainTextFromJson(json));
-    
-    if (!selectedType) return;
-    
-    setSaving(true);
-    try {
-      // Save to Supabase with both formats for compatibility
-      const { error } = await supabase
-        .from('application_documents')
-        .upsert({
-          content_json: json,
-          content_raw: getPlainTextFromJson(json),
-          document_type: selectedType,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-          updated_at: new Date().toISOString()
-        });
-      
-      if (error) throw error;
-    } catch (error) {
-      console.error('Auto-save error:', error);
-      toast.error('Failed to auto-save');
-    } finally {
-      setSaving(false);
-    }
+    // Note: Auto-save removed to prevent conflicts. Use Save button or create document first.
   };
 
   // Handle document save
@@ -221,12 +199,15 @@ const SimpleDocumentInterface = () => {
       const newDoc = await addDocument({
         documentType: selectedType as any,
         linkedProgramId: null,
-        contentRaw: content || "",
+        contentRaw: getPlainTextFromJson(contentJson) || "",
         fileName: null
       });
       
       if (newDoc) {
-        navigate(`/documents/${newDoc.id}/edit`);
+        // Navigate to the correct DocumentEditor route
+        const editorRoute = `/documents/${newDoc.id}/edit`;
+        console.log('Navigating to:', editorRoute);
+        navigate(editorRoute);
       }
     } catch (error) {
       console.error("Create error:", error);
@@ -373,32 +354,51 @@ const SimpleDocumentInterface = () => {
     }
   };
 
-  // Export document locally as DOCX to avoid server issues
+  // Export document with improved TipTap JSON support
   const handleExport = async () => {
-    const currentContent = selectedDocument ? selectedDocument.contentRaw : getPlainTextFromJson(contentJson);
-    const currentType = selectedDocument ? selectedDocument.documentType : selectedType || 'Document';
-    const createdAt = selectedDocument?.createdAt || new Date().toISOString();
-
-    if (!currentContent?.trim()) {
-      toast.error("There's no content to export");
-      return;
-    }
-
     try {
-      const { generateDocxBlob, buildDocxFilename } = await import('@/utils/docxExport');
+      // Get current content from either selected document or current editor
+      let exportContent;
+      let documentTitle;
+      
+      if (selectedDocument) {
+        // Export selected document
+        exportContent = contentJson;
+        documentTitle = selectedDocument.fileName || selectedDocument.documentType;
+      } else {
+        // Export current editor content
+        exportContent = contentJson;
+        documentTitle = selectedType || 'Document';
+      }
+
+      if (!exportContent.content || exportContent.content.length === 0) {
+        toast.error("There's no content to export");
+        return;
+      }
 
       toast.info('Generating DOCX...');
 
-      const blob = await generateDocxBlob({
-        title: currentType,
-        content: currentContent,
-        createdAt,
+      const response = await fetch('/api/export-docx', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: documentTitle,
+          content_json: exportContent,
+        }),
       });
 
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || 'Export failed');
+      }
+
+      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = buildDocxFilename(currentType);
+      link.download = `${documentTitle.replace(/[^a-z0-9_-]+/gi, '_')}.docx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -461,14 +461,25 @@ const SimpleDocumentInterface = () => {
                     setIsUploading={setIsUploading}
                   />
                   {content && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleExport}
-                    >
-                      <Download className="h-4 w-4 mr-1" />
-                      Export
-                    </Button>
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCreateRichText}
+                        disabled={isSaving}
+                      >
+                        <PenTool className="h-4 w-4 mr-1" />
+                        {isSaving ? "Creating..." : "Rich Text Editor"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleExport}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Export
+                      </Button>
+                    </>
                   )}
                 </div>
             </div>
@@ -714,28 +725,43 @@ const SimpleDocumentInterface = () => {
                           }`}
                           onClick={() => setSelectedDocument(doc)}
                         >
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <FileText className="h-3 w-3 flex-shrink-0" />
-                            <div className="text-sm truncate">
-                              {doc.fileName || `Version ${doc.versionNumber}`}
-                            </div>
-                            {doc.score && (
-                              <Badge variant="secondary" className="text-xs">
-                                {doc.score}/10
-                              </Badge>
-                            )}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(doc.id);
-                            }}
-                            className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                           <div className="flex items-center gap-2 flex-1 min-w-0">
+                             <FileText className="h-3 w-3 flex-shrink-0" />
+                             <div className="text-sm truncate">
+                               {doc.fileName || `Version ${doc.versionNumber}`}
+                             </div>
+                             {doc.score && (
+                               <Badge variant="secondary" className="text-xs">
+                                 {doc.score}/10
+                               </Badge>
+                             )}
+                           </div>
+                           <div className="flex items-center gap-1">
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 navigate(`/documents/${doc.id}/edit`);
+                               }}
+                               className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                               title="Edit in Rich Text Editor"
+                             >
+                               <PenTool className="h-3 w-3" />
+                             </Button>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 handleDelete(doc.id);
+                               }}
+                               className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                               title="Delete document"
+                             >
+                               <Trash2 className="h-3 w-3" />
+                             </Button>
+                           </div>
                         </div>
                       ))}
                       {docs.length > 3 && (
