@@ -10,6 +10,7 @@ import { JSONContent } from '@tiptap/react';
 import FileUploadButton from '@/components/documents/editor/FileUploadButton';
 import { ArrowLeft, Save, Download, Upload, Clock, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { saveTipTapJson, detectContentType, textToTipTapJson, markdownToHtml } from '@/utils/saveDoc';
 
 interface DocumentData {
   id: string;
@@ -34,9 +35,13 @@ export const DocumentEditorScreen: React.FC = () => {
     content: [{ type: "paragraph" }] 
   });
   const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [savingState, setSavingState] = useState<'idle'|'saving'|'saved'|'error'>('idle');
   const [isUploading, setIsUploading] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<string | undefined>();
+  
+  // Auto-save refs for race condition handling
+  const saveSeqRef = React.useRef(0);
+  const debouncedSaveRef = React.useRef<number | undefined>(undefined);
 
   // Load document on mount
   useEffect(() => {
@@ -68,38 +73,48 @@ export const DocumentEditorScreen: React.FC = () => {
         setDocument(data);
         setTitle(data.file_name || 'Untitled Document');
         
-        // Load content from content_json if available, otherwise migrate from original_text
+        // Load content with migration support
         if (data.content_json) {
           setContent(data.content_json);
         } else if (data.original_text) {
-          // Convert plain text to TipTap JSON - handle paragraphs
-          const paragraphs = data.original_text.split('\n\n').filter(p => p.trim());
-          const tiptapContent = {
-            type: "doc",
-            content: paragraphs.length > 0 ? paragraphs.map(paragraph => ({
-              type: "paragraph",
-              content: paragraph.trim() ? [
-                {
-                  type: "text",
-                  text: paragraph.trim()
-                }
-              ] : []
-            })) : [{ type: "paragraph" }]
-          };
+          // Migrate legacy content to TipTap JSON
+          const contentType = detectContentType(data.original_text);
+          let tiptapContent: JSONContent;
+          
+          if (contentType === 'html') {
+            // For HTML content, we'll create a temporary editor to parse it
+            tiptapContent = {
+              type: "doc",
+              content: [{ 
+                type: "paragraph", 
+                content: [{ type: "text", text: data.original_text.replace(/<[^>]*>/g, '') }]
+              }]
+            };
+          } else if (contentType === 'markdown') {
+            // Convert markdown to HTML then to TipTap JSON
+            const html = markdownToHtml(data.original_text);
+            tiptapContent = {
+              type: "doc", 
+              content: [{ 
+                type: "paragraph", 
+                content: [{ type: "text", text: html.replace(/<[^>]*>/g, '') }]
+              }]
+            };
+          } else {
+            // Plain text conversion
+            tiptapContent = textToTipTapJson(data.original_text);
+          }
+          
           setContent(tiptapContent);
           
-          // Save the migrated content
-          try {
-            await supabase
-              .from('user_documents')
-              .update({
-                content_json: tiptapContent,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', id);
-          } catch (migrationError) {
-            console.error('Error migrating content:', migrationError);
-          }
+          // Save migrated content asynchronously
+          saveTipTapJson({
+            docId: id!,
+            userId: user!.id,
+            json: tiptapContent,
+          }).catch(error => {
+            console.error('Migration save failed:', error);
+          });
         } else {
           // Empty document
           setContent({
@@ -108,7 +123,7 @@ export const DocumentEditorScreen: React.FC = () => {
           });
         }
 
-        setLastSaved(new Date(data.updated_at || data.created_at));
+        setLastSavedAt(data.updated_at || data.created_at);
       } catch (error) {
         console.error('Error loading document:', error);
         toast.error('Failed to load document');
@@ -121,60 +136,86 @@ export const DocumentEditorScreen: React.FC = () => {
     loadDocument();
   }, [id, user, navigate]);
 
-  // Autosave function
-  const saveDocument = async (contentToSave?: JSONContent, titleToSave?: string) => {
-    if (!document || !user || isSaving) return;
-
-    setIsSaving(true);
-    try {
-      const updates: any = {
-        updated_at: new Date().toISOString(),
-      };
-
-      if (contentToSave !== undefined) {
-        updates.content_json = contentToSave;
+  // Debounced auto-save with race condition handling
+  const onEditorChange = React.useCallback((json: JSONContent) => {
+    setContent(json);
+    
+    // Clear existing timeout
+    window.clearTimeout(debouncedSaveRef.current);
+    
+    // Debounce the save
+    debouncedSaveRef.current = window.setTimeout(async () => {
+      if (!document || !user) return;
+      
+      setSavingState('saving');
+      const seq = ++saveSeqRef.current;
+      
+      try {
+        const timestamp = await saveTipTapJson({
+          docId: document.id,
+          userId: user.id,
+          json,
+        });
+        
+        // Only update state if this is still the latest save
+        if (seq === saveSeqRef.current) {
+          setSavingState('saved');
+          setLastSavedAt(timestamp);
+        }
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+        if (seq === saveSeqRef.current) {
+          setSavingState('error');
+        }
       }
+    }, 900);
+  }, [document, user]);
 
-      if (titleToSave !== undefined) {
-        updates.file_name = titleToSave;
-      }
-
-      const { error } = await supabase
-        .from('user_documents')
-        .update(updates)
-        .eq('id', document.id)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error saving document:', error);
-        toast.error('Failed to save document');
-        return;
-      }
-
-      setLastSaved(new Date());
-    } catch (error) {
-      console.error('Error saving document:', error);
-      toast.error('Failed to save document');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Handle content changes with autosave
-  const handleContentChange = (newContent: JSONContent) => {
-    setContent(newContent);
-    saveDocument(newContent);
-  };
-
-  // Handle title changes
-  const handleTitleChange = (newTitle: string) => {
+  // Title save handler  
+  const onTitleChange = React.useCallback((newTitle: string) => {
     setTitle(newTitle);
-    saveDocument(undefined, newTitle);
-  };
+    
+    // Immediate save for title changes
+    if (document && user) {
+      saveTipTapJson({
+        docId: document.id,
+        userId: user.id,
+        json: content,
+        title: newTitle,
+      }).catch(error => {
+        console.error('Title save failed:', error);
+        toast.error('Failed to save title');
+      });
+    }
+  }, [document, user, content]);
 
-  // Manual save
+  // Manual save handler
   const handleManualSave = async () => {
-    await saveDocument(content, title);
+    if (!document || !user) return;
+    
+    setSavingState('saving');
+    const seq = ++saveSeqRef.current;
+    
+    try {
+      const timestamp = await saveTipTapJson({
+        docId: document.id,
+        userId: user.id,
+        json: content,
+        title,
+      });
+      
+      if (seq === saveSeqRef.current) {
+        setSavingState('saved');
+        setLastSavedAt(timestamp);
+        toast.success('Document saved');
+      }
+    } catch (error) {
+      console.error('Manual save failed:', error);
+      if (seq === saveSeqRef.current) {
+        setSavingState('error');
+        toast.error('Failed to save document');
+      }
+    }
   };
 
   // Handle DOCX import
@@ -198,7 +239,7 @@ export const DocumentEditorScreen: React.FC = () => {
       };
       
       setContent(importedContent);
-      handleContentChange(importedContent);
+      onEditorChange(importedContent);
       toast.success('Document imported successfully');
     } catch (error) {
       console.error('Error importing document:', error);
@@ -206,27 +247,27 @@ export const DocumentEditorScreen: React.FC = () => {
     }
   };
 
-  // Handle DOCX export
+  // Handle DOCX export using new API
   const handleExportDocx = async () => {
     if (!document) return;
 
     try {
-      const response = await supabase.functions.invoke('export-docx-tiptap', {
-        body: {
-          title: title || 'Document',
-          content_json: content,
-          document_type: document.document_type,
+      const response = await fetch('/api/export-tiptap-docx', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          content_json: content,
+          title: title || 'Document',
+        }),
       });
 
-      if (response.error) {
+      if (!response.ok) {
         throw new Error('Export failed');
       }
 
-      // Create blob from response data
-      const blob = new Blob([response.data], { 
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
-      });
+      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = globalThis.document.createElement('a');
       link.href = url;
@@ -287,9 +328,13 @@ export const DocumentEditorScreen: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-2">
-              <Button onClick={handleManualSave} disabled={isSaving} variant="outline">
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                {isSaving ? 'Saving...' : 'Save'}
+              <Button 
+                onClick={handleManualSave} 
+                disabled={savingState === 'saving'} 
+                variant="outline"
+              >
+                {savingState === 'saving' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                {savingState === 'saving' ? 'Saving...' : 'Save'}
               </Button>
               
               <FileUploadButton 
@@ -311,22 +356,23 @@ export const DocumentEditorScreen: React.FC = () => {
           <CardTitle>
             <Input
               value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
+              onChange={(e) => onTitleChange(e.target.value)}
               placeholder="Document Title"
               className="text-lg font-semibold border-none shadow-none px-0 focus-visible:ring-0"
             />
           </CardTitle>
-          {lastSaved && (
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              Last saved: {lastSaved.toLocaleTimeString()}
-            </div>
-          )}
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            {savingState === 'saving' && 'Saving...'}
+            {savingState === 'saved' && lastSavedAt && `Saved ${new Date(lastSavedAt).toLocaleTimeString()}`}
+            {savingState === 'error' && <span className="text-red-500">Save failed</span>}
+            {savingState === 'idle' && 'Ready'}
+          </div>
         </CardHeader>
         <CardContent>
           <RichTextEditor
             initialContent={content}
-            onChange={handleContentChange}
+            onChange={onEditorChange}
           />
         </CardContent>
       </Card>
