@@ -10,6 +10,8 @@ import Blockquote from '@tiptap/extension-blockquote';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
 
+export type RichTextHandle = { getJSON: () => JSONContent | null };
+
 type Props = {
   initialContent?: JSONContent;
   onChange?: (json: JSONContent) => void;
@@ -74,7 +76,7 @@ function Toolbar({ editor }: { editor: Editor | null }) {
   );
 }
 
-export default function RichTextEditor({ initialContent, onChange, readOnly, className }: Props) {
+const RichTextEditor = React.forwardRef<RichTextHandle, Props>(({ initialContent, onChange, readOnly, className }, ref) => {
   const editor = useEditor({
     editable: !readOnly,
     extensions: [
@@ -96,9 +98,13 @@ export default function RichTextEditor({ initialContent, onChange, readOnly, cla
       if (!onChange) return;
       const json = editor.getJSON();
       clearTimeout((editor as any).__saveT);
-      (editor as any).__saveT = setTimeout(() => onChange(json), 800);
+      (editor as any).__saveT = setTimeout(() => onChange(json), 900);
     },
   }, [readOnly]);
+
+  React.useImperativeHandle(ref, () => ({
+    getJSON: () => editor?.getJSON() ?? null,
+  }), [editor]);
 
   return (
     <div className={`rounded-md bg-white ${className || ''}`} data-testid="rte-root">
@@ -108,4 +114,6 @@ export default function RichTextEditor({ initialContent, onChange, readOnly, cla
       </div>
     </div>
   );
-}
+});
+
+export default RichTextEditor;

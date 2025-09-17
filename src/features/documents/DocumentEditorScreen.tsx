@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import RichTextEditor from '@/components/editor/RichTextEditor';
+import RichTextEditor, { RichTextHandle } from '@/components/editor/RichTextEditor';
 import { JSONContent } from '@tiptap/react';
 import FileUploadButton from '@/components/documents/editor/FileUploadButton';
 import { ArrowLeft, Save, Download, Upload, Clock, Loader2 } from 'lucide-react';
@@ -42,6 +42,7 @@ export const DocumentEditorScreen: React.FC = () => {
   // Auto-save refs for race condition handling
   const saveSeqRef = React.useRef(0);
   const debouncedSaveRef = React.useRef<number | undefined>(undefined);
+  const editorRef = React.useRef<RichTextHandle>(null);
 
   // Load document on mount
   useEffect(() => {
@@ -252,19 +253,23 @@ export const DocumentEditorScreen: React.FC = () => {
     if (!document) return;
 
     try {
-      const response = await fetch('/api/export-tiptap-docx', {
+      // Get the latest content from the editor
+      const liveJson = editorRef.current?.getJSON() ?? content;
+      
+      const response = await fetch('/api/export-docx', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content_json: content,
-          title: title || 'Document',
+          title: title || 'document',
+          content_json: liveJson,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Export failed');
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || 'Export failed');
       }
 
       const blob = await response.blob();
@@ -371,6 +376,7 @@ export const DocumentEditorScreen: React.FC = () => {
         </CardHeader>
         <CardContent>
           <RichTextEditor
+            ref={editorRef}
             initialContent={content}
             onChange={onEditorChange}
           />
