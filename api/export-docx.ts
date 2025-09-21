@@ -34,27 +34,35 @@ function parasFrom(nodes: J[], ctx?: { ol?: boolean; olIndex?: number; }): Parag
       }
       case 'blockquote': {
         const inner = parasFrom(n.content || []);
-        inner.forEach(p => p.border({ left: { color: 'E5E7EB', space: 1, size: 6 } }));
-        out.push(...inner);
+        // Add quotation marks and indentation for blockquote effect
+        out.push(...inner.map(p => new Paragraph({
+          children: [
+            new TextRun({ text: '"', italics: true }),
+            ...(n.content || []).flatMap(runsFrom),
+            new TextRun({ text: '"', italics: true })
+          ],
+          indent: { left: 720 } // 0.5 inch indent
+        })));
         break;
       }
       case 'bulletList': {
         for (const li of n.content || []) {
-          const inner = parasFrom(li.content || []);
-          inner.forEach(p => p.bullet({ level: 0 }));
-          out.push(...inner);
+          const listItemContent = (li.content || []).flatMap(runsFrom);
+          out.push(new Paragraph({ 
+            children: [new TextRun("• "), ...listItemContent],
+            indent: { left: 360 } // 0.25 inch indent
+          }));
         }
         break;
       }
       case 'orderedList': {
         let idx = 1;
         for (const li of n.content || []) {
-          const inner = parasFrom(li.content || []);
-          inner.forEach(p => {
-            // Prefix "1. " for robust numbering without complex numbering config
-            p.children = [new TextRun(`${idx}. `), ...(p.options.children || [])];
-          });
-          out.push(...inner);
+          const listItemContent = (li.content || []).flatMap(runsFrom);
+          out.push(new Paragraph({ 
+            children: [new TextRun(`${idx}. `), ...listItemContent],
+            indent: { left: 360 } // 0.25 inch indent
+          }));
           idx++;
         }
         break;
