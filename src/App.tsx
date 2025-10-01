@@ -6,11 +6,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Search from "./pages/Search";
-import UpdatedSearch from "./pages/UpdatedSearch";
-import USSearch from "./pages/USSearch";
-import Documents from "./pages/Documents";
-import DocumentEditor from "./pages/DocumentEditor";
-import Resume from "./pages/Resume";
+import CVBuilder from "./pages/CVBuilder";
+import SOPAssistant from "./pages/SOPAssistant";
+import EssayAssistant from "./pages/EssayAssistant";
+import LORAssistant from "./pages/LORAssistant";
+import SuccessfulDocsArchive from "./pages/SuccessfulDocsArchive";
 import Notes from "./pages/Notes";
 import Insights from "./pages/Insights";
 import NotFound from "./pages/NotFound";
@@ -68,12 +68,12 @@ const AppRoutes = () => {
         </ProtectedRoute>
       }>
         <Route index element={<Dashboard />} />
-        <Route path="documents" element={<Documents />} />
-        <Route path="documents/:id/edit" element={<DocumentEditor />} />
-        <Route path="resume" element={<Resume />} />
         <Route path="search" element={<Search />} />
-        <Route path="updated-search" element={<UpdatedSearch />} />
-        <Route path="us-search" element={<USSearch />} />
+        <Route path="cv-builder" element={<CVBuilder />} />
+        <Route path="sop-assistant" element={<SOPAssistant />} />
+        <Route path="essay-assistant" element={<EssayAssistant />} />
+        <Route path="lor-assistant" element={<LORAssistant />} />
+        <Route path="archive" element={<SuccessfulDocsArchive />} />
         <Route path="notes" element={<Notes />} />
         <Route path="insights" element={<Insights />} />
         <Route path="account" element={<Account />} />

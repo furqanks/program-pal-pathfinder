@@ -20,24 +20,29 @@ const navItems = [
     icon: Search
   },
   {
-    path: '/updated-search',
-    label: 'Updated Search',
-    icon: Sparkles
+    path: '/cv-builder',
+    label: 'CV Builder',
+    icon: User
   },
   {
-    path: '/us-search',
-    label: 'US Universities',
-    icon: GraduationCap
-  },
-  {
-    path: '/documents',
-    label: 'Application Documents',
+    path: '/sop-assistant',
+    label: 'SOP Assistant',
     icon: FileText
   },
   {
-    path: '/resume',
-    label: 'Resume Editor',
-    icon: User
+    path: '/essay-assistant',
+    label: 'Essay Assistant',
+    icon: FileText
+  },
+  {
+    path: '/lor-assistant',
+    label: 'LOR Assistant',
+    icon: FileText
+  },
+  {
+    path: '/archive',
+    label: 'Successful Docs Archive',
+    icon: Sparkles
   },
   {
     path: '/notes',
