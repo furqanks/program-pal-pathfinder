@@ -4,6 +4,9 @@
     "api/improve-resume.ts": { "memory": 512, "maxDuration": 30 },
     "api/export-pdf.ts": { "memory": 1536, "maxDuration": 60 },
     "api/export-docx.ts": { "memory": 512, "maxDuration": 30 },
-    "api/export-document.ts": { "memory": 1024, "maxDuration": 45 }
+    "api/export-document.ts": { "memory": 1024, "maxDuration": 45 },
+    "api/generate-cv.ts": { "memory": 512, "maxDuration": 30 },
+    "api/export-cv-docx.ts": { "memory": 512, "maxDuration": 30 },
+    "api/export-cv-pdf.ts": { "memory": 1536, "maxDuration": 60 }
   }
 }
