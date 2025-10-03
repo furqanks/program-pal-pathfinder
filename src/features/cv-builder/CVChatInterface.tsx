@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/integrations/supabase/client'
 
 type Message = {
   id: string
@@ -125,13 +126,26 @@ export const CVChatInterface = () => {
 
   const generateCV = async () => {
     try {
-      const response = await fetch('/api/generate-cv', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cvType, cvData })
-      })
+      // Transform cvData to match expected format
+      const transformedData = {
+        personalInfo: {
+          name: cvData.fullName,
+          email: cvData.email,
+          phone: cvData.phone,
+          title: cvData.title
+        },
+        education: cvData.education,
+        researchExperience: cvData.research,
+        publications: cvData.publications,
+        conferences: cvData.conferences,
+        teaching: cvData.teaching,
+        summary: cvData.summary,
+        workExperience: cvData.experience,
+        skills: cvData.skills,
+        achievements: cvData.achievements
+      }
 
-      if (!response.ok) throw new Error('Failed to generate CV')
+      setCVData(transformedData)
 
       setMessages(prev => [
         ...prev,
@@ -157,32 +171,44 @@ export const CVChatInterface = () => {
 
   const handleDownload = async (format: 'pdf' | 'docx') => {
     try {
-      const response = await fetch(`/api/export-cv-${format}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cvType, cvData })
+      setIsProcessing(true)
+      const functionName = format === 'docx' ? 'generate-cv-docx' : 'generate-cv-pdf'
+      
+      const { data, error } = await supabase.functions.invoke(functionName, {
+        body: { cvType, cvData }
       })
 
-      if (!response.ok) throw new Error('Export failed')
+      if (error) throw error
 
-      const blob = await response.blob()
+      // Convert data to blob
+      const blob = new Blob([data], { 
+        type: format === 'docx' 
+          ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          : 'application/pdf'
+      })
+      
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `cv.${format}`
+      a.download = `CV_${cvType}_${new Date().toISOString().split('T')[0]}.${format}`
+      document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
 
       toast({
         title: 'Download Complete',
         description: `CV exported as ${format.toUpperCase()}`
       })
     } catch (error) {
+      console.error(`Error downloading ${format}:`, error)
       toast({
         title: 'Export Failed',
         description: 'Failed to export CV. Please try again.',
         variant: 'destructive'
       })
+    } finally {
+      setIsProcessing(false)
     }
   }
 
